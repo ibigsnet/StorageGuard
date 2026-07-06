@@ -16,6 +16,8 @@
     .then(r => r.json())
     .then(cfg => {
       applyColoring(cfg);
+      // Check and send alerts (server side, rate limited)
+      fetch('/plugins/StorageGuard/check-alerts.php').catch(()=>{});
     })
     .catch(err => {
       console.warn('Storage Guard: could not load config, using defaults', err);
