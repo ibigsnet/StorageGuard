@@ -1,0 +1,16 @@
+<?xml version='1.0' standalone='yes'?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name "storageguard">
+<!ENTITY author "RifleJock">
+<!ENTITY version "2026.07.01">
+<!ENTITY launch "Settings/StorageGuard">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
+]>
+
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0">
+
+<FILE Run="/bin/bash"><INLINE>mkdir -p /usr/local/emhttp/plugins/storageguard /boot/config/plugins/storageguard/config</INLINE></FILE>
+
+<FILE Name="/usr/local/emhttp/plugins/storageguard/Settings/StorageGuard.page"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/StorageGuard.page</URL></FILE>
+
+</PLUGIN>
