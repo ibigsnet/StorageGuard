@@ -1,5 +1,5 @@
 Menu="Settings"
-Title="StorageGuard"
+Title="Storage Guard"
 Icon="shield"
 ---
 <?php
@@ -271,14 +271,14 @@ Other BTRFS options (raid5, raid6, raid1c3, raid1c4, raid5e etc.) change the red
 <hr>
 
 <!-- ALERTS SECTION -->
-_(Enable StorageGuard Alerts?)_:
+_(Enable Storage Guard Alerts?)_:
 : <select name="alerts_enabled" id="alerts_enabled">
   <?=mk_option($alerts_enabled, "yes", _("Yes"))?>
   <?=mk_option($alerts_enabled, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-When enabled, StorageGuard will send Unraid notifications (System / Warning / Alert levels) when thresholds are crossed.
+When enabled, Storage Guard will send Unraid notifications (System / Warning / Alert levels) when thresholds are crossed.
 </blockquote>
 
 _(Array / Pools alerts enabled)_:

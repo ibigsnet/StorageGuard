@@ -1,6 +1,6 @@
-# StorageGuard - Unraid
+# Storage Guard - Unraid
 
-StorageGuard adds configurable total free space thresholds for your Unraid Array and Pools. 
+Storage Guard adds configurable total free space thresholds for your Unraid Array and Pools. It colors relevant sections yellow/red when low and sends native Unraid notifications.
 
 - Pulls real disk capacities from your array data disks and each pool.
 - Dropdowns for Warning + Critical using actual disk sizes (unique, sorted).

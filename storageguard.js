@@ -1,5 +1,5 @@
-// StorageGuard UI helpers
-console.log("StorageGuard loaded - pools + settings active");
+// Storage Guard UI helpers
+console.log("Storage Guard loaded - pools + settings active");
 
 function initStorageGuardUI() {
   // Array custom toggle

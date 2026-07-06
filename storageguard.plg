@@ -3,11 +3,11 @@
 <!ENTITY name "storageguard">
 <!ENTITY author "RifleJock">
 <!ENTITY version "2026.07.06-1">
-<!ENTITY launch "Settings/StorageGuard">
+<!ENTITY launch "Settings/Storage Guard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" desc="Configurable total free space thresholds for your Unraid Array and Pools with coloring and alerts." launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0">
+<PLUGIN name="&name;" author="&author;" version="&version;" desc="Configurable total free space thresholds for your Unraid Array and Pools. Colors sections and sends alerts." launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0">
 
 <FILE Run="/bin/bash"><INLINE>mkdir -p /usr/local/emhttp/plugins/storageguard /boot/config/plugins/storageguard</INLINE></FILE>
 
