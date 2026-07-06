@@ -34,7 +34,9 @@ The core idea: set thresholds so that *before* any drive fails, the Main tab alr
 
 The same core idea applies as the array: your thresholds exist so you know *in advance* whether you will still have enough total free space in the pool to rebalance or evacuate data after a drive failure—without being forced to buy a replacement disk right away. Rising drive prices make having this buffer even more valuable.
 
-Your RAID calculator sheet shows how speeds and capacity scale. For example with 4x4TB + 2x8TB disks (base ~540/550 MB/s for 4TB, ~520/540 for 8TB):
+https://docs.google.com/spreadsheets/d/1_hyQBpp4EpSqxYUCarDHSfYkRkGiAHMIHbHz4uuAZHs/edit?usp=sharing
+
+For example with 4x4TB + 2x8TB disks (base ~540/550 MB/s for 4TB, ~520/540 for 8TB):
 
 - RAID 0: 32.0 TB usable, ~2,080 MB/s read, ~2,160 MB/s write (0 disk tolerance)
 - RAID 1: 16.0 TB, ~2,080 read, ~540 write (1 disk)
@@ -44,11 +46,11 @@ Your RAID calculator sheet shows how speeds and capacity scale. For example with
 - RAID 1c4: 8.0 TB, ~2,080 read, ~540 write (3 disks)
 - RAID 10: 16.0 TB, ~2,080 read, ~1,080 write (1+ disks)
 
-In mixed setups (like your 4x4TB + 2x8TB pools), the slowest disk often limits stripe performance, and usable space depends on the profile's allocation rules. BTRFS does a good job balancing across unequal drives after a `btrfs balance`.
+In mixed setups (like this 4x4TB + 2x8TB pools), the slowest disk often limits stripe performance, and usable space depends on the profile's allocation rules. BTRFS does a good job balancing across unequal drives after a `btrfs balance`.
 
-Your sheet calculates pool speeds from base single-disk numbers per RAID type (e.g. full sum for RAID0 reads/writes, limited to single for RAID1 writes, etc.). We reflect similar logic in explanations here. For your exact drives, refer to the sheet for precise numbers.
+This calculates pool speeds from base single-disk numbers per RAID type (e.g. full sum for RAID0 reads/writes, limited to single for RAID1 writes, etc.). We reflect similar logic in explanations here. For your exact drives, refer to the sheet for precise numbers.
 
-Your sheet calculates pool speeds from base single-disk numbers per RAID type (e.g. full sum for RAID0 reads/writes, limited to single for RAID1 writes, etc.). Use the sheet to plug in your exact disk speeds for accurate numbers. We can use similar math in the per-pool help texts for dynamic speed impact estimates based on detected profile and your disk sizes.
+The sheet calculates pool speeds from base single-disk numbers per RAID type (e.g. full sum for RAID0 reads/writes, limited to single for RAID1 writes, etc.). Use the sheet to plug in your exact disk speeds for accurate numbers. We can use similar math in the per-pool help texts for dynamic speed impact estimates based on detected profile and your disk sizes.
 
 ### Core BTRFS RAID Concepts
 - **Profiles** (set at mkfs or via balance convert):
