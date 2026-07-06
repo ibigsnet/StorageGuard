@@ -1,14 +1,310 @@
+Menu="Settings"
+Title="StorageGuard"
+Icon="shield"
+---
 <?php
-?>
-<h2>StorageGuard</h2>
+$plugin = "storageguard";
+$cfg = parse_plugin_cfg($plugin);
 
-<input type="checkbox" checked> Enable Array Coloring<br>
-<input type="checkbox"> Enable Cache Coloring<br>
-<input type="checkbox"> Enable Notifications<br>
+// Load disk information from Unraid
+$disks_ini = '/var/local/emhttp/disks.ini';
+$has_disks = file_exists($disks_ini);
+$disks = $has_disks ? parse_ini_file($disks_ini, true) : [];
+
+// Helper: format KB size to human like 26T, 8T, 1.2T, 500G
+function sg_format_size($kb) {
+    if (!$kb || $kb <= 0) return '0';
+    $bytes = $kb * 1024;
+    if ($bytes >= 1024 * 1024 * 1024 * 1024) {
+        $val = round($bytes / (1024 * 1024 * 1024 * 1024), 1);
+        return rtrim(rtrim($val, '0'), '.') . 'T';
+    } elseif ($bytes >= 1024 * 1024 * 1024) {
+        $val = round($bytes / (1024 * 1024 * 1024), 1);
+        return rtrim(rtrim($val, '0'), '.') . 'G';
+    } elseif ($bytes >= 1024 * 1024) {
+        $val = round($bytes / (1024 * 1024));
+        return $val . 'M';
+    } else {
+        $val = round($bytes / 1024);
+        return $val . 'K';
+    }
+}
+
+// Collect array data disk capacities (unique, largest first). Ignore parity.
+$array_sizes = [];
+if ($has_disks) {
+    foreach ($disks as $key => $d) {
+        if (empty($d['device'])) continue;
+        $name = isset($d['name']) ? $d['name'] : $key;
+        if (preg_match('/^disk\d+$/', $name)) {
+            $sz = isset($d['size']) ? (int)$d['size'] : 0;
+            if ($sz > 0) {
+                $array_sizes[] = sg_format_size($sz);
+            }
+        }
+    }
+}
+$array_sizes = array_unique($array_sizes);
+// Sort descending by numeric value (rough parse)
+usort($array_sizes, function($a, $b) {
+    $va = (float)preg_replace('/[^0-9.]/', '', $a);
+    $ua = strpos($a, 'T') !== false ? 1000 : (strpos($a,'G')!==false ? 1 : 0.001);
+    $vb = (float)preg_replace('/[^0-9.]/', '', $b);
+    $ub = strpos($b, 'T') !== false ? 1000 : (strpos($b,'G')!==false ? 1 : 0.001);
+    return ($vb * $ub) <=> ($va * $ua);
+});
+
+// Collect pools + their disk sizes
+// Pools are non-disk, non-parity, non-flash entries with a device
+$pools = [];
+if ($has_disks) {
+    foreach ($disks as $key => $d) {
+        if (empty($d['device'])) continue;
+        $name = isset($d['name']) ? $d['name'] : $key;
+        if (preg_match('/^disk\d+$/', $name) || strpos($name, 'parity') === 0 || $name === 'flash') {
+            continue;
+        }
+        // Treat as pool (cache, cache2, intelligence, overshield, etc.)
+        $sz = isset($d['size']) ? (int)$d['size'] : 0;
+        if ($sz > 0) {
+            if (!isset($pools[$name])) $pools[$name] = [];
+            $pools[$name][] = sg_format_size($sz);
+        }
+    }
+}
+// Unique + sort per pool
+foreach ($pools as $pname => $sizes) {
+    $pools[$pname] = array_unique($sizes);
+    usort($pools[$pname], function($a, $b) {
+        $va = (float)preg_replace('/[^0-9.]/', '', $a);
+        $ua = strpos($a, 'T') !== false ? 1000 : (strpos($a,'G')!==false ? 1 : 0.001);
+        $vb = (float)preg_replace('/[^0-9.]/', '', $b);
+        $ub = strpos($b, 'T') !== false ? 1000 : (strpos($b,'G')!==false ? 1 : 0.001);
+        return ($vb * $ub) <=> ($va * $ua);
+    });
+}
+
+$pool_names = array_keys($pools);
+
+// Dev/preview fallback so the UI is usable even without a real Unraid disks.ini
+if (!$has_disks || (empty($array_sizes) && empty($pools))) {
+  $array_sizes = ['26T', '12T', '8T', '4T', '2T'];
+  $pools = [
+    'intelligence' => ['1.2T'],
+    'overshield' => ['8T', '4T'],
+    'hyperspace' => ['2T'],
+  ];
+  $pool_names = array_keys($pools);
+  $dev_mode = true;
+} else {
+  $dev_mode = false;
+}
+
+// Helper to build <option>s for a size list (current value preselected)
+function sg_size_options($sizes, $current) {
+    $html = '';
+    $found = false;
+    foreach ($sizes as $s) {
+        $sel = ($s === $current) ? ' selected' : '';
+        if ($sel) $found = true;
+        $html .= '<option value="' . htmlspecialchars($s) . '"' . $sel . '>' . htmlspecialchars($s) . '</option>';
+    }
+    if (!$found && $current) {
+        // keep custom-ish previous value visible
+        $html = '<option value="' . htmlspecialchars($current) . '" selected>' . htmlspecialchars($current) . '</option>' . $html;
+    }
+    if (empty($sizes)) {
+        $html = '<option value="">No disks detected</option>';
+    }
+    return $html;
+}
+
+// Current values (fallbacks)
+$array_warning = $cfg['array_warning'] ?? '8T';
+$array_critical = $cfg['array_critical'] ?? '2T';
+$array_use_custom = $cfg['array_use_custom'] ?? 'no';
+$array_warning_custom = $cfg['array_warning_custom'] ?? '';
+$array_critical_custom = $cfg['array_critical_custom'] ?? '';
+
+$array_coloring = $cfg['array_coloring'] ?? 'yes';
+$cache_coloring = $cfg['cache_coloring'] ?? 'yes';
+
+$pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
+$alerts_enabled = $cfg['alerts_enabled'] ?? 'yes';
+$alerts_for = $cfg['alerts_for'] ?? 'all';
+?>
+
+<form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
+<input type="hidden" name="#file" value="storageguard/storageguard.cfg">
+<input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
+<input type="hidden" name="alerts_for" id="alerts_for" value="<?=htmlspecialchars($alerts_for)?>">
+
+<h2>StorageGuard</h2>
+<p>Configurable free space thresholds for your Unraid Array and Cache/Pools. Colors sections yellow (warning) or red (critical). Sends native notifications.</p>
+<?php if (!empty($dev_mode)): ?>
+<p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — using example disk sizes (no /var/local/emhttp/disks.ini detected on this system).</p>
+<?php endif; ?>
+
+<!-- ARRAY SECTION -->
+_(Enable Array Coloration)_:
+: <select name="array_coloring" id="array_coloring">
+  <?=mk_option($array_coloring, "yes", _("Yes"))?>
+  <?=mk_option($array_coloring, "no", _("No"))?>
+  </select>
+
+<blockquote class="inline_help">
+Enable yellow/red coloring of the Array total free space on the Main tab based on the thresholds below.
+</blockquote>
+
+_(Hint: If no array is present, these settings will be ignored.)_
+
+_(Choose Array Total Warning Capacity)_:
+: <select name="array_warning" id="array_warning">
+  <?=sg_size_options($array_sizes, $array_warning)?>
+  </select>
+
+<blockquote class="inline_help">
+Total free space on the array (data disks) drops below this → yellow warning.<br><br>
+<b>Examples:</b><br>
+Uniform 4×26TB (1 parity + 3 data): choose 26T.<br>
+Mixed: Parity 12T / Disks 8T,8T,8T,4T,2T → Warning often set to 8T (largest data disk).<br>
+If free space &lt; 8T and your largest disk fails, you may not have room to move its data off the failed disk without buying a new drive.
+</blockquote>
+
+_(Choose Array Total Critical Capacity)_:
+: <select name="array_critical" id="array_critical">
+  <?=sg_size_options($array_sizes, $array_critical)?>
+  </select>
+
+<blockquote class="inline_help">
+Total free space on the array drops below this → red critical.<br><br>
+<b>Critical example (mixed array):</b><br>
+Set to 2T. If you have &lt; 2T free and the 2T disk fails, there is not enough room on remaining disks to move the data that was on the failed drive (even using parity). You would need to purchase a new disk instead of "moving" data.
+</blockquote>
+
+_(Use custom capacity?)_:
+: <select name="array_use_custom" id="array_use_custom">
+  <?=mk_option($array_use_custom, "no", _("No"))?>
+  <?=mk_option($array_use_custom, "yes", _("Yes"))?>
+  </select>
+
+<blockquote class="inline_help">
+Yes = ignore the disk dropdowns above and use the manual values below instead. Useful for fine-tuned values not exactly matching a disk size (e.g. 7.5T, 1.5T, 500G).
+</blockquote>
+
+_(Custom Array Warning Capacity)_:
+: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 8T or 1.5T or 500G">
+
+_(Custom Array Critical Capacity)_:
+: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T or 500G">
 
 <hr>
-All Caches: <input type="checkbox"> cache <input type="checkbox"> cache2 <input type="checkbox"> media_cache<br>
 
-Notify on: Array <input type="checkbox"> All Caches <input type="checkbox"> or select specific<br>
+<!-- CACHE / POOLS SECTION -->
+_(Enable Cache Coloration?)_:
+: <select name="cache_coloring" id="cache_coloring">
+  <?=mk_option($cache_coloring, "yes", _("Yes"))?>
+  <?=mk_option($cache_coloring, "no", _("No"))?>
+  </select>
 
-<button>Save Settings</button>
+<blockquote class="inline_help">
+Master switch for coloring cache/pool total free space.
+</blockquote>
+
+_(Select Caches to color)_:
+: <label><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label>
+<?php foreach ($pool_names as $p): 
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
+?>
+  <label style="margin-left:8px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
+<?php endforeach; ?>
+<?php if (empty($pool_names)): ?>
+  <span class="hint">(No cache pools detected)</span>
+<?php endif; ?>
+
+<blockquote class="inline_help">
+Choose which cache pools participate in coloration. "All" selects everything. Individual checkboxes allow granular control.
+</blockquote>
+
+<?php if (!empty($pool_names)): ?>
+<h3 style="margin-top:16px">Per-Pool Thresholds (Free Space)</h3>
+<?php foreach ($pool_names as $p): 
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $w_key = "pool_{$safe}_warning";
+  $c_key = "pool_{$safe}_critical";
+  $w_val = $cfg[$w_key] ?? ($pools[$p][0] ?? '2T');
+  $c_val = $cfg[$c_key] ?? ($pools[$p][0] ?? '1T');
+?>
+<div class="pool-section" id="pool-section-<?=htmlspecialchars($safe)?>" style="margin-bottom:12px; border-left:3px solid #ccc; padding-left:10px;">
+  <strong><?=htmlspecialchars($p)?></strong> (Free)
+
+  <div>
+    _(Choose <?=htmlspecialchars($p)?> Total Warning Capacity (Free))_:
+    : <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select">
+      <?=sg_size_options($pools[$p], $w_val)?>
+      </select>
+  </div>
+
+  <div>
+    _(Choose <?=htmlspecialchars($p)?> Total Critical Capacity (Free))_:
+    : <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select">
+      <?=sg_size_options($pools[$p], $c_val)?>
+      </select>
+  </div>
+</div>
+
+<blockquote class="inline_help">
+For pool <strong><?=htmlspecialchars($p)?></strong>:<br>
+Warning / Critical based on <strong>total free</strong> in the pool.<br><br>
+<b>BTRFS RAID awareness examples:</b><br>
+- RAID1 (2×1.2T): Losing one drive requires rebalance. Set warning near 1.2T or 2T so you know rebalance may not fit remaining space.<br>
+- RAID10 (e.g. 8T+8T+4T+4T+4T+4T): Losing an 8T drive effectively reduces usable by ~4T in many configs. Choose warning/critical so you are warned before a rebalance would fail due to insufficient space.<br><br>
+Other BTRFS options (raid5, raid6, raid1c3, raid1c4, raid5e etc.) change the redundancy math. Set thresholds with your RAID profile and rebalance needs in mind. More advanced BTRFS guidance coming soon.
+</blockquote>
+<?php endforeach; ?>
+<?php endif; ?>
+
+<hr>
+
+<!-- ALERTS SECTION -->
+_(Enable StorageGuard Alerts?)_:
+: <select name="alerts_enabled" id="alerts_enabled">
+  <?=mk_option($alerts_enabled, "yes", _("Yes"))?>
+  <?=mk_option($alerts_enabled, "no", _("No"))?>
+  </select>
+
+<blockquote class="inline_help">
+When enabled, StorageGuard will send Unraid notifications (System / Warning / Alert levels) when thresholds are crossed.
+</blockquote>
+
+_(Array / Pools alerts enabled)_:
+: <label><input type="checkbox" id="alert_all" name="alert_all" value="yes"> All</label>
+<label style="margin-left:8px"><input type="checkbox" class="alert-cb" name="alert_array" value="array" <?= (strpos(','.$alerts_for.',', ',array,')!==false || $alerts_for==='all') ? 'checked' : '' ?>> Array</label>
+<?php foreach ($pool_names as $p): 
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $checked = (strpos(','.$alerts_for.',', ','.$p.',') !== false || $alerts_for === 'all') ? 'checked' : '';
+?>
+  <label style="margin-left:8px"><input type="checkbox" class="alert-cb" name="alert_pool_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
+<?php endforeach; ?>
+
+<blockquote class="inline_help">
+Select which components generate alerts. "All" covers Array + every cache/pool.<br>
+Individual control lets you silence noisy pools or only alert on the Array.
+</blockquote>
+
+<hr>
+
+<input type="submit" name="#default" value="_(Default)_">
+: <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
+</form>
+
+<script src="<?autov('/plugins/storageguard/storageguard.js')?>"></script>
+<script>
+// Additional inline bootstrap for this page (main logic in storageguard.js)
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof initStorageGuardUI === 'function') {
+    initStorageGuardUI();
+  }
+});
+</script>
