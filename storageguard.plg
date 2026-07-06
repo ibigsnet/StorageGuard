@@ -3,7 +3,7 @@
 <!ENTITY name "storageguard">
 <!ENTITY author "RifleJock">
 <!ENTITY version "2026.07.06-1">
-<!ENTITY launch "Settings/Storage Guard">
+<!ENTITY launch "User Utilities/Storage Guard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 ]>
 
