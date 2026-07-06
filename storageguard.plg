@@ -29,7 +29,7 @@ mkdir -p /usr/local/emhttp/plugins/StorageGuard /boot/config/plugins/StorageGuar
 
 <!-- Inject the coloring script and CSS into Unraid's global head (leverages existing UI) -->
 <FILE Run="/bin/bash">
-<INLINE>
+<INLINE><![CDATA[
 # Clean previous injections (both old and current naming)
 sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
 sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
@@ -41,12 +41,12 @@ if ! grep -q "storageguard-color.js" /usr/local/emhttp/webGui/include/HeadInclud
   echo '<script src="/plugins/StorageGuard/storageguard-color.js"></script>' >> /usr/local/emhttp/webGui/include/HeadInclude.php
   echo '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css">' >> /usr/local/emhttp/webGui/include/HeadInclude.php
 fi
-</INLINE>
+]]></INLINE>
 </FILE>
 
 <!-- Cleanup on plugin removal (thorough to prevent leftover settings pages or injections) -->
 <FILE Run="/bin/bash" Type="remove">
-<INLINE>
+<INLINE><![CDATA[
 # Clean any injection lines (both old and new naming)
 sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
 sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
@@ -66,7 +66,7 @@ sed -i '/StorageGuard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>
 # Optionally leave user config (recommended, so settings survive re-install):
 # rm -rf /boot/config/plugins/StorageGuard
 # rm -rf /boot/config/plugins/storageguard
-</INLINE>
+]]></INLINE>
 </FILE>
 
 </PLUGIN>
