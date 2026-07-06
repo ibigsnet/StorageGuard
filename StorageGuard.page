@@ -1,0 +1,14 @@
+<?php
+?>
+<h2>StorageGuard</h2>
+
+<input type="checkbox" checked> Enable Array Coloring<br>
+<input type="checkbox"> Enable Cache Coloring<br>
+<input type="checkbox"> Enable Notifications<br>
+
+<hr>
+All Caches: <input type="checkbox"> cache <input type="checkbox"> cache2 <input type="checkbox"> media_cache<br>
+
+Notify on: Array <input type="checkbox"> All Caches <input type="checkbox"> or select specific<br>
+
+<button>Save Settings</button>
