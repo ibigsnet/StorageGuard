@@ -55,20 +55,25 @@ usort($array_sizes, function($a, $b) {
 });
 
 // Collect pools + their disk sizes
-// Pools are non-disk, non-parity, non-flash entries with a device
+// Pools are non-disk, non-parity, non-flash entries. Use section key (or name) as pool identifier.
 $pools = [];
 if ($has_disks) {
     foreach ($disks as $key => $d) {
         if (empty($d['device'])) continue;
-        $name = isset($d['name']) ? $d['name'] : $key;
-        if (preg_match('/^disk\d+$/', $name) || strpos($name, 'parity') === 0 || $name === 'flash') {
+        // Skip array data disks and parity
+        if (preg_match('/^disk\d+$/', $key) || strpos($key, 'parity') === 0 || $key === 'flash') {
             continue;
         }
-        // Treat as pool (cache, cache2, intelligence, overshield, etc.)
+        // Pool name: prefer section key (e.g. "cache", "intelligence"), fall back to name field
+// This ensures we list actual pools, not individual disk devices.
+        $poolName = $key;
+        if (isset($d['name']) && !empty(trim($d['name']))) {
+            $poolName = trim($d['name']);
+        }
         $sz = isset($d['size']) ? (int)$d['size'] : 0;
         if ($sz > 0) {
-            if (!isset($pools[$name])) $pools[$name] = [];
-            $pools[$name][] = sg_format_size($sz);
+            if (!isset($pools[$poolName])) $pools[$poolName] = [];
+            $pools[$poolName][] = sg_format_size($sz);
         }
     }
 }
@@ -127,7 +132,7 @@ $array_warning_custom = $cfg['array_warning_custom'] ?? '';
 $array_critical_custom = $cfg['array_critical_custom'] ?? '';
 
 $array_coloring = $cfg['array_coloring'] ?? 'yes';
-$cache_coloring = $cfg['cache_coloring'] ?? 'yes';
+$pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 $alerts_enabled = $cfg['alerts_enabled'] ?? 'yes';
@@ -139,8 +144,6 @@ $alerts_for = $cfg['alerts_for'] ?? 'all';
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
 <input type="hidden" name="alerts_for" id="alerts_for" value="<?=htmlspecialchars($alerts_for)?>">
 
-<h2>StorageGuard</h2>
-<p>Configurable free space thresholds for your Unraid Array and Cache/Pools. Colors sections yellow (warning) or red (critical). Sends native notifications.</p>
 <?php if (!empty($dev_mode)): ?>
 <p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — using example disk sizes (no /var/local/emhttp/disks.ini detected on this system).</p>
 <?php endif; ?>
@@ -200,18 +203,18 @@ _(Custom Array Critical Capacity)_:
 
 <hr>
 
-<!-- CACHE / POOLS SECTION -->
-_(Enable Cache Coloration?)_:
-: <select name="cache_coloring" id="cache_coloring">
-  <?=mk_option($cache_coloring, "yes", _("Yes"))?>
-  <?=mk_option($cache_coloring, "no", _("No"))?>
+<!-- POOLS SECTION -->
+_(Enable Pool Coloration?)_:
+: <select name="pool_coloring" id="pool_coloring">
+  <?=mk_option($pool_coloring, "yes", _("Yes"))?>
+  <?=mk_option($pool_coloring, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-Master switch for coloring cache/pool total free space.
+Master switch for coloring pool total free space.
 </blockquote>
 
-_(Select Caches to color)_:
+_(Select Pools to color)_:
 : <label><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label>
 <?php foreach ($pool_names as $p): 
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
@@ -220,11 +223,11 @@ _(Select Caches to color)_:
   <label style="margin-left:8px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
 <?php endforeach; ?>
 <?php if (empty($pool_names)): ?>
-  <span class="hint">(No cache pools detected)</span>
+  <span class="hint">(No pools detected)</span>
 <?php endif; ?>
 
 <blockquote class="inline_help">
-Choose which cache pools participate in coloration. "All" selects everything. Individual checkboxes allow granular control.
+Choose which pools participate in coloration. "All" selects everything. Individual checkboxes allow granular control.
 </blockquote>
 
 <?php if (!empty($pool_names)): ?>
@@ -289,7 +292,7 @@ _(Array / Pools alerts enabled)_:
 <?php endforeach; ?>
 
 <blockquote class="inline_help">
-Select which components generate alerts. "All" covers Array + every cache/pool.<br>
+Select which components generate alerts. "All" covers Array + every pool.<br>
 Individual control lets you silence noisy pools or only alert on the Array.
 </blockquote>
 
