@@ -2,12 +2,21 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-2">
+<!ENTITY version "2026.07.06-4">
 <!ENTITY launch "User Utilities/Storage Guard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
+<!ENTITY github "ibigsnet/StorageGuard">
 ]>
 
-<PLUGIN name="&name;" author="&author;" version="&version;" desc="Enhances redundancy awareness for Unraid arrays and pools. Set total free space thresholds based on real disk capacities so you know—before a drive fails—whether you still have room to migrate data, rebalance, or remove a failed drive without immediate replacement. Colors the Main tab and sends alerts when space drops below your safe buffer." launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0">
+<PLUGIN name="&name;" author="&author;" version="&version;" launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0" support="https://github.com/&github;" project="https://github.com/&github;" readme="https://github.com/&github;#readme">
+
+<CHANGES>
+###&version;
+- Storage Guard: redundancy awareness plugin for Unraid arrays and pools.
+- Set free-space thresholds using real disk sizes; colors Main tab; optional alerts.
+- Full description and usage in README.
+- Fixed: Settings menu entry now appears under User Utilities (Menu="Utilities" + launch tweak).
+</CHANGES>
 
 <FILE Run="/bin/bash"><INLINE>
 # Clean any old remnants from previous installs (both slug variants)
@@ -20,6 +29,7 @@ mkdir -p /usr/local/emhttp/plugins/StorageGuard /boot/config/plugins/StorageGuar
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/StorageGuard.page</URL></FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/default.cfg</URL></FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.js</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/README.md"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/README.md</URL></FILE>
 
 <!-- Coloring injection files -->
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.css</URL></FILE>

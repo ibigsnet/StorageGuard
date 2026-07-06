@@ -57,11 +57,11 @@ The sheet calculates pool speeds from base single-disk numbers per RAID type (e.
   - **Single**: No redundancy. 100% usable. Any failure = data loss.
   - **RAID 0**: Striping only. Max space & speed. No redundancy.
   - **RAID 1**: 2 copies on different devices. ~50% usable. Tolerates 1 failure.
-  - **RAID 1c3**: 3 copies. ~33% usable. Tolerates 2 failures.
-  - **RAID 1c4**: 4 copies. ~25% usable. Tolerates 3 failures.
+  - **RAID 1c3**: 3 copies. ~33% usable. Tolerates 2 failures. (3 disks minimum)
+  - **RAID 1c4**: 4 copies. ~25% usable. Tolerates 3 failures. (4 disks minimum)
   - **RAID 10**: Striped + mirrored. ~50% usable. Good performance. Tolerates multiple failures (layout dependent).
-  - **RAID 5**: Striping + 1 parity. ~(N-1)/N usable. Tolerates 1 failure.
-  - **RAID 6**: Striping + 2 parity. ~(N-2)/N usable. Tolerates 2 failures.
+  - **RAID 5**: Striping + 1 parity. ~(N-1)/N usable. Tolerates 1 failure. (3 disks minimum)
+  - **RAID 6**: Striping + 2 parity. ~(N-2)/N usable. Tolerates 2 failures. (4 disks minimum)
 - **Redundancy & Failure Behavior**:
   - When a disk fails the pool goes **degraded** but remains usable (reads from remaining copies/parity, writes with reduced redundancy).
   - To recover full redundancy you must either:
