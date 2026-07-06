@@ -3,7 +3,7 @@ Title="Storage Guard"
 Icon="shield"
 ---
 <?php
-$plugin = "storageguard";
+$plugin = "StorageGuard";
 $cfg = parse_plugin_cfg($plugin);
 
 // Load disk information from Unraid
@@ -140,7 +140,7 @@ $alerts_for = $cfg['alerts_for'] ?? 'all';
 ?>
 
 <form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
-<input type="hidden" name="#file" value="storageguard/storageguard.cfg">
+<input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
 <input type="hidden" name="alerts_for" id="alerts_for" value="<?=htmlspecialchars($alerts_for)?>">
 
@@ -302,7 +302,7 @@ Individual control lets you silence noisy pools or only alert on the Array.
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
 </form>
 
-<script src="<?autov('/plugins/storageguard/storageguard.js')?>"></script>
+<script src="<?autov('/plugins/StorageGuard/storageguard.js')?>"></script>
 <script>
 // Additional inline bootstrap for this page (main logic in storageguard.js)
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,10 @@
+/* Storage Guard - coloring for array and pools on Main tab */
+.array-warning, .pool-warning {
+  background-color: #ffeb3b !important;
+  color: #000 !important;
+}
+
+.array-critical, .pool-critical {
+  background-color: #ff4444 !important;
+  color: #fff !important;
+}

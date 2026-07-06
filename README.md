@@ -24,3 +24,13 @@ https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg
 - Thresholds are **total free space** in the pool.
 - For BTRFS RAID1/10 etc. the values should reflect rebalance space needs after a drive loss.
 - The help text under each pool gives examples. More detailed RAID calculator / advice planned.
+
+## How coloring works (injection)
+Storage Guard uses client-side injection (JS + CSS loaded globally via Unraid's HeadInclude) to color the existing Array and Pool sections on the Main tab.
+
+- It reads your saved thresholds from the config (the disk-capacity dropdowns, custom values, per-pool settings, etc.).
+- Scans the live Unraid Main page DOM for free space values associated with the array and selected pools.
+- Applies yellow (warning) or red (critical) styling to the relevant containers using the thresholds you defined.
+- No custom UI is built — it leverages Unraid's existing elements for a clean look.
+
+The alerts section in settings configures when notifications should fire (can be wired to Unraid's notify command).

@@ -1,6 +1,6 @@
 <?xml version='1.0' standalone='yes'?>
 <!DOCTYPE PLUGIN [
-<!ENTITY name "storageguard">
+<!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
 <!ENTITY version "2026.07.06-1">
 <!ENTITY launch "User Utilities/Storage Guard">
@@ -9,10 +9,38 @@
 
 <PLUGIN name="&name;" author="&author;" version="&version;" desc="Configurable total free space thresholds for your Unraid Array and Pools. Colors sections and sends alerts." launch="&launch;" pluginURL="&pluginURL;" icon="shield" min="6.12.0">
 
-<FILE Run="/bin/bash"><INLINE>mkdir -p /usr/local/emhttp/plugins/storageguard /boot/config/plugins/storageguard</INLINE></FILE>
+<FILE Run="/bin/bash"><INLINE>mkdir -p /usr/local/emhttp/plugins/StorageGuard /boot/config/plugins/StorageGuard</INLINE></FILE>
 
-<FILE Name="/usr/local/emhttp/plugins/storageguard/StorageGuard.page"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/StorageGuard.page</URL></FILE>
-<FILE Name="/usr/local/emhttp/plugins/storageguard/default.cfg"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/default.cfg</URL></FILE>
-<FILE Name="/usr/local/emhttp/plugins/storageguard/storageguard.js"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.js</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/StorageGuard.page</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/default.cfg</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.js</URL></FILE>
+
+<!-- Coloring injection files -->
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.css</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard-color.js</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/get-config.php"><URL>https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/get-config.php</URL></FILE>
+
+<!-- Inject the coloring script and CSS into Unraid's global head (leverages existing UI) -->
+<FILE Run="/bin/bash">
+<INLINE>
+# Clean previous injections
+sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+
+# Add fresh injection
+if ! grep -q "storageguard-color.js" /usr/local/emhttp/webGui/include/HeadInclude.php; then
+  echo '<script src="/plugins/StorageGuard/storageguard-color.js"></script>' >> /usr/local/emhttp/webGui/include/HeadInclude.php
+  echo '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css">' >> /usr/local/emhttp/webGui/include/HeadInclude.php
+fi
+</INLINE>
+</FILE>
+
+<!-- Cleanup injection on plugin removal -->
+<FILE Run="/bin/bash" Type="remove">
+<INLINE>
+sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+</INLINE>
+</FILE>
 
 </PLUGIN>
