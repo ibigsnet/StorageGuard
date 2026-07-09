@@ -273,8 +273,8 @@ function initStorageGuardUI() {
         tr.style.display = open ? '' : 'none';
       });
       btn.textContent = open
-        ? 'Hide advanced pool settings (WIP)'
-        : 'Show advanced pool settings (WIP)…';
+        ? 'Hide advanced pools (WIP)'
+        : 'Show advanced pools (WIP)…';
       if (hint) hint.style.display = open ? 'none' : '';
       try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) { /* ignore */ }
       if (open) {
