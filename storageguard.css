@@ -12,13 +12,17 @@
 }
 
 
-/* ---- Solid mode: replace free-bar fill ---- */
+/* ---- Solid mode: recolor free fill ---- */
+/* Prefer attribute on parent .usage-disk so color survives Unraid rewriting the inner span
+   (avoids clear/repaint flash when Main live-updates free bars). */
+.usage-disk[data-sg-solid="warning"] > span:first-child,
 .usage-disk > span.sg-bar.sg-solid.sg-warning,
 .usage-disk > span[data-sg-bar="warning"][data-sg-style="solid"] {
   background-color: #ffc107 !important;
   background: #ffc107 !important;
 }
 
+.usage-disk[data-sg-solid="critical"] > span:first-child,
 .usage-disk > span.sg-bar.sg-solid.sg-critical,
 .usage-disk > span[data-sg-bar="critical"][data-sg-style="solid"] {
   background-color: #e53935 !important;

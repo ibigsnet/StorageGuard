@@ -1,6 +1,7 @@
 // Storage Guard — paint Free bars on Main.
 // Array: "Array of N devices" free bar.
-// Pool: Data Partition free bar (not "Pool of N devices", not Internal Boot).
+// Pool: prefer "Pool of N devices" free bar (pool total free = our threshold);
+//       never paint every member disk row (that looked like "flashing" on multi-device cache).
 
 (function () {
   'use strict';
@@ -43,6 +44,7 @@
 
   function clearPaint(scope) {
     if (!scope) return;
+    if (scope.nodeName === 'TR') scope.removeAttribute('data-sg-sig');
     scope.querySelectorAll('[data-sg-bar]').forEach(function (el) {
       el.style.removeProperty('background-color');
       el.style.removeProperty('background');
@@ -50,11 +52,12 @@
       el.removeAttribute('data-sg-style');
       el.classList.remove('sg-warning', 'sg-critical', 'sg-ok', 'sg-bar', 'sg-solid');
     });
-    scope.querySelectorAll('[data-sg-outline], .sg-outline').forEach(function (el) {
+    scope.querySelectorAll('[data-sg-solid], [data-sg-outline], .sg-outline').forEach(function (el) {
       el.style.removeProperty('outline');
       el.style.removeProperty('outline-offset');
       el.style.removeProperty('box-shadow');
       el.removeAttribute('data-sg-outline');
+      el.removeAttribute('data-sg-solid');
       el.removeAttribute('data-sg-sig');
       el.classList.remove('sg-outline', 'sg-warning', 'sg-critical', 'sg-ok', 'sg-pulse');
     });
@@ -70,6 +73,21 @@
     scope.querySelectorAll('[data-sg-sig]').forEach(function (el) {
       el.removeAttribute('data-sg-sig');
     });
+  }
+
+  /** Soft re-tint solid fill if Unraid replaced the bar span (no clearPaint flash). */
+  function ensureSolidBar(disk, level) {
+    if (!disk || (level !== 'warning' && level !== 'critical')) return;
+    var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
+    var bar = disk.querySelector('span:first-child');
+    disk.setAttribute('data-sg-solid', level);
+    if (bar) {
+      bar.style.setProperty('background-color', color, 'important');
+      bar.style.setProperty('background', color, 'important');
+      bar.setAttribute('data-sg-bar', level);
+      bar.setAttribute('data-sg-style', 'solid');
+      bar.classList.add('sg-bar', 'sg-solid', level === 'critical' ? 'sg-critical' : 'sg-warning');
+    }
   }
 
   function makeSig(level, style, pulse, showOk) {
@@ -101,12 +119,18 @@
 
     var sig = makeSig(level, style, pulse && (level === 'warning' || level === 'critical'), showOk);
     var disk = freeUsageDisk(tr);
-    var existing = tr.querySelector('[data-sg-sig]');
-    if (existing && existing.getAttribute('data-sg-sig') === sig) {
-      return true; // already painted — do not restart CSS animation
+    // Prefer stable host (.usage-disk / tr) for signature — Unraid often replaces the fill span
+    var existing =
+      (disk && disk.getAttribute('data-sg-sig') === sig && disk) ||
+      (tr.getAttribute('data-sg-sig') === sig && tr) ||
+      tr.querySelector('[data-sg-sig="' + sig + '"]');
+    if (existing) {
+      if (style === 'solid' && disk) ensureSolidBar(disk, level);
+      return true; // same look — do not clearPaint (prevents flash)
     }
 
     clearPaint(tr);
+    tr.setAttribute('data-sg-sig', sig);
 
     var color = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
 
@@ -123,14 +147,10 @@
         log('outline free bar', level, pulse ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
-      // solid — only warning/critical
-      if (level !== 'ok' && bar) {
-        bar.style.setProperty('background-color', color, 'important');
-        bar.style.setProperty('background', color, 'important');
-        bar.setAttribute('data-sg-bar', level);
-        bar.setAttribute('data-sg-style', 'solid');
-        bar.setAttribute('data-sg-sig', sig);
-        bar.classList.add('sg-bar', 'sg-solid', level === 'critical' ? 'sg-critical' : 'sg-warning');
+      // solid — mark parent + tint fill (parent attr survives Unraid span rewrites)
+      if (level !== 'ok') {
+        disk.setAttribute('data-sg-sig', sig);
+        ensureSolidBar(disk, level);
         log('solid free bar', level, (tr.textContent || '').slice(0, 50));
         return true;
       }
@@ -208,27 +228,50 @@
     return null;
   }
 
+  function isPoolMemberDeviceRow(tr) {
+    var t = rowText(tr);
+    // Individual pool slots: "Device 1", device links, not the pool total line
+    if (/device\s+\d+/.test(t)) return true;
+    if (isPoolOfDevicesRow(tr) || isArrayOfDevicesRow(tr) || isBootSummaryRow(tr)) return false;
+    // Named slots like cache2 / nvme under a multi-device pool (have a Device?name= link + not "pool of")
+    var link = tr.querySelector('a[href*="Device?name="]');
+    if (link && freeUsageDisk(tr) && !isDataPartitionRow(tr)) {
+      // single-device free bars on member rows still have usage disks; exclude pure members
+      // Prefer only excluding when text looks like a secondary device row
+      if (/\b(cache\d+|device)\b/.test(t) && t.indexOf('pool of') === -1) {
+        // keep data partition for single-disk pools; multi-device members often say Device N
+      }
+    }
+    return false;
+  }
+
   function findPoolDataFreeRow(root) {
     if (!root) return null;
     var rows = root.querySelectorAll('tr');
     var i, tr;
 
+    // Prefer pool total free ("Pool of N devices") — matches get-config pool free_tb
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
+      if (isPoolOfDevicesRow(tr) && freeUsageDisk(tr)) return tr;
+    }
+    // Single-disk pool / layout without pool-of row: data partition free
+    for (i = 0; i < rows.length; i++) {
+      tr = rows[i];
+      if (isPoolMemberDeviceRow(tr)) continue;
       if (isDataPartitionRow(tr) && freeUsageDisk(tr)) return tr;
     }
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
+      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr)) continue;
+      if (isPoolOfDevicesRow(tr)) continue;
       var t = rowText(tr);
-      if (/^[\s]*device\s+\d+/.test(t) || t.indexOf('device 1') !== -1 || t.indexOf('device 2') !== -1) {
-        if (tr.querySelectorAll('td .usage-disk').length < 2) continue;
-      }
+      if (/^[\s]*device\s+\d+/.test(t)) continue;
       if (tr.querySelectorAll('td .usage-disk').length >= 2) return tr;
     }
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
+      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) continue;
       if (freeUsageDisk(tr)) return tr;
     }
     return null;
@@ -326,10 +369,12 @@
 
     for (var r = 0; r < roots.length; r++) {
       var root = roots[r];
-      // Strip paint only from pool totals / boot summary — never the array totals row
+      // Clear boot summary + individual member rows only — keep pool-total free bar for painting
       root.querySelectorAll('tr').forEach(function (tr) {
         if (isArrayOfDevicesRow(tr)) return;
-        if (isPoolOfDevicesRow(tr) || isBootSummaryRow(tr)) clearPaint(tr);
+        if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) {
+          clearPaint(tr);
+        }
       });
 
       var names = namesInRoot(root);
@@ -352,10 +397,13 @@
       if (!prow) continue;
       // Safety: never paint pool status onto the array totals row
       if (isArrayOfDevicesRow(prow)) continue;
+      // Never paint every member disk — only one free-bar target per pool
+      if (isPoolMemberDeviceRow(prow) || /^[\s]*device\s+\d+/.test(rowText(prow))) continue;
       matched[key] = true;
       paintTarget(prow, st, opts);
     }
 
+    // Fallback: one row only (pool-of or single data partition) — do not paint all "cache*" members
     Object.keys(pools).forEach(function (pk) {
       if (matched[pk]) return;
       var st = pools[pk];
@@ -364,15 +412,23 @@
           !(st.level === 'ok' && opts.showOk && resolveStyle(st, 'solid') === 'outline')) {
         return;
       }
+      var candidates = [];
       document.querySelectorAll('tr').forEach(function (tr) {
-        if (matched[pk]) return;
-        if (!isDataPartitionRow(tr) && rowText(tr).indexOf(pk.toLowerCase()) === -1) return;
-        if (isBootSummaryRow(tr) || isTotalsOnlyRow(tr)) return;
+        if (isBootSummaryRow(tr) || isArrayOfDevicesRow(tr)) return;
+        if (isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) return;
         if (!freeUsageDisk(tr)) return;
-        if (paintFreeBar(tr, st.level || 'ok', resolveStyle(st, 'solid'), opts)) {
-          matched[pk] = true;
+        var t = rowText(tr);
+        if (isPoolOfDevicesRow(tr) && t.indexOf(pk.toLowerCase()) !== -1) {
+          candidates.unshift(tr); // prefer pool total
+          return;
+        }
+        if (isDataPartitionRow(tr) && t.indexOf(pk.toLowerCase()) !== -1) {
+          candidates.push(tr);
         }
       });
+      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'solid'), opts)) {
+        matched[pk] = true;
+      }
     });
   }
 
