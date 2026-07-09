@@ -26,9 +26,9 @@
 }
 
 
-/* ---- Solid mode: recolor free fill ---- */
-/* Prefer attribute on parent .usage-disk so color survives Unraid rewriting the inner span
-   (avoids clear/repaint flash when Main live-updates free bars). */
+/* ---- Solid: recolor free fill (no border, no pulse) ---- */
+/* Parent .usage-disk[data-sg-solid] keeps color if Unraid rewrites the inner span
+   (avoids clear/repaint flash on Main live free-bar updates). */
 .usage-disk[data-sg-solid="warning"] > span:first-child,
 .usage-disk > span.sg-bar.sg-solid.sg-warning,
 .usage-disk > span[data-sg-bar="warning"][data-sg-style="solid"] {
@@ -43,7 +43,7 @@
   background: #e53935 !important;
 }
 
-/* Plain-text Free column (no usage bar) */
+/* Plain-text Free column fallback (no .usage-disk bar) */
 td[data-sg-td="warning"] {
   color: #ffc107 !important;
   font-weight: 700 !important;
@@ -57,14 +57,14 @@ td[data-sg-td="ok"] {
   outline-offset: 2px;
 }
 
-/* ---- Outline mode: keep free fill; border shows status ---- */
+/* ---- Outline: border only; free fill left to Unraid ---- */
 .usage-disk.sg-outline,
 .usage-disk[data-sg-outline] {
   outline-offset: 2px;
   border-radius: 2px;
 }
 
-/* Healthy free space (optional) — static green, never pulse */
+/* Healthy free space (optional) — static green border, never pulse */
 .usage-disk.sg-outline.sg-ok,
 .usage-disk[data-sg-outline="ok"] {
   outline: 2px solid #4caf50 !important;
@@ -72,7 +72,7 @@ td[data-sg-td="ok"] {
   animation: none !important;
 }
 
-/* Warning / critical — static by default */
+/* Warning / critical — static border by default (no .sg-pulse) */
 .usage-disk.sg-outline.sg-warning,
 .usage-disk[data-sg-outline="warning"] {
   outline: 2px solid #ffc107 !important;
@@ -83,7 +83,7 @@ td[data-sg-td="ok"] {
   outline: 2px solid #e53935 !important;
 }
 
-/* Pulse only when user enabled it (.sg-pulse) */
+/* Pulse: Outline + user enabled outline_pulse + warning/critical only */
 .usage-disk.sg-outline.sg-warning.sg-pulse,
 .usage-disk[data-sg-outline="warning"].sg-pulse {
   animation: sg-pulse-warn 2.4s ease-in-out infinite;

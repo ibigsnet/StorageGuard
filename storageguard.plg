@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.09zd">
+<!ENTITY version "2026.07.09ze">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,10 @@
 
 <CHANGES>
 ###&version;
+- Outline wording: border only (free fill unchanged), not “keep free fill…”. Solid = recolor fill. Docs + CSS comments match.
+- Verify pulse vs solid: pulse/green-OK are Outline-only; solid never pulses; soft re-apply without clearPaint to avoid flash/pulse restart.
+
+###2026.07.09zd
 - Default button: fully reset pool thresholds/alerts/styles (and array product defaults). Unraid only restores default.cfg keys; dynamic pool_* keys needed an #include + form UI reset.
 
 ###2026.07.09zc
@@ -212,7 +216,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09zd"
+[ -z "$VER" ] && VER="2026.07.09ze"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

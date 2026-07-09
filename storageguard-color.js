@@ -2,6 +2,18 @@
 // Array: "Array of N devices" free bar.
 // Pool: prefer "Pool of N devices" free bar (pool total free = our threshold);
 //       never paint every member disk row (that looked like "flashing" on multi-device cache).
+//
+// Style matrix (per target: array / each pool):
+//   Outline (default) — border only around .usage-disk; Unraid free fill unchanged.
+//                       pulse + green-when-OK apply only here (global opts).
+//   Solid             — recolor free fill yellow/red; no border, no pulse, no green OK.
+//
+// Flash / thrash guards:
+//   - data-sg-sig skips clearPaint when level/style/pulse/showOk unchanged
+//   - Solid: data-sg-solid on parent + CSS so Unraid span rewrites keep color
+//   - Outline: classes on parent .usage-disk (survives fill-span rewrites)
+//   - Pulse: only add .sg-pulse for warning/critical; never re-clear same sig
+//     (clearPaint would restart CSS animation → look like "flashing")
 
 (function () {
   'use strict';
@@ -81,6 +93,9 @@
     if (!disk || (level !== 'warning' && level !== 'critical')) return;
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
     var bar = disk.querySelector('span:first-child');
+    // Solid never uses outline/pulse classes
+    disk.classList.remove('sg-outline', 'sg-pulse', 'sg-ok', 'sg-warning', 'sg-critical');
+    disk.removeAttribute('data-sg-outline');
     disk.setAttribute('data-sg-solid', level);
     if (bar) {
       bar.style.setProperty('background-color', color, 'important');
@@ -91,23 +106,60 @@
     }
   }
 
+  /**
+   * Outline classes on parent .usage-disk. Free fill span is intentionally untouched.
+   * When already correct, no-op (re-toggling .sg-pulse would restart the CSS animation).
+   */
+  function ensureOutline(disk, level, pulse, sig) {
+    if (!disk) return;
+    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
+    var levelClass = level === 'ok' ? 'sg-ok' : (level === 'critical' ? 'sg-critical' : 'sg-warning');
+    var ok =
+      disk.classList.contains('sg-outline') &&
+      disk.getAttribute('data-sg-outline') === level &&
+      disk.getAttribute('data-sg-sig') === sig &&
+      disk.classList.contains(levelClass) &&
+      (wantPulse === disk.classList.contains('sg-pulse')) &&
+      !disk.hasAttribute('data-sg-solid');
+    if (ok) return;
+
+    disk.classList.remove('sg-ok', 'sg-warning', 'sg-critical', 'sg-pulse', 'sg-solid', 'sg-bar');
+    disk.removeAttribute('data-sg-solid');
+    disk.classList.add('sg-outline', levelClass);
+    if (wantPulse) disk.classList.add('sg-pulse');
+    disk.setAttribute('data-sg-outline', level);
+    disk.setAttribute('data-sg-sig', sig);
+    // Ensure free fill is not left with solid tints from a prior style switch
+    var bar = disk.querySelector('span:first-child');
+    if (bar && (bar.hasAttribute('data-sg-bar') || bar.classList.contains('sg-solid'))) {
+      bar.style.removeProperty('background-color');
+      bar.style.removeProperty('background');
+      bar.removeAttribute('data-sg-bar');
+      bar.removeAttribute('data-sg-style');
+      bar.classList.remove('sg-bar', 'sg-solid', 'sg-warning', 'sg-critical', 'sg-ok');
+    }
+  }
+
   function makeSig(level, style, pulse, showOk) {
-    return [level || 'none', style || 'solid', pulse ? '1' : '0', showOk ? '1' : '0'].join('|');
+    // Product default style is outline (not solid)
+    return [level || 'none', style || 'outline', pulse ? '1' : '0', showOk ? '1' : '0'].join('|');
   }
 
   /**
    * Paint free bar for level: ok | warning | critical
    * style: outline (default) | solid
-   * opts: { pulse, showOk }
+   * opts: { pulse, showOk } — pulse/showOk are Outline-only
    */
   function paintFreeBar(tr, level, style, opts) {
     if (!tr) return false;
     opts = opts || {};
+    // Pulse only meaningful for Outline warn/crit; solid ignores it
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
     style = style === 'solid' ? 'solid' : 'outline';
+    var pulseActive = style === 'outline' && pulse && (level === 'warning' || level === 'critical');
 
-    // Nothing to draw for OK unless outline + show healthy
+    // OK: only Outline + green-when-OK paints; Solid OK = clear (normal Unraid fill)
     if (level === 'ok') {
       if (style !== 'outline' || !showOk) {
         clearPaint(tr);
@@ -118,7 +170,7 @@
       return false;
     }
 
-    var sig = makeSig(level, style, pulse && (level === 'warning' || level === 'critical'), showOk);
+    var sig = makeSig(level, style, pulseActive, showOk);
     var disk = freeUsageDisk(tr);
     // Prefer stable host (.usage-disk / tr) for signature — Unraid often replaces the fill span
     var existing =
@@ -126,8 +178,10 @@
       (tr.getAttribute('data-sg-sig') === sig && tr) ||
       tr.querySelector('[data-sg-sig="' + sig + '"]');
     if (existing) {
+      // Same look: soft-repair only (no clearPaint → no flash / no pulse restart)
       if (style === 'solid' && disk) ensureSolidBar(disk, level);
-      return true; // same look — do not clearPaint (prevents flash)
+      else if (style === 'outline' && disk) ensureOutline(disk, level, pulse, sig);
+      return true;
     }
 
     clearPaint(tr);
@@ -136,16 +190,9 @@
     var color = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
 
     if (disk) {
-      var bar = disk.querySelector('span:first-child');
       if (style === 'outline') {
-        disk.classList.add('sg-outline');
-        if (level === 'ok') disk.classList.add('sg-ok');
-        else if (level === 'critical') disk.classList.add('sg-critical');
-        else disk.classList.add('sg-warning');
-        if (pulse && level !== 'ok') disk.classList.add('sg-pulse');
-        disk.setAttribute('data-sg-outline', level);
-        disk.setAttribute('data-sg-sig', sig);
-        log('outline free bar', level, pulse ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
+        ensureOutline(disk, level, pulse, sig);
+        log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
       // solid — mark parent + tint fill (parent attr survives Unraid span rewrites)
@@ -157,7 +204,7 @@
       }
     }
 
-    // Plain-text Free column fallback
+    // Plain-text Free column fallback (no .usage-disk)
     var tds = tr.querySelectorAll('td');
     if (tds.length) {
       var td = tds[tds.length - 1];
