@@ -13,21 +13,23 @@ Storage Guard watches **remaining free space** on:
 - the **array** (data disks), and  
 - each **pool** Unraid reports (often named `cache`, or names you assigned)
 
-You set a **Warning** and/or **Critical** free-space threshold for each. When free space falls to or below a threshold:
+You set a **Warning** and/or **Critical** free-space threshold for each. When free space falls to or below a threshold, Storage Guard colors that target’s **total free space bar** on the Main tab (the Free usage bar for the array totals row, or for a pool’s data free space—not the whole page):
 
-| Level | Main tab | Alerts (if enabled) |
-|--------|----------|---------------------|
-| Warning | Yellow | Unraid warning notification |
-| Critical | Red | Unraid alert notification |
+| Level | Main tab (total free space bar) | Alerts (if enabled) |
+|--------|----------------------------------|---------------------|
+| Warning | Colored **yellow** | Unraid warning notification |
+| Critical | Colored **red** | Unraid alert notification |
+
+How the bar is colored (outline vs solid fill) is a separate setting per array/pool—see [Highlight styles](#highlight-styles-main).
 
 **None** (or a blank custom field) means that level is not used.
 
 If **both** Warning and Critical are set, the **lower free-space amount** is always treated as critical (more severe), and the **higher** as warning—order in the form does not matter.
 
 **Example:** Warning `8T`, Critical `2T`  
-- Free above 8T → normal  
-- Free at or below 8T → warning (yellow)  
-- Free at or below 2T → critical (red)
+- Free above 8T → free bar looks normal  
+- Free at or below 8T → free bar warning (yellow)  
+- Free at or below 2T → free bar critical (red)
 
 Units can be whatever fits your setup (`26T`, `7.5T`, `500G`, `1.5T`, …)—not only terabytes.
 

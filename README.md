@@ -5,7 +5,7 @@ Free-space thresholds for your array and pools. Colors free bars on Main (and op
 
 # Storage Guard
 
-Unraid plugin for **redundancy awareness**: set free-space thresholds on the array and each pool, then see them on the Main tab (yellow = warning, red = critical). Optional notifications use the same thresholds.
+Unraid plugin for **redundancy awareness**: set free-space thresholds on the array and each pool, then the **total free space bar** on Main is colored yellow (warning) or red (critical). Optional notifications use the same thresholds.
 
 The idea is simple. Disk prices are rising. If a drive fails, you may still have enough free space to move data or rebalance **without** buying a replacement the same day. Storage Guard makes that buffer visible at a glance.
 
