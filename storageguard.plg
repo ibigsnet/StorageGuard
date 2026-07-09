@@ -84,7 +84,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.06-16"
+[ -z "$VER" ] && VER="2026.07.06-17"
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
