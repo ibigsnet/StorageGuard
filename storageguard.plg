@@ -30,6 +30,9 @@
 
 <CHANGES>
 ###&version;
+- Slim README to short ####Storage Guard#### Plugins-list blurb only; full docs stay in DOCS.md.
+
+###2026.07.09r
 - Fix Plugins list description and README layout for Unraid (####Name#### blurb).
 - Ensure README.md ships with the plugin again.
 
@@ -153,7 +156,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09r"
+[ -z "$VER" ] && VER="2026.07.09s"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
