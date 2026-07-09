@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09a">
+<!ENTITY version "2026.07.09b">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,9 +34,11 @@
 
 <CHANGES>
 ###&version;
-- Versioning aligned with community: YYYY.MM.DD + letter same-day suffixes (a, b, …).
-- Color Free usage bars only; pool colors Data Partition row (not "Pool of N devices").
-- Inject color JS via HeadInlineJS.php (Unraid 7).
+- NIROG fix: Data Partition Free bar on boot-on-cache / pools-only; skip Internal Boot and Pool-of-N.
+- Post-install curl refresh of JS/CSS so plugin manager/CDN cannot leave stale color.js.
+
+###2026.07.09
+- Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
 
 ###2026.07.06
 - Initial development series (array/pool thresholds, alerts matrix, Plugins metadata).
@@ -92,7 +94,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09b"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
@@ -126,6 +128,12 @@ do
       : > "$f"
     fi
   fi
+done
+
+# Re-fetch critical assets (plugin manager can skip existing; raw CDN can lag)
+RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
+for f in storageguard-color.js storageguard.css get-config.php check-alerts.php; do
+  curl -fsSL "${RAW}/${f}?v=${VER}" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
 done
 
 echo "StorageGuard: install complete. Hard-refresh Main to see coloring."
