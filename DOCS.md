@@ -139,10 +139,19 @@ Each target (array, and every pool) has its own style:
 
 | Style | Effect |
 |--------|--------|
-| **Outline** (default) | Keeps Unraid’s green free fill; yellow/red outline pulses around the free bar |
-| **Solid** | Free bar fill becomes yellow or red |
+| **Solid** (default) | Free bar fill becomes yellow or red when a threshold is hit |
+| **Outline** | Keeps the normal free fill; draws a yellow/red border when a threshold is hit |
 
-Array can be Outline while one pool is Solid, and so on.
+Array can be Solid while one pool is Outline, and so on.
+
+**Outline-only options** (global; ignored for Solid):
+
+| Option | Default | Effect |
+|--------|---------|--------|
+| **Pulse** | Off | Yellow/red outline gently pulses (static border if off) |
+| **Green when OK** | Off | Static green outline when free space is still above your thresholds |
+
+Pulse was previously always-on for outlines; it is now optional. The paint script also avoids re-applying the same style every second so animations are not reset constantly.
 
 ---
 

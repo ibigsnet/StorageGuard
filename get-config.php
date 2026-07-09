@@ -51,11 +51,11 @@ function sg_level($free_tb, $warn_tb, $crit_tb) {
   return 'ok';
 }
 
-/** outline | solid — per target; falls back to legacy color_style */
+/** solid (default) | outline — per target; falls back to legacy color_style */
 function sg_style($cfg, $key) {
-  $legacy = $cfg['color_style'] ?? 'outline';
+  $legacy = $cfg['color_style'] ?? 'solid';
   $s = $cfg[$key] ?? $legacy;
-  return ($s === 'solid') ? 'solid' : 'outline';
+  return ($s === 'outline') ? 'outline' : 'solid';
 }
 
 $array_free = sg_free_tb_mount('/mnt/user0');

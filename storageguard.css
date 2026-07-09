@@ -22,21 +22,45 @@ td[data-sg-td="critical"] {
   color: #e53935 !important;
   font-weight: 700 !important;
 }
+td[data-sg-td="ok"] {
+  outline: 2px solid #4caf50 !important;
+  outline-offset: 2px;
+}
 
-/* ---- Outline mode: keep green fill, pulse outline on .usage-disk ---- */
+/* ---- Outline mode: keep free fill; border shows status ---- */
+.usage-disk.sg-outline,
+.usage-disk[data-sg-outline] {
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Healthy free space (optional) — static green, never pulse */
+.usage-disk.sg-outline.sg-ok,
+.usage-disk[data-sg-outline="ok"] {
+  outline: 2px solid #4caf50 !important;
+  box-shadow: none;
+  animation: none !important;
+}
+
+/* Warning / critical — static by default */
 .usage-disk.sg-outline.sg-warning,
 .usage-disk[data-sg-outline="warning"] {
   outline: 2px solid #ffc107 !important;
-  outline-offset: 2px;
-  border-radius: 2px;
-  animation: sg-pulse-warn 2.4s ease-in-out infinite;
 }
 
 .usage-disk.sg-outline.sg-critical,
 .usage-disk[data-sg-outline="critical"] {
   outline: 2px solid #e53935 !important;
-  outline-offset: 2px;
-  border-radius: 2px;
+}
+
+/* Pulse only when user enabled it (.sg-pulse) */
+.usage-disk.sg-outline.sg-warning.sg-pulse,
+.usage-disk[data-sg-outline="warning"].sg-pulse {
+  animation: sg-pulse-warn 2.4s ease-in-out infinite;
+}
+
+.usage-disk.sg-outline.sg-critical.sg-pulse,
+.usage-disk[data-sg-outline="critical"].sg-pulse {
   animation: sg-pulse-crit 2.4s ease-in-out infinite;
 }
 
@@ -62,11 +86,9 @@ td[data-sg-td="critical"] {
   }
 }
 
-/* Prefer reduced motion: static outline, no pulse */
 @media (prefers-reduced-motion: reduce) {
-  .usage-disk.sg-outline.sg-warning,
-  .usage-disk.sg-outline.sg-critical,
-  .usage-disk[data-sg-outline] {
+  .usage-disk.sg-outline.sg-pulse,
+  .usage-disk[data-sg-outline].sg-pulse {
     animation: none !important;
   }
 }

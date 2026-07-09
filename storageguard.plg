@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09h">
+<!ENTITY version "2026.07.09i">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,20 +34,21 @@
 
 <CHANGES>
 ###&version;
-- Docs and settings copy cleanup (README, DOCS, UI help text).
-- Alerts: checkbox matrix restored (Warning/Critical per target).
-- Clearer free-space wording (any unit, not “TB only”).
+- Solid is default highlight style; Outline pulse is optional (off by default).
+- Optional green outline when free space is OK (Outline only, off by default).
+- Fix outline pulse thrashing (re-paint only when status changes).
+
+###2026.07.09h
+- Docs/settings cleanup; alerts checkbox matrix; free-space wording.
 
 ###2026.07.09g
-- Per-block Outline/Solid (array + each pool).
-- Custom free-space values for pools; friendlier custom examples.
+- Per-block Outline/Solid; pool custom free-space values.
 
 ###2026.07.09f
-- Uniform Array/Pools layout; hide details when coloring is No.
-- None thresholds; default Warning=largest disk, Critical=None.
+- Uniform layout; None thresholds; default Warning=largest disk.
 
 ###2026.07.09
-- Free-bar coloring on Main; HeadInlineJS inject; YYYY.MM.DD versioning.
+- Free-bar coloring on Main; HeadInlineJS inject.
 
 ###2026.07.06
 - Initial public development series.
@@ -103,7 +104,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09h"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09i"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites

@@ -13,7 +13,7 @@ The idea is simple. Disk prices are rising. If a drive fails, you may still have
 
 - Thresholds from real disk sizes (dropdowns) or custom values (`1.5T`, `500G`, `7.5T`, …)
 - **Warning** and **Critical** levels, or **None** to leave a level unused
-- Main-tab coloring: **Outline** (pulse border, keep green fill) or **Solid** (recolor the free bar) — set **per array / per pool**
+- Main-tab coloring: **Solid** (default) or **Outline** per array/pool; optional outline pulse and optional green outline when free space is still OK
 - Optional Unraid notifications, independent of coloring
 - Works with the array and all your pools (names come from Unraid—any pool name, not just `cache`)
 

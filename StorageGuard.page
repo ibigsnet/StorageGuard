@@ -82,11 +82,11 @@ function sg_sort_sizes_desc($sizes) {
     return $sizes;
 }
 
-/** outline | solid — prefer per-target key, fall back to legacy global color_style */
+/** solid (default) | outline — prefer per-target key, fall back to legacy global color_style */
 function sg_resolve_style($cfg, $key) {
-    $legacy = $cfg['color_style'] ?? 'outline';
+    $legacy = $cfg['color_style'] ?? 'solid';
     $s = $cfg[$key] ?? $legacy;
-    return ($s === 'solid') ? 'solid' : 'outline';
+    return ($s === 'outline') ? 'outline' : 'solid';
 }
 
 // Collect array data disk capacities (unique, largest first). Ignore parity / boot / cache.
@@ -217,6 +217,8 @@ if (array_key_exists('array_critical', $cfg)) {
 $array_coloring = $cfg['array_coloring'] ?? 'yes';
 $pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
 $array_color_style = sg_resolve_style($cfg, 'array_color_style');
+$outline_pulse = (($cfg['outline_pulse'] ?? 'no') === 'yes') ? 'yes' : 'no';
+$outline_show_ok = (($cfg['outline_show_ok'] ?? 'no') === 'yes') ? 'yes' : 'no';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 
@@ -261,7 +263,27 @@ foreach ($pool_names as $p) {
 
 Set free-space thresholds for Main. When **remaining free space** falls to or below a threshold, that Free bar goes **yellow** (warning) or **red** (critical). **None** leaves a level unused. If both levels are set, the **lower free-space amount** is critical and the **higher** is warning. Units can be T, G, etc. (for example `8T` or `500G`).
 
-Highlight style (Outline / Solid) is chosen **separately** for the array and for each pool.
+Highlight style is chosen **separately** for the array and for each pool. **Solid** is the default (recolor the free bar). **Outline** keeps Unraid’s fill and draws a border instead.
+
+_(Outline — pulse on warning/critical?)_:
+: <select name="outline_pulse" id="outline_pulse">
+  <?=mk_option($outline_pulse, "no", _("No (static outline)"))?>
+  <?=mk_option($outline_pulse, "yes", _("Yes (pulsing outline)"))?>
+  </select>
+
+<blockquote class="inline_help">
+Only applies when a target uses <strong>Outline</strong> style. Default is static. Pulse can make yellow/red easier to notice.
+</blockquote>
+
+_(Outline — green border when free space is OK?)_:
+: <select name="outline_show_ok" id="outline_show_ok">
+  <?=mk_option($outline_show_ok, "no", _("No"))?>
+  <?=mk_option($outline_show_ok, "yes", _("Yes — green outline when above thresholds"))?>
+  </select>
+
+<blockquote class="inline_help">
+Only for <strong>Outline</strong> style. When free space is still healthy (above your thresholds), draw a <strong>static green</strong> outline so you can see “still enough free space” at a glance. Off by default. Does nothing in Solid mode.
+</blockquote>
 
 ---
 
@@ -285,13 +307,13 @@ Yes = paint the array Free bar when thresholds are crossed. No = hide the option
 
 _(Array highlight style)_:
 : <select name="array_color_style" id="array_color_style">
-  <?=mk_option($array_color_style, "outline", _("Outline (default) — keep green fill, pulse yellow/red border"))?>
-  <?=mk_option($array_color_style, "solid", _("Solid — free bar fill becomes yellow/red"))?>
+  <?=mk_option($array_color_style, "solid", _("Solid (default) — free bar fill becomes yellow/red"))?>
+  <?=mk_option($array_color_style, "outline", _("Outline — keep free fill, yellow/red border"))?>
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline</strong> keeps Unraid’s green free fill and adds a pulsing border.<br>
-<strong>Solid</strong> recolors the free fill itself.<br>
+<strong>Solid</strong> recolors the free fill yellow/red when thresholds are hit.<br>
+<strong>Outline</strong> keeps the normal fill and adds a border (pulse / green-when-OK are the global Outline options above).<br>
 Applies only to the <strong>array</strong>. Each pool has its own style.
 </blockquote>
 
@@ -400,12 +422,12 @@ Only checked pools are colored on Main. Each pool can have its own highlight sty
 
 _(<?=htmlspecialchars($p)?> highlight style)_:
 : <select name="<?=$style_key?>" id="<?=$style_key?>">
-  <?=mk_option($p_style, "outline", _("Outline (default) — keep green fill, pulse yellow/red border"))?>
-  <?=mk_option($p_style, "solid", _("Solid — free bar fill becomes yellow/red"))?>
+  <?=mk_option($p_style, "solid", _("Solid (default) — free bar fill becomes yellow/red"))?>
+  <?=mk_option($p_style, "outline", _("Outline — keep free fill, yellow/red border"))?>
   </select>
 
 <blockquote class="inline_help">
-Outline or Solid for this pool only (independent of the array and other pools).
+Solid or Outline for this pool only. Pulse and green-when-OK follow the global Outline options at the top of the page.
 </blockquote>
 
 _(<?=htmlspecialchars($p)?> thresholds from)_:

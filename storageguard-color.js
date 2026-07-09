@@ -6,13 +6,16 @@
   'use strict';
 
   var lastStatus = null;
+  var lastOpts = { pulse: false, showOk: false };
   var BAR_WARN = '#ffc107';
   var BAR_CRIT = '#e53935';
+  var BAR_OK = '#4caf50';
+  var applyTimer = null;
 
   function resolveStyle(obj, fallback) {
-    if (obj && obj.style === 'solid') return 'solid';
     if (obj && obj.style === 'outline') return 'outline';
-    return fallback === 'solid' ? 'solid' : 'outline';
+    if (obj && obj.style === 'solid') return 'solid';
+    return fallback === 'outline' ? 'outline' : 'solid';
   }
 
   function log() {
@@ -45,58 +48,95 @@
       el.style.removeProperty('background');
       el.removeAttribute('data-sg-bar');
       el.removeAttribute('data-sg-style');
-      el.classList.remove('sg-warning', 'sg-critical', 'sg-bar', 'sg-solid');
+      el.classList.remove('sg-warning', 'sg-critical', 'sg-ok', 'sg-bar', 'sg-solid');
     });
     scope.querySelectorAll('[data-sg-outline], .sg-outline').forEach(function (el) {
       el.style.removeProperty('outline');
       el.style.removeProperty('outline-offset');
       el.style.removeProperty('box-shadow');
       el.removeAttribute('data-sg-outline');
-      el.classList.remove('sg-outline', 'sg-warning', 'sg-critical');
+      el.removeAttribute('data-sg-sig');
+      el.classList.remove('sg-outline', 'sg-warning', 'sg-critical', 'sg-ok', 'sg-pulse');
     });
     scope.querySelectorAll('[data-sg-td]').forEach(function (el) {
       el.style.removeProperty('color');
       el.style.removeProperty('font-weight');
       el.style.removeProperty('outline');
+      el.style.removeProperty('outline-offset');
       el.style.removeProperty('box-shadow');
       el.removeAttribute('data-sg-td');
+      el.removeAttribute('data-sg-sig');
+    });
+    scope.querySelectorAll('[data-sg-sig]').forEach(function (el) {
+      el.removeAttribute('data-sg-sig');
     });
   }
 
-  /**
-   * style: 'outline' (default) — keep green free fill, pulse yellow/red outline
-   *        'solid'             — replace free bar fill with yellow/red
-   */
-  function paintFreeBar(tr, level, style) {
-    if (!tr) return false;
-    clearPaint(tr);
-    if (level !== 'warning' && level !== 'critical') return false;
+  function makeSig(level, style, pulse, showOk) {
+    return [level || 'none', style || 'solid', pulse ? '1' : '0', showOk ? '1' : '0'].join('|');
+  }
 
-    style = style === 'solid' ? 'solid' : 'outline';
-    var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
+  /**
+   * Paint free bar for level: ok | warning | critical
+   * style: solid (default) | outline
+   * opts: { pulse, showOk }
+   */
+  function paintFreeBar(tr, level, style, opts) {
+    if (!tr) return false;
+    opts = opts || {};
+    var pulse = !!opts.pulse;
+    var showOk = !!opts.showOk;
+    style = style === 'outline' ? 'outline' : 'solid';
+
+    // Nothing to draw for OK unless outline + show healthy
+    if (level === 'ok') {
+      if (style !== 'outline' || !showOk) {
+        clearPaint(tr);
+        return false;
+      }
+    } else if (level !== 'warning' && level !== 'critical') {
+      clearPaint(tr);
+      return false;
+    }
+
+    var sig = makeSig(level, style, pulse && (level === 'warning' || level === 'critical'), showOk);
     var disk = freeUsageDisk(tr);
+    var existing = tr.querySelector('[data-sg-sig]');
+    if (existing && existing.getAttribute('data-sg-sig') === sig) {
+      return true; // already painted — do not restart CSS animation
+    }
+
+    clearPaint(tr);
+
+    var color = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
+
     if (disk) {
       var bar = disk.querySelector('span:first-child');
       if (style === 'outline') {
-        // Keep Unraid green fill; outline the free bar container with a slow pulse
-        disk.classList.add('sg-outline', level === 'critical' ? 'sg-critical' : 'sg-warning');
+        disk.classList.add('sg-outline');
+        if (level === 'ok') disk.classList.add('sg-ok');
+        else if (level === 'critical') disk.classList.add('sg-critical');
+        else disk.classList.add('sg-warning');
+        if (pulse && level !== 'ok') disk.classList.add('sg-pulse');
         disk.setAttribute('data-sg-outline', level);
-        log('outline free bar', level, (tr.textContent || '').slice(0, 60));
+        disk.setAttribute('data-sg-sig', sig);
+        log('outline free bar', level, pulse ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
-      // solid: override free fill color
-      if (bar) {
+      // solid — only warning/critical
+      if (level !== 'ok' && bar) {
         bar.style.setProperty('background-color', color, 'important');
         bar.style.setProperty('background', color, 'important');
         bar.setAttribute('data-sg-bar', level);
         bar.setAttribute('data-sg-style', 'solid');
+        bar.setAttribute('data-sg-sig', sig);
         bar.classList.add('sg-bar', 'sg-solid', level === 'critical' ? 'sg-critical' : 'sg-warning');
-        log('solid free bar', level, (tr.textContent || '').slice(0, 60));
+        log('solid free bar', level, (tr.textContent || '').slice(0, 50));
         return true;
       }
     }
 
-    // Plain-text Free column (no usage bar)
+    // Plain-text Free column fallback
     var tds = tr.querySelectorAll('td');
     if (tds.length) {
       var td = tds[tds.length - 1];
@@ -105,10 +145,12 @@
           td.style.setProperty('outline', '2px solid ' + color, 'important');
           td.style.setProperty('outline-offset', '2px', 'important');
           td.setAttribute('data-sg-td', level);
-        } else {
+          td.setAttribute('data-sg-sig', sig);
+        } else if (level !== 'ok') {
           td.style.setProperty('color', color, 'important');
           td.style.setProperty('font-weight', '700', 'important');
           td.setAttribute('data-sg-td', level);
+          td.setAttribute('data-sg-sig', sig);
         }
         return true;
       }
@@ -129,12 +171,10 @@
     return /array of\s/.test(rowText(tr));
   }
 
-  /** Internal boot summary — not the cache data free space */
   function isBootSummaryRow(tr) {
     var t = rowText(tr);
     return (
       t.indexOf('internal boot') !== -1 ||
-      t.indexOf('boot(flash)') !== -1 ||
       t.indexOf('boot(flash)') !== -1 ||
       (t.indexOf('boot') !== -1 && t.indexOf('data partition') === -1 && /flash|zfs/.test(t) && t.indexOf('btrfs') === -1)
     );
@@ -143,9 +183,7 @@
   function isDataPartitionRow(tr) {
     var t = rowText(tr);
     if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) return false;
-    // Explicit Unraid label
     if (t.indexOf('data partition') !== -1) return true;
-    // Has FS type + usage bars (cache data), not bare "Device N"
     var n = tr.querySelectorAll('td .usage-disk').length;
     if (n >= 2 && /btrfs|xfs|zfs|online/.test(t) && t.indexOf('device ') === -1) return true;
     if (n >= 2 && /btrfs/.test(t)) return true;
@@ -166,34 +204,24 @@
     return null;
   }
 
-  /**
-   * Pool data free row — Data Partition (btrfs/xfs/…) with Used+Free bars.
-   * Never Internal Boot, never "Pool of N devices".
-   */
   function findPoolDataFreeRow(root) {
     if (!root) return null;
     var rows = root.querySelectorAll('tr');
     var i, tr;
 
-    // 1) Explicit Data Partition
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isDataPartitionRow(tr) && freeUsageDisk(tr)) return tr;
     }
-
-    // 2) Row with 2 usage-disks, not boot/totals/device-only
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
       var t = rowText(tr);
       if (/^[\s]*device\s+\d+/.test(t) || t.indexOf('device 1') !== -1 || t.indexOf('device 2') !== -1) {
-        // member rows usually have no FS bars; skip if only device label
         if (tr.querySelectorAll('td .usage-disk').length < 2) continue;
       }
       if (tr.querySelectorAll('td .usage-disk').length >= 2) return tr;
     }
-
-    // 3) Any non-boot non-totals row with a free bar
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
@@ -212,7 +240,6 @@
     }
     document.querySelectorAll('[id^="pool_device"]').forEach(add);
     add(document.getElementById('boot_device'));
-    // Whole Pool Devices section as fallback (table containers)
     document.querySelectorAll('.TableContainer table.disk_status').forEach(add);
     return list;
   }
@@ -245,39 +272,43 @@
     for (j = 0; j < keys.length; j++) {
       if (t.indexOf(keys[j].toLowerCase()) !== -1) return keys[j];
     }
-    // Single-pool systems: if only one pool in status and this root looks like a pool table
     if (keys.length === 1 && (/pool|cache|btrfs|data partition|device/.test(t))) {
       return keys[0];
     }
     return null;
   }
 
-  function applyStatus(status) {
+  function paintTarget(tr, st, opts) {
+    if (!tr || !st) return;
+    if (!st.enabled) {
+      clearPaint(tr);
+      return;
+    }
+    var style = resolveStyle(st, 'solid');
+    var level = st.level || 'ok';
+    paintFreeBar(tr, level, style, opts);
+  }
+
+  function applyStatus(status, opts) {
     if (!status) return;
     lastStatus = status;
+    if (opts) lastOpts = opts;
+    opts = lastOpts || { pulse: false, showOk: false };
+
     if (!onMainLikePage()) {
       log('not on Main');
       return;
     }
 
-    // --- Array (skipped when array_coloring=no or pools-only) ---
     var arow = findArrayFreeRow();
-    if (arow) {
-      if (status.array && status.array.enabled && (status.array.level === 'warning' || status.array.level === 'critical')) {
-        paintFreeBar(arow, status.array.level, resolveStyle(status.array, 'outline'));
-      } else {
-        clearPaint(arow);
-      }
-    }
+    if (arow) paintTarget(arow, status.array, opts);
 
-    // --- Pools (incl. boot-on-cache layout) ---
     var pools = status.pools || {};
     var roots = allPoolRoots();
     var matched = {};
 
     for (var r = 0; r < roots.length; r++) {
       var root = roots[r];
-      // Clear bad paints on totals / boot summary in this root
       root.querySelectorAll('tr').forEach(function (tr) {
         if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) clearPaint(tr);
       });
@@ -290,45 +321,46 @@
       if (!st) continue;
 
       var prow = findPoolDataFreeRow(root);
-      var pStyle = resolveStyle(st, 'outline');
       log('pool match', {
         root: root.id || root.className,
         key: key,
-        names: names,
         level: st.level,
         enabled: st.enabled,
-        style: pStyle,
-        foundRow: !!(prow),
-        rowHint: prow ? rowText(prow).slice(0, 80) : null
+        style: resolveStyle(st, 'solid'),
+        foundRow: !!prow
       });
 
       if (!prow) continue;
       matched[key] = true;
-
-      if (st.enabled && (st.level === 'warning' || st.level === 'critical')) {
-        paintFreeBar(prow, st.level, pStyle);
-      } else {
-        clearPaint(prow);
-      }
+      paintTarget(prow, st, opts);
     }
 
-    // Last resort: paint any unmatched Data Partition free bar on Main
     Object.keys(pools).forEach(function (pk) {
       if (matched[pk]) return;
       var st = pools[pk];
-      if (!st || !st.enabled || (st.level !== 'warning' && st.level !== 'critical')) return;
-      var pStyle = resolveStyle(st, 'outline');
+      if (!st || !st.enabled) return;
+      if (st.level !== 'warning' && st.level !== 'critical' &&
+          !(st.level === 'ok' && opts.showOk && resolveStyle(st, 'solid') === 'outline')) {
+        return;
+      }
       document.querySelectorAll('tr').forEach(function (tr) {
         if (matched[pk]) return;
         if (!isDataPartitionRow(tr) && rowText(tr).indexOf(pk.toLowerCase()) === -1) return;
         if (isBootSummaryRow(tr) || isTotalsOnlyRow(tr)) return;
         if (!freeUsageDisk(tr)) return;
-        if (paintFreeBar(tr, st.level, pStyle)) {
+        if (paintFreeBar(tr, st.level || 'ok', resolveStyle(st, 'solid'), opts)) {
           matched[pk] = true;
-          log('last-resort paint', pk, rowText(tr).slice(0, 60));
         }
       });
     });
+  }
+
+  function scheduleApply() {
+    if (applyTimer) return;
+    applyTimer = setTimeout(function () {
+      applyTimer = null;
+      if (lastStatus) applyStatus(lastStatus, lastOpts);
+    }, 250);
   }
 
   function fetchAndApply() {
@@ -339,8 +371,14 @@
       })
       .then(function (data) {
         if (!data || !data._status) return;
-        log('status', data._status);
-        applyStatus(data._status);
+        var opts = {
+          pulse: (data.outline_pulse === 'yes'),
+          showOk: (data.outline_show_ok === 'yes')
+        };
+        // Also expose under _status for debugging
+        data._status._opts = opts;
+        log('status', data._status, opts);
+        applyStatus(data._status, opts);
         fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
       })
       .catch(function (err) {
@@ -350,14 +388,15 @@
 
   function boot() {
     fetchAndApply();
+    // Re-apply for nchan/table refreshes without hammering animations
     setInterval(function () {
-      if (lastStatus) applyStatus(lastStatus);
-    }, 1200);
+      if (lastStatus) applyStatus(lastStatus, lastOpts);
+    }, 3000);
     setInterval(fetchAndApply, 12000);
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
-        if (lastStatus) applyStatus(lastStatus);
+        scheduleApply();
       });
       var main = document.getElementById('content') || document.body;
       obs.observe(main, { childList: true, subtree: true });
