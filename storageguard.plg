@@ -34,9 +34,8 @@
 
 <CHANGES>
 ###&version;
-- Threshold logic: Warning/Critical order independent (smaller free TB = critical).
-- Settings page cleaned up for clearer Array / Pools / Alerts layout.
-- Free space compared in decimal TB (closer to Main display).
+- Color style: Outline (default, pulse yellow/red, keep green free fill) or Solid fill override.
+- Applies to array and pool Free bars.
 
 ###2026.07.09
 - Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
@@ -95,7 +94,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09c"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09d"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
@@ -131,11 +130,16 @@ do
   fi
 done
 
-# Re-fetch critical assets (plugin manager can skip existing; raw CDN can lag)
-RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
-for f in storageguard-color.js storageguard.css get-config.php check-alerts.php; do
-  curl -fsSL "${RAW}/${f}?v=${VER}" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
-done
+# Only re-fetch if a critical asset looks missing/stale (avoid overwriting good
+# downloads with a lagging raw.githubusercontent.com/main CDN edge)
+JS="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"
+if [ ! -s "$JS" ] || ! grep -q 'data-sg-outline\|sg-outline\|color_style' "$JS" 2>/dev/null; then
+  RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
+  echo "StorageGuard: refreshing assets (stale or missing)..."
+  for f in storageguard-color.js storageguard.css get-config.php check-alerts.php StorageGuard.page; do
+    curl -fsSL "${RAW}/${f}?v=${VER}&t=$(date +%s)" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
+  done
+fi
 
 echo "StorageGuard: install complete. Hard-refresh Main to see coloring."
 ls -la /usr/local/emhttp/plugins/StorageGuard/ || true
