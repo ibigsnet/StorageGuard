@@ -452,26 +452,27 @@ Uses the thresholds above. Default: Array Warning only. Pool rows appear under A
 
 > Optional. Thresholds, coloring, and alerts work now. BTRFS profile-aware suggested numbers are not ready yet. Defaults: coloring **No**, thresholds **None**, pool alerts **off**.
 
-_(Color pool free bars?)_:
+_(Enable coloring?)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
   <?=mk_option($pool_coloring, "yes", _("Yes"))?>
   <?=mk_option($pool_coloring, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-Paint free bars for the pools you check below. Off by default.
+<strong>Yes</strong> = color each checked pool’s <strong>Total free</strong> bar on Main when thresholds are hit.<br>
+<strong>No</strong> = leave pool free bars alone (default). Thresholds still apply to Alerts if enabled.
 </blockquote>
 
 <div id="pool-details" class="sg-details" markdown="1">
 
-_(Pools to color)_:
+_(Which pools?)_:
 : <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
 ?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
 
 <blockquote class="inline_help">
-Only checked pools are colored. Each pool has its own style and thresholds.
+Only checked pools get Main coloring. Style and thresholds are per pool below.
 </blockquote>
 
 <?php foreach ($pool_names as $p):
@@ -509,11 +510,15 @@ Only checked pools are colored. Each pool has its own style and thresholds.
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
 
-_(<?=htmlspecialchars($p)?> style)_:
+_(<?=htmlspecialchars($p)?> highlight style)_:
 : <select name="<?=$style_key?>" id="<?=$style_key?>">
-  <?=mk_option($p_style, "outline", _("Outline — border only"))?>
-  <?=mk_option($p_style, "solid", _("Solid — recolor fill"))?>
+  <?=mk_option($p_style, "outline", _("Outline"))?>
+  <?=mk_option($p_style, "solid", _("Solid"))?>
   </select>
+
+<blockquote class="inline_help">
+Same as array: <strong>Outline</strong> = border only; <strong>Solid</strong> = recolor free fill. Pulse / green-when-OK are global (Appearance).
+</blockquote>
 
 _(<?=htmlspecialchars($p)?> thresholds from)_:
 : <select name="<?=$use_key?>" id="<?=$use_key?>" class="pool-use-custom" data-pool-safe="<?=htmlspecialchars($safe)?>">
@@ -522,7 +527,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members; Custom = type free space.
+Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members. Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc.
 </blockquote>
 
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
@@ -542,10 +547,10 @@ _(<?=htmlspecialchars($p)?> Critical)_:
 <div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
 
 _(<?=htmlspecialchars($p)?> Warning (custom))_:
-: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 1.5T — blank = None">
+: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
 
 _(<?=htmlspecialchars($p)?> Critical (custom))_:
-: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G — blank = None">
+: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G, 1.2T — blank = None">
 
 </div>
 

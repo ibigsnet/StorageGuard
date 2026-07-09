@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.09zi">
+<!ENTITY version "2026.07.09zj">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,12 @@
 
 <CHANGES>
 ###&version;
+- Clean reinstall path; Settings polish complete (Appearance first, Enable coloring, Pulse color, decimal examples).
+
+###2026.07.09zi
+- Settings polish: Appearance first (global); Enable coloring / Outline|Solid / Pulse color labels; accurate hints (pulse = warn/crit only, not green); decimal custom examples.
+
+###2026.07.09zh
 - Settings page declutter: short intro, compact labels/help, Appearance section, slim advanced pools (no RAID essay). Quick-glance layout.
 
 ###2026.07.09zg
@@ -225,7 +231,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09zh"
+[ -z "$VER" ] && VER="2026.07.09zj"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
