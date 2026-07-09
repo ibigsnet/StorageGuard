@@ -1,6 +1,7 @@
-// Storage Guard — color the Free *usage bar* only (same style as Unraid's green bars).
-// Array: totals row "Array of N devices" → Free column bar.
-// Pool: Data Partition / FS summary row (btrfs/zfs + Size/Used/Free) — NOT "Pool of N devices".
+// Storage Guard — color Free usage-bar fill only.
+// Array: "Array of N devices" totals Free bar.
+// Pool: Data Partition Free bar (NOT "Pool of N devices", NOT Internal Boot).
+// Supports pools-only + internal-boot-on-cache (Unraid 7 boot partition scheme).
 
 (function () {
   'use strict';
@@ -19,11 +20,12 @@
     return !!(
       document.getElementById('array_devices') ||
       document.querySelector('[id^="pool_device"]') ||
+      document.getElementById('boot_device') ||
       document.getElementById('array_list')
     );
   }
 
-  /** Free column = last .usage-disk in the row (Used is before Free). */
+  /** Free column = last .usage-disk in the row (Used comes before Free). */
   function freeUsageDisk(tr) {
     if (!tr) return null;
     var disks = tr.querySelectorAll('td .usage-disk');
@@ -40,40 +42,31 @@
       el.classList.remove('sg-warning', 'sg-critical', 'sg-bar');
     });
     scope.querySelectorAll('[data-sg-td]').forEach(function (el) {
-      el.style.removeProperty('background-color');
       el.style.removeProperty('color');
       el.style.removeProperty('font-weight');
       el.removeAttribute('data-sg-td');
     });
   }
 
-  /**
-   * Paint only the Free bar fill (first span inside Free .usage-disk).
-   * Does not outline the cell or recolor the whole row.
-   */
   function paintFreeBar(tr, level) {
     if (!tr) return false;
     clearPaint(tr);
-
     if (level !== 'warning' && level !== 'critical') return false;
 
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
     var disk = freeUsageDisk(tr);
-
     if (disk) {
       var bar = disk.querySelector('span:first-child');
       if (bar) {
-        // Unraid already sets width:% — we only change the fill color
         bar.style.setProperty('background-color', color, 'important');
         bar.style.setProperty('background', color, 'important');
         bar.setAttribute('data-sg-bar', level);
         bar.classList.add('sg-bar', level === 'critical' ? 'sg-critical' : 'sg-warning');
-        log('bar', level, tr);
+        log('painted free bar', level, (tr.textContent || '').slice(0, 60));
         return true;
       }
     }
 
-    // Plain-text Free column (no usage bar in Display settings)
     var tds = tr.querySelectorAll('td');
     if (tds.length) {
       var td = tds[tds.length - 1];
@@ -81,85 +74,116 @@
         td.style.setProperty('color', color, 'important');
         td.style.setProperty('font-weight', '700', 'important');
         td.setAttribute('data-sg-td', level);
-        log('text free', level, tr);
         return true;
       }
     }
     return false;
   }
 
-  function isPoolOfDevicesRow(tr) {
-    var t = (tr.textContent || '').toLowerCase();
+  function rowText(tr) {
+    return (tr && tr.textContent ? tr.textContent : '').toLowerCase();
+  }
+
+  function isTotalsOnlyRow(tr) {
+    var t = rowText(tr);
     return /pool of\s/.test(t) || /array of\s/.test(t);
   }
 
   function isArrayOfDevicesRow(tr) {
-    return /array of\s/i.test(tr.textContent || '');
+    return /array of\s/.test(rowText(tr));
   }
 
-  /** Array totals row with Free bar */
+  /** Internal boot summary — not the cache data free space */
+  function isBootSummaryRow(tr) {
+    var t = rowText(tr);
+    return (
+      t.indexOf('internal boot') !== -1 ||
+      t.indexOf('boot(flash)') !== -1 ||
+      t.indexOf('boot(flash)') !== -1 ||
+      (t.indexOf('boot') !== -1 && t.indexOf('data partition') === -1 && /flash|zfs/.test(t) && t.indexOf('btrfs') === -1)
+    );
+  }
+
+  function isDataPartitionRow(tr) {
+    var t = rowText(tr);
+    if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) return false;
+    // Explicit Unraid label
+    if (t.indexOf('data partition') !== -1) return true;
+    // Has FS type + usage bars (cache data), not bare "Device N"
+    var n = tr.querySelectorAll('td .usage-disk').length;
+    if (n >= 2 && /btrfs|xfs|zfs|online/.test(t) && t.indexOf('device ') === -1) return true;
+    if (n >= 2 && /btrfs/.test(t)) return true;
+    return false;
+  }
+
   function findArrayFreeRow() {
     var tbody = document.getElementById('array_devices');
     if (!tbody) return null;
     var rows = tbody.querySelectorAll('tr');
-    for (var i = 0; i < rows.length; i++) {
+    var i;
+    for (i = 0; i < rows.length; i++) {
       if (isArrayOfDevicesRow(rows[i]) && freeUsageDisk(rows[i])) return rows[i];
     }
-    // fallback: last row with free usage-disk
-    for (var j = rows.length - 1; j >= 0; j--) {
-      if (freeUsageDisk(rows[j])) return rows[j];
+    for (i = rows.length - 1; i >= 0; i--) {
+      if (freeUsageDisk(rows[i]) && !isBootSummaryRow(rows[i])) return rows[i];
     }
     return null;
   }
 
   /**
-   * Pool FS row = Data Partition (or similar) with Size + Used/Free bars.
-   * Skip "Pool of N devices" (no real free bar — empty colspan).
-   * Skip bare Device 1/2 member rows without usage-disk.
+   * Pool data free row — Data Partition (btrfs/xfs/…) with Used+Free bars.
+   * Never Internal Boot, never "Pool of N devices".
    */
-  function findPoolFreeRow(tbody) {
-    if (!tbody) return null;
-    var rows = tbody.querySelectorAll('tr');
-    var i, tr, t, nDisks;
+  function findPoolDataFreeRow(root) {
+    if (!root) return null;
+    var rows = root.querySelectorAll('tr');
+    var i, tr;
 
-    // 1) Prefer "Data Partition" / ONLINE / filesystem name rows
+    // 1) Explicit Data Partition
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isPoolOfDevicesRow(tr)) continue;
-      t = (tr.textContent || '').toLowerCase();
-      nDisks = tr.querySelectorAll('td .usage-disk').length;
-      if (nDisks < 1) continue;
-      if (
-        t.indexOf('data partition') !== -1 ||
-        t.indexOf('online') !== -1 ||
-        t.indexOf('btrfs') !== -1 ||
-        t.indexOf('zfs') !== -1 ||
-        t.indexOf('xfs') !== -1 ||
-        t.indexOf('btrfs') !== -1
-      ) {
-        return tr;
-      }
+      if (isDataPartitionRow(tr) && freeUsageDisk(tr)) return tr;
     }
 
-    // 2) Any row with two usage-disks (Used + Free) that isn't "Pool of"
+    // 2) Row with 2 usage-disks, not boot/totals/device-only
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isPoolOfDevicesRow(tr)) continue;
+      if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
+      var t = rowText(tr);
+      if (/^[\s]*device\s+\d+/.test(t) || t.indexOf('device 1') !== -1 || t.indexOf('device 2') !== -1) {
+        // member rows usually have no FS bars; skip if only device label
+        if (tr.querySelectorAll('td .usage-disk').length < 2) continue;
+      }
       if (tr.querySelectorAll('td .usage-disk').length >= 2) return tr;
     }
 
-    // 3) First non-totals row with any usage-disk
+    // 3) Any non-boot non-totals row with a free bar
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isPoolOfDevicesRow(tr)) continue;
+      if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) continue;
       if (freeUsageDisk(tr)) return tr;
     }
     return null;
   }
 
-  function poolNamesInTbody(tbody) {
+  function allPoolRoots() {
+    var list = [];
+    var seen = {};
+    function add(el) {
+      if (!el || seen[el.id || el]) return;
+      seen[el.id || el] = true;
+      list.push(el);
+    }
+    document.querySelectorAll('[id^="pool_device"]').forEach(add);
+    add(document.getElementById('boot_device'));
+    // Whole Pool Devices section as fallback (table containers)
+    document.querySelectorAll('.TableContainer table.disk_status').forEach(add);
+    return list;
+  }
+
+  function namesInRoot(root) {
     var found = [];
-    var links = tbody.querySelectorAll('a[href*="Device?name="]');
+    var links = root.querySelectorAll('a[href*="Device?name="], a[href*="Boot?name="]');
     for (var i = 0; i < links.length; i++) {
       var href = links[i].getAttribute('href') || '';
       var m = href.match(/name=([^&]+)/i);
@@ -167,26 +191,27 @@
       var n = decodeURIComponent(m[1]);
       if (found.indexOf(n) === -1) found.push(n);
     }
-    // Also "Cache" label as pool name
-    var t = (tbody.textContent || '');
     return found;
   }
 
-  function resolvePoolKey(names, poolsStatus) {
+  function resolvePoolKey(names, text, poolsStatus) {
     if (!poolsStatus) return null;
     var keys = Object.keys(poolsStatus);
-    var i, j, pref;
+    var i, j, pref, t;
     for (i = 0; i < names.length; i++) {
       if (poolsStatus[names[i]]) return names[i];
     }
     for (i = 0; i < names.length; i++) {
-      pref = names[i].replace(/\d+$/, '');
+      pref = String(names[i]).replace(/\d+$/, '');
       if (pref && poolsStatus[pref]) return pref;
     }
-    for (i = 0; i < names.length; i++) {
-      for (j = 0; j < keys.length; j++) {
-        if (keys[j].toLowerCase() === String(names[i]).toLowerCase()) return keys[j];
-      }
+    t = (text || '').toLowerCase();
+    for (j = 0; j < keys.length; j++) {
+      if (t.indexOf(keys[j].toLowerCase()) !== -1) return keys[j];
+    }
+    // Single-pool systems: if only one pool in status and this root looks like a pool table
+    if (keys.length === 1 && (/pool|cache|btrfs|data partition|device/.test(t))) {
+      return keys[0];
     }
     return null;
   }
@@ -194,14 +219,12 @@
   function applyStatus(status) {
     if (!status) return;
     lastStatus = status;
-    if (!onMainLikePage()) return;
+    if (!onMainLikePage()) {
+      log('not on Main');
+      return;
+    }
 
-    // Clear any previous wrong paints on pool "Pool of N" rows
-    document.querySelectorAll('[id^="pool_device"] tr, #array_devices tr').forEach(function (tr) {
-      if (isPoolOfDevicesRow(tr) && !isArrayOfDevicesRow(tr)) clearPaint(tr);
-    });
-
-    // --- Array: "Array of N devices" Free bar ---
+    // --- Array (skipped when array_coloring=no or pools-only) ---
     var arow = findArrayFreeRow();
     if (arow) {
       if (status.array && status.array.enabled && (status.array.level === 'warning' || status.array.level === 'critical')) {
@@ -211,41 +234,62 @@
       }
     }
 
-    // --- Pools: Data Partition Free bar ---
+    // --- Pools (incl. boot-on-cache layout) ---
     var pools = status.pools || {};
-    var bodies = document.querySelectorAll('[id^="pool_device"]');
+    var roots = allPoolRoots();
     var matched = {};
 
-    for (var b = 0; b < bodies.length; b++) {
-      var tbody = bodies[b];
-      // Always clear mistaken totals-row paint in this tbody
-      tbody.querySelectorAll('tr').forEach(function (tr) {
-        if (isPoolOfDevicesRow(tr)) clearPaint(tr);
+    for (var r = 0; r < roots.length; r++) {
+      var root = roots[r];
+      // Clear bad paints on totals / boot summary in this root
+      root.querySelectorAll('tr').forEach(function (tr) {
+        if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) clearPaint(tr);
       });
 
-      var names = poolNamesInTbody(tbody);
-      var key = resolvePoolKey(names, pools);
-      // Fallback: body text contains pool key
-      if (!key) {
-        var bt = (tbody.textContent || '').toLowerCase();
-        Object.keys(pools).forEach(function (pk) {
-          if (bt.indexOf(pk.toLowerCase()) !== -1) key = key || pk;
-        });
-      }
+      var names = namesInRoot(root);
+      var key = resolvePoolKey(names, root.textContent || '', pools);
       if (!key || matched[key]) continue;
-      matched[key] = true;
 
       var st = pools[key];
-      var prow = findPoolFreeRow(tbody);
-      log('pool', key, 'row', prow, st);
-      if (!prow) continue;
+      if (!st) continue;
 
-      if (st && st.enabled && (st.level === 'warning' || st.level === 'critical')) {
+      var prow = findPoolDataFreeRow(root);
+      log('pool match', {
+        root: root.id || root.className,
+        key: key,
+        names: names,
+        level: st.level,
+        enabled: st.enabled,
+        foundRow: !!(prow),
+        rowHint: prow ? rowText(prow).slice(0, 80) : null
+      });
+
+      if (!prow) continue;
+      matched[key] = true;
+
+      if (st.enabled && (st.level === 'warning' || st.level === 'critical')) {
         paintFreeBar(prow, st.level);
       } else {
         clearPaint(prow);
       }
     }
+
+    // Last resort: one critical pool, paint any unmatched Data Partition free bar on Main
+    Object.keys(pools).forEach(function (pk) {
+      if (matched[pk]) return;
+      var st = pools[pk];
+      if (!st || !st.enabled || (st.level !== 'warning' && st.level !== 'critical')) return;
+      document.querySelectorAll('tr').forEach(function (tr) {
+        if (matched[pk]) return;
+        if (!isDataPartitionRow(tr) && rowText(tr).indexOf(pk.toLowerCase()) === -1) return;
+        if (isBootSummaryRow(tr) || isTotalsOnlyRow(tr)) return;
+        if (!freeUsageDisk(tr)) return;
+        if (paintFreeBar(tr, st.level)) {
+          matched[pk] = true;
+          log('last-resort paint', pk, rowText(tr).slice(0, 60));
+        }
+      });
+    });
   }
 
   function fetchAndApply() {
@@ -276,8 +320,8 @@
       var obs = new MutationObserver(function () {
         if (lastStatus) applyStatus(lastStatus);
       });
-      var main = document.querySelector('.TableContainer') || document.getElementById('content') || document.body;
-      if (main) obs.observe(main, { childList: true, subtree: true });
+      var main = document.getElementById('content') || document.body;
+      obs.observe(main, { childList: true, subtree: true });
     }
   }
 
@@ -297,5 +341,5 @@
       fetchAndApply();
     }
   };
-  console.log('Storage Guard color injector ready (free-bar only)');
+  console.log('Storage Guard color injector ready (array totals + pool Data Partition)');
 })();
