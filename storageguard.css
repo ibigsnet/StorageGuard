@@ -26,7 +26,7 @@
 }
 
 
-/* ---- Solid: recolor free fill (no border, no pulse) ---- */
+/* ---- Solid: recolor free fill (no border) ---- */
 /* Parent .usage-disk[data-sg-solid] keeps color if Unraid rewrites the inner span
    (avoids clear/repaint flash on Main live free-bar updates). */
 .usage-disk[data-sg-solid="warning"] > span:first-child,
@@ -83,18 +83,30 @@ td[data-sg-td="ok"] {
   outline: 2px solid #e53935 !important;
 }
 
-/* Pulse: Outline + user enabled outline_pulse + warning/critical only */
+/* ---- Pulse (global flasher): warning/critical only, Outline + Solid ---- */
+/* Outline: pulse the border */
 .usage-disk.sg-outline.sg-warning.sg-pulse,
 .usage-disk[data-sg-outline="warning"].sg-pulse {
-  animation: sg-pulse-warn 2.4s ease-in-out infinite;
+  animation: sg-pulse-outline-warn 2.4s ease-in-out infinite;
 }
 
 .usage-disk.sg-outline.sg-critical.sg-pulse,
 .usage-disk[data-sg-outline="critical"].sg-pulse {
-  animation: sg-pulse-crit 2.4s ease-in-out infinite;
+  animation: sg-pulse-outline-crit 2.4s ease-in-out infinite;
 }
 
-@keyframes sg-pulse-warn {
+/* Solid: pulse the free fill */
+.usage-disk[data-sg-solid="warning"].sg-pulse > span:first-child,
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-warning {
+  animation: sg-pulse-solid-warn 2.4s ease-in-out infinite;
+}
+
+.usage-disk[data-sg-solid="critical"].sg-pulse > span:first-child,
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-critical {
+  animation: sg-pulse-solid-crit 2.4s ease-in-out infinite;
+}
+
+@keyframes sg-pulse-outline-warn {
   0%, 100% {
     outline-color: #ffc107;
     box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.55);
@@ -105,7 +117,7 @@ td[data-sg-td="ok"] {
   }
 }
 
-@keyframes sg-pulse-crit {
+@keyframes sg-pulse-outline-crit {
   0%, 100% {
     outline-color: #e53935;
     box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.55);
@@ -116,9 +128,33 @@ td[data-sg-td="ok"] {
   }
 }
 
+@keyframes sg-pulse-solid-warn {
+  0%, 100% {
+    filter: brightness(1);
+    opacity: 1;
+  }
+  50% {
+    filter: brightness(1.35);
+    opacity: 0.72;
+  }
+}
+
+@keyframes sg-pulse-solid-crit {
+  0%, 100% {
+    filter: brightness(1);
+    opacity: 1;
+  }
+  50% {
+    filter: brightness(1.4);
+    opacity: 0.7;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .usage-disk.sg-outline.sg-pulse,
-  .usage-disk[data-sg-outline].sg-pulse {
+  .usage-disk.sg-pulse,
+  .usage-disk.sg-pulse > span:first-child,
+  .usage-disk[data-sg-outline].sg-pulse,
+  .usage-disk[data-sg-solid].sg-pulse > span:first-child {
     animation: none !important;
   }
 }

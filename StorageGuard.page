@@ -289,28 +289,28 @@ Set free-space thresholds for Main. Thresholds are **remaining free space** (how
 **Usual order:** Warning = larger free amount (earlier heads-up), Critical = **smaller** free amount (more severe).  
 If both are set, the plugin always uses **severity by free-space amount**: the **lower** free amount is treated as critical (red), the **higher** as warning (yellow)—even if you assign the numbers the other way around. A notice appears below if Critical is set higher than Warning.
 
-Highlight style is for the **array** (primary focus of this plugin). **Outline** (default) leaves Unraid’s free-fill alone and draws a yellow/red **border** around it (optional pulse; optional green when still OK). **Solid** recolors the free **fill** yellow/red instead. Pool options are under Advanced (WIP).
+Highlight style is for the **array** (primary focus of this plugin). **Outline** (default) leaves Unraid’s free-fill alone and draws a yellow/red **border** around it. **Solid** recolors the free **fill** yellow/red. **Pulse** (below) is the optional flasher for warning/critical on either style. Pool options are under Advanced (WIP).
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
-_(Outline — pulse on warning/critical?)_:
+_(Pulse warning/critical?)_:
 : <select name="outline_pulse" id="outline_pulse">
-  <?=mk_option($outline_pulse, "no", _("No (static outline)"))?>
-  <?=mk_option($outline_pulse, "yes", _("Yes (pulsing outline)"))?>
+  <?=mk_option($outline_pulse, "no", _("No (static)"))?>
+  <?=mk_option($outline_pulse, "yes", _("Yes (pulse / flash)"))?>
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline style only</strong> (ignored for Solid). Default is a static yellow/red border. Pulse gently animates that border so warning/critical is easier to notice. Never pulses the green “OK” outline.
+Global <strong>flasher</strong> for Warning and Critical on Main — works with both highlight styles. <strong>Outline</strong>: pulses the yellow/red border. <strong>Solid</strong>: pulses the free-fill color. Off (static) by default. Never pulses healthy/OK.
 </blockquote>
 
-_(Outline — green border when free space is OK?)_:
+_(Green outline when free space is OK?)_:
 : <select name="outline_show_ok" id="outline_show_ok">
   <?=mk_option($outline_show_ok, "no", _("No"))?>
   <?=mk_option($outline_show_ok, "yes", _("Yes — green outline when above thresholds"))?>
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline style only</strong> (ignored for Solid). When free space is still healthy (above your thresholds), draw a <strong>static green</strong> border so “still enough free space” is visible. Off by default. Never pulses.
+<strong>Outline style only</strong> (Solid has no “healthy” paint). When free space is still above your thresholds, draw a <strong>static green</strong> border. Off by default. Never pulses.
 </blockquote>
 
 ---
@@ -340,8 +340,9 @@ _(Array highlight style)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline</strong> (default): status is a <strong>border only</strong> around the free bar — Unraid’s free fill is left alone. Yellow/red when thresholds hit; pulse and green-when-OK are the global Outline options above.<br>
-<strong>Solid</strong>: recolors the free <strong>fill</strong> yellow/red when thresholds hit (no border, no pulse).<br>
+<strong>Outline</strong> (default): status is a <strong>border only</strong> around the free bar — Unraid’s free fill is left alone. Yellow/red when thresholds hit.<br>
+<strong>Solid</strong>: recolors the free <strong>fill</strong> yellow/red when thresholds hit (no border).<br>
+<strong>Pulse</strong> (global, above) flashes warning/critical for either style. <strong>Green when OK</strong> is Outline-only.<br>
 Applies to the <strong>array</strong> free bar on Main.
 </blockquote>
 
@@ -536,7 +537,7 @@ _(<?=htmlspecialchars($p)?> highlight style)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline</strong>: border only (free fill unchanged). <strong>Solid</strong>: recolor free fill. For this pool only. Pulse and green-when-OK follow the global Outline options at the top of the page.
+<strong>Outline</strong>: border only (free fill unchanged). <strong>Solid</strong>: recolor free fill. For this pool only. Global <strong>Pulse</strong> and <strong>green when OK</strong> are at the top of the page.
 </blockquote>
 
 _(<?=htmlspecialchars($p)?> thresholds from)_:

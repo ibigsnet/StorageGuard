@@ -170,14 +170,14 @@ Each target (array, and every pool) has its own style:
 | Style | Effect |
 |--------|--------|
 | **Outline** (default) | **Border only** — yellow/red around the free bar; Unraid’s free **fill** is left alone. Optional green border when still OK. |
-| **Solid** | **Recolor free fill** yellow or red when a threshold is hit. Healthy = normal Unraid fill (no green fill). No border, no pulse. |
+| **Solid** | **Recolor free fill** yellow or red when a threshold is hit. Healthy = normal Unraid fill (no green fill). No border. |
 
-**Outline-only options** (global; ignored for Solid):
+**Global options:**
 
-| Option | Default | Effect |
-|--------|---------|--------|
-| **Pulse** | Off | Yellow/red **border** gently pulses (static if off). Never pulses green OK. |
-| **Green when OK** | Off | Static **green** border when free space is still **above** your thresholds |
+| Option | Default | Applies to | Effect |
+|--------|---------|------------|--------|
+| **Pulse** | Off | Outline **and** Solid | Flasher for Warning/Critical. Outline: pulses the border. Solid: pulses the free fill. Never pulses healthy/OK. |
+| **Green when OK** | Off | Outline only | Static **green** border when free space is still **above** your thresholds |
 
 | Level (Outline) | Look |
 |-----------------|------|
@@ -189,10 +189,10 @@ Each target (array, and every pool) has its own style:
 | Level (Solid) | Look |
 |---------------|------|
 | OK | Normal Unraid free fill (no Storage Guard paint) |
-| Warning | Free fill tinted yellow |
-| Critical | Free fill tinted red |
+| Warning | Free fill tinted yellow (static or pulse) |
+| Critical | Free fill tinted red (static or pulse) |
 
-Array can be Solid while one pool is Outline, and so on.
+Array can be Solid while one pool is Outline, and so on. Pulse is shared.
 
 ---
 
