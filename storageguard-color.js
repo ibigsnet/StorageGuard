@@ -7,6 +7,7 @@
   'use strict';
 
   var lastStatus = null;
+  var lastStyle = 'outline'; // outline | solid
   var BAR_WARN = '#ffc107';
   var BAR_CRIT = '#e53935';
 
@@ -39,41 +40,72 @@
       el.style.removeProperty('background-color');
       el.style.removeProperty('background');
       el.removeAttribute('data-sg-bar');
-      el.classList.remove('sg-warning', 'sg-critical', 'sg-bar');
+      el.removeAttribute('data-sg-style');
+      el.classList.remove('sg-warning', 'sg-critical', 'sg-bar', 'sg-solid');
+    });
+    scope.querySelectorAll('[data-sg-outline], .sg-outline').forEach(function (el) {
+      el.style.removeProperty('outline');
+      el.style.removeProperty('outline-offset');
+      el.style.removeProperty('box-shadow');
+      el.removeAttribute('data-sg-outline');
+      el.classList.remove('sg-outline', 'sg-warning', 'sg-critical');
     });
     scope.querySelectorAll('[data-sg-td]').forEach(function (el) {
       el.style.removeProperty('color');
       el.style.removeProperty('font-weight');
+      el.style.removeProperty('outline');
+      el.style.removeProperty('box-shadow');
       el.removeAttribute('data-sg-td');
     });
   }
 
-  function paintFreeBar(tr, level) {
+  /**
+   * style: 'outline' (default) — keep green free fill, pulse yellow/red outline
+   *        'solid'             — replace free bar fill with yellow/red
+   */
+  function paintFreeBar(tr, level, style) {
     if (!tr) return false;
     clearPaint(tr);
     if (level !== 'warning' && level !== 'critical') return false;
 
+    style = style === 'solid' ? 'solid' : 'outline';
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
     var disk = freeUsageDisk(tr);
     if (disk) {
       var bar = disk.querySelector('span:first-child');
+      if (style === 'outline') {
+        // Keep Unraid green fill; outline the free bar container with a slow pulse
+        disk.classList.add('sg-outline', level === 'critical' ? 'sg-critical' : 'sg-warning');
+        disk.setAttribute('data-sg-outline', level);
+        log('outline free bar', level, (tr.textContent || '').slice(0, 60));
+        return true;
+      }
+      // solid: override free fill color
       if (bar) {
         bar.style.setProperty('background-color', color, 'important');
         bar.style.setProperty('background', color, 'important');
         bar.setAttribute('data-sg-bar', level);
-        bar.classList.add('sg-bar', level === 'critical' ? 'sg-critical' : 'sg-warning');
-        log('painted free bar', level, (tr.textContent || '').slice(0, 60));
+        bar.setAttribute('data-sg-style', 'solid');
+        bar.classList.add('sg-bar', 'sg-solid', level === 'critical' ? 'sg-critical' : 'sg-warning');
+        log('solid free bar', level, (tr.textContent || '').slice(0, 60));
         return true;
       }
     }
 
+    // Plain-text Free column (no usage bar)
     var tds = tr.querySelectorAll('td');
     if (tds.length) {
       var td = tds[tds.length - 1];
       if (/\d/.test(td.textContent || '')) {
-        td.style.setProperty('color', color, 'important');
-        td.style.setProperty('font-weight', '700', 'important');
-        td.setAttribute('data-sg-td', level);
+        if (style === 'outline') {
+          td.style.setProperty('outline', '2px solid ' + color, 'important');
+          td.style.setProperty('outline-offset', '2px', 'important');
+          td.setAttribute('data-sg-td', level);
+        } else {
+          td.style.setProperty('color', color, 'important');
+          td.style.setProperty('font-weight', '700', 'important');
+          td.setAttribute('data-sg-td', level);
+        }
         return true;
       }
     }
@@ -216,19 +248,21 @@
     return null;
   }
 
-  function applyStatus(status) {
+  function applyStatus(status, style) {
     if (!status) return;
     lastStatus = status;
+    if (style) lastStyle = style === 'solid' ? 'solid' : 'outline';
     if (!onMainLikePage()) {
       log('not on Main');
       return;
     }
+    var mode = lastStyle;
 
     // --- Array (skipped when array_coloring=no or pools-only) ---
     var arow = findArrayFreeRow();
     if (arow) {
       if (status.array && status.array.enabled && (status.array.level === 'warning' || status.array.level === 'critical')) {
-        paintFreeBar(arow, status.array.level);
+        paintFreeBar(arow, status.array.level, mode);
       } else {
         clearPaint(arow);
       }
@@ -268,7 +302,7 @@
       matched[key] = true;
 
       if (st.enabled && (st.level === 'warning' || st.level === 'critical')) {
-        paintFreeBar(prow, st.level);
+        paintFreeBar(prow, st.level, mode);
       } else {
         clearPaint(prow);
       }
@@ -284,7 +318,7 @@
         if (!isDataPartitionRow(tr) && rowText(tr).indexOf(pk.toLowerCase()) === -1) return;
         if (isBootSummaryRow(tr) || isTotalsOnlyRow(tr)) return;
         if (!freeUsageDisk(tr)) return;
-        if (paintFreeBar(tr, st.level)) {
+        if (paintFreeBar(tr, st.level, mode)) {
           matched[pk] = true;
           log('last-resort paint', pk, rowText(tr).slice(0, 60));
         }
@@ -300,8 +334,9 @@
       })
       .then(function (data) {
         if (!data || !data._status) return;
-        log('status', data._status);
-        applyStatus(data._status);
+        var style = (data.color_style === 'solid') ? 'solid' : 'outline';
+        log('status', data._status, 'style', style);
+        applyStatus(data._status, style);
         fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
       })
       .catch(function (err) {
@@ -312,13 +347,13 @@
   function boot() {
     fetchAndApply();
     setInterval(function () {
-      if (lastStatus) applyStatus(lastStatus);
+      if (lastStatus) applyStatus(lastStatus, lastStyle);
     }, 1200);
     setInterval(fetchAndApply, 12000);
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
-        if (lastStatus) applyStatus(lastStatus);
+        if (lastStatus) applyStatus(lastStatus, lastStyle);
       });
       var main = document.getElementById('content') || document.body;
       obs.observe(main, { childList: true, subtree: true });
@@ -341,5 +376,5 @@
       fetchAndApply();
     }
   };
-  console.log('Storage Guard color injector ready (array totals + pool Data Partition)');
+  console.log('Storage Guard color injector ready (outline default / solid optional)');
 })();

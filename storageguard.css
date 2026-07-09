@@ -1,18 +1,19 @@
-/* Storage Guard — Free-column bar fill only (matches Unraid bar shape) */
+/* Storage Guard — Free bar highlight styles */
 
-.usage-disk > span.sg-bar.sg-warning,
-.usage-disk > span[data-sg-bar="warning"] {
+/* ---- Solid mode: replace free-bar fill ---- */
+.usage-disk > span.sg-bar.sg-solid.sg-warning,
+.usage-disk > span[data-sg-bar="warning"][data-sg-style="solid"] {
   background-color: #ffc107 !important;
   background: #ffc107 !important;
 }
 
-.usage-disk > span.sg-bar.sg-critical,
-.usage-disk > span[data-sg-bar="critical"] {
+.usage-disk > span.sg-bar.sg-solid.sg-critical,
+.usage-disk > span[data-sg-bar="critical"][data-sg-style="solid"] {
   background-color: #e53935 !important;
   background: #e53935 !important;
 }
 
-/* Plain-text Free column (bars off in Display settings) */
+/* Plain-text Free column (no usage bar) */
 td[data-sg-td="warning"] {
   color: #ffc107 !important;
   font-weight: 700 !important;
@@ -20,4 +21,52 @@ td[data-sg-td="warning"] {
 td[data-sg-td="critical"] {
   color: #e53935 !important;
   font-weight: 700 !important;
+}
+
+/* ---- Outline mode: keep green fill, pulse outline on .usage-disk ---- */
+.usage-disk.sg-outline.sg-warning,
+.usage-disk[data-sg-outline="warning"] {
+  outline: 2px solid #ffc107 !important;
+  outline-offset: 2px;
+  border-radius: 2px;
+  animation: sg-pulse-warn 2.4s ease-in-out infinite;
+}
+
+.usage-disk.sg-outline.sg-critical,
+.usage-disk[data-sg-outline="critical"] {
+  outline: 2px solid #e53935 !important;
+  outline-offset: 2px;
+  border-radius: 2px;
+  animation: sg-pulse-crit 2.4s ease-in-out infinite;
+}
+
+@keyframes sg-pulse-warn {
+  0%, 100% {
+    outline-color: #ffc107;
+    box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.55);
+  }
+  50% {
+    outline-color: #ffecb3;
+    box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.15);
+  }
+}
+
+@keyframes sg-pulse-crit {
+  0%, 100% {
+    outline-color: #e53935;
+    box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.55);
+  }
+  50% {
+    outline-color: #ef9a9a;
+    box-shadow: 0 0 0 4px rgba(229, 57, 53, 0.18);
+  }
+}
+
+/* Prefer reduced motion: static outline, no pulse */
+@media (prefers-reduced-motion: reduce) {
+  .usage-disk.sg-outline.sg-warning,
+  .usage-disk.sg-outline.sg-critical,
+  .usage-disk[data-sg-outline] {
+    animation: none !important;
+  }
 }

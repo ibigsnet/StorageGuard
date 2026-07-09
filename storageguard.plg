@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09c">
+<!ENTITY version "2026.07.09d">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,8 +34,9 @@
 
 <CHANGES>
 ###&version;
-- NIROG fix: Data Partition Free bar on boot-on-cache / pools-only; skip Internal Boot and Pool-of-N.
-- Post-install curl refresh of JS/CSS so plugin manager/CDN cannot leave stale color.js.
+- Threshold logic: Warning/Critical order independent (smaller free TB = critical).
+- Settings page cleaned up for clearer Array / Pools / Alerts layout.
+- Free space compared in decimal TB (closer to Main display).
 
 ###2026.07.09
 - Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
@@ -94,7 +95,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09b"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09c"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites

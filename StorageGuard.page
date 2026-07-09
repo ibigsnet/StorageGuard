@@ -224,6 +224,8 @@ if ($array_use_custom !== 'yes' && !empty($array_sizes)) {
 
 $array_coloring = $cfg['array_coloring'] ?? 'yes';
 $pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
+$color_style = $cfg['color_style'] ?? 'outline'; // outline | solid
+if (!in_array($color_style, ['outline', 'solid'], true)) $color_style = 'outline';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 
@@ -270,9 +272,26 @@ foreach ($pool_names as $p) {
 <?php endif; ?>
 
 <p style="margin-bottom:1em">
-Set <strong>free-space thresholds</strong> for the Main tab. When free space falls <em>at or below</em> a threshold, that bar turns yellow (warning) or red (critical).<br>
-<span style="color:#888;font-size:0.92em">Tip: Critical should usually be the <em>smaller</em> free amount (more severe). If you reverse them, we still treat the smaller TB value as critical.</span>
+Set <strong>free-space thresholds</strong> for the Main tab. When free space falls <em>at or below</em> a threshold, Storage Guard marks that Free bar (array and/or pools).<br>
+<span style="color:#888;font-size:0.92em">Tip: Critical is usually the <em>smaller</em> free amount. If you reverse them, we still treat the smaller TB as critical.</span>
 </p>
+
+<!-- ========== DISPLAY STYLE (global) ========== -->
+<div class="title">Main-tab highlight style</div>
+
+_(How to mark Warning / Critical?)_:
+: <select name="color_style" id="color_style">
+  <?=mk_option($color_style, "outline", _("Outline (recommended) — keep green free bar, pulse yellow/red outline"))?>
+  <?=mk_option($color_style, "solid", _("Solid — replace free bar fill with yellow/red"))?>
+  </select>
+
+<blockquote class="inline_help">
+<strong>Outline</strong> (default): leaves Unraid’s green free-space fill as-is and draws a slow-pulsing yellow or red outline around the Free bar so you still see how full the free segment is.<br>
+<strong>Solid</strong>: overrides the free bar fill color to yellow/red (previous behavior).<br>
+Applies to both array and pool Free bars.
+</blockquote>
+
+<hr>
 
 <!-- ========== ARRAY ========== -->
 <div class="title">Array</div>
