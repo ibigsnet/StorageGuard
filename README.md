@@ -36,7 +36,7 @@ plugin update storageguard
 
 Or **Plugins → check for updates → Update**. Settings stay in `/boot/config/plugins/StorageGuard/`.
 
-Requires Unraid **6.12.0+**.
+**Requirements:** plugin metadata allows Unraid **6.12.0+**. I’ve only tested on **Unraid 7.1.3** so far (Main free-bar coloring is aimed at Unraid 7’s page layout). Reports from other versions are very welcome.
 
 ## Where to configure
 
