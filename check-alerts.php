@@ -4,6 +4,8 @@
 
 header('Content-Type: application/json');
 
+require_once __DIR__ . '/sg-lib.php';
+
 $cfg_file = '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
 $cfg = [];
 if (file_exists($cfg_file)) {
@@ -13,7 +15,6 @@ if (file_exists($cfg_file)) {
 // Legacy global master still respected if present and off
 if (isset($cfg['alerts_enabled']) && $cfg['alerts_enabled'] !== 'yes'
     && !isset($cfg['alerts_array_warning']) && !isset($cfg['alerts_array_critical'])) {
-    // Old install with master off and no new keys: stay silent
     $has_new = false;
     foreach ($cfg as $k => $v) {
         if (strpos($k, 'alerts_pool_') === 0 || strpos($k, 'alerts_array_') === 0) {
@@ -35,7 +36,7 @@ function sg_get_array_free_tb() {
         if (!is_dir($mnt)) continue;
         $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mnt) . " 2>/dev/null | tail -1");
         $bytes = (float)trim((string)$out);
-        if ($bytes > 0 || $mnt === '/mnt/user') return $bytes / 1e12; // decimal TB
+        if ($bytes > 0 || $mnt === '/mnt/user') return $bytes / 1e12;
     }
     return 0.0;
 }
@@ -60,7 +61,6 @@ function sg_parse_to_tb($str) {
     return $num;
 }
 
-/** Same free-space level logic as get-config.php */
 function sg_level($free_tb, $warn_tb, $crit_tb) {
     if ($free_tb === null) return 'ok';
     $w = ($warn_tb > 0) ? (float)$warn_tb : null;
@@ -94,23 +94,12 @@ function sg_flag($cfg, $key) {
     return ($cfg[$key] ?? 'no') === 'yes';
 }
 
-/** Largest array data disk in decimal TB (0 if none). */
 function sg_largest_data_disk_tb() {
-    $disks_ini = '/var/local/emhttp/disks.ini';
-    if (!file_exists($disks_ini)) return 0.0;
-    $disks = @parse_ini_file($disks_ini, true) ?: [];
-    $max_kb = 0;
-    foreach ($disks as $key => $d) {
-        if (empty($d['device'])) continue;
-        $type = $d['type'] ?? '';
-        $name = $d['name'] ?? $key;
-        $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
-        if (!$is_data) continue;
-        $sz = isset($d['size']) ? (int)$d['size'] : 0;
-        if ($sz > $max_kb) $max_kb = $sz;
+    $max = 0.0;
+    foreach (sg_array_data_disks() as $d) {
+        if ($d['tb'] > $max) $max = $d['tb'];
     }
-    if ($max_kb <= 0) return 0.0;
-    return ($max_kb * 1024.0) / 1e12;
+    return $max;
 }
 
 function sg_largest_data_disk_label() {
@@ -131,7 +120,6 @@ function sg_array_thresholds($cfg) {
             'custom' => true,
         ];
     }
-    // Missing array_warning → default largest data disk; empty string → None
     if (array_key_exists('array_warning', $cfg)) {
         $warn_label = $cfg['array_warning'];
         $warn = sg_parse_to_tb($warn_label);
@@ -171,8 +159,6 @@ function sg_pool_thresholds($cfg, $safe) {
 $sent = [];
 $array_free = sg_get_array_free_tb();
 
-// --- Array ---
-// Defaults: Array Warning yes; Array Critical no. Legacy only if old keys present and new ones absent.
 $has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
     || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
 if (isset($cfg['alerts_array_warning'])) {
@@ -183,7 +169,7 @@ if (isset($cfg['alerts_array_warning'])) {
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_warn_on = $legacy_on && $array_selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
 } else {
-    $arr_warn_on = true; // default: array warning only
+    $arr_warn_on = true;
 }
 if (isset($cfg['alerts_array_critical'])) {
     $arr_crit_on = sg_flag($cfg, 'alerts_array_critical');
@@ -199,26 +185,21 @@ if (isset($cfg['alerts_array_critical'])) {
 if ($arr_warn_on || $arr_crit_on) {
     $th = sg_array_thresholds($cfg);
     $level = sg_level($array_free, $th['warn'], $th['crit']);
-    // Respect which severities the user enabled for this target
     if ($level === 'critical' && !$arr_crit_on) $level = $arr_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$arr_warn_on) $level = 'ok';
 
     if ($level === 'critical' && sg_should_send('array_critical')) {
-        $msg = $th['custom']
-            ? "Custom critical threshold {$th['crit_label']}. Array free space is " . round($array_free, 1) . " TB (below critical)."
-            : "Array free space is " . round($array_free, 1) . " TB, at or below critical threshold {$th['crit_label']}. You may not have room to move data off a failed disk without replacement.";
-        sg_send_notify('Array Critical Low Space', $msg, 'alert');
+        $msg = sg_array_notify_body('critical', $array_free, $th);
+        sg_send_notify('Storage Guard: Array free space critical', $msg, 'alert');
         $sent[] = 'array_critical';
     } elseif ($level === 'warning' && sg_should_send('array_warning')) {
-        $msg = $th['custom']
-            ? "Custom warning threshold {$th['warn_label']}. Array free space is " . round($array_free, 1) . " TB."
-            : "Array free space is " . round($array_free, 1) . " TB, at or below warning threshold {$th['warn_label']}.";
-        sg_send_notify('Array Warning Low Space', $msg, 'warning');
+        $msg = sg_array_notify_body('warning', $array_free, $th);
+        sg_send_notify('Storage Guard: Array free space warning', $msg, 'warning');
         $sent[] = 'array_warning';
     }
 }
 
-// --- Pools (from threshold keys + per-pool alert flags) ---
+// --- Pools ---
 $seen_pools = [];
 foreach ($cfg as $k => $v) {
     if (!preg_match('/^pool_([a-zA-Z0-9_]+)_(warning|warning_custom)$/', $k, $m)) continue;
@@ -229,7 +210,6 @@ foreach ($cfg as $k => $v) {
 
     $warn_key = "alerts_pool_{$safe}_warning";
     $crit_key = "alerts_pool_{$safe}_critical";
-    // Default: pool alerts off unless explicitly enabled
     if (isset($cfg[$warn_key])) {
         $p_warn_on = sg_flag($cfg, $warn_key);
     } elseif ($has_legacy_alerts) {
@@ -259,19 +239,22 @@ foreach ($cfg as $k => $v) {
     if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$p_warn_on) $level = 'ok';
 
+    $profile = sg_pool_btrfs_profile($pname);
+    $class = sg_pool_profile_class($profile);
+
     if ($level === 'critical' && sg_should_send("pool_{$safe}_critical")) {
-        $msg = $th['custom']
-            ? "Custom critical threshold {$th['crit_label']}. Pool '{$pname}' free space is " . round($pool_free, 1) . " TB."
-            : "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below critical threshold {$th['crit_label']}. Rebalance after a drive failure may not fit.";
-        sg_send_notify("Pool {$pname} Critical", $msg, 'alert');
+        $msg = sg_pool_notify_body('critical', $pname, $pool_free, $th, $profile, $class);
+        sg_send_notify("Storage Guard: Pool {$pname} free space critical", $msg, 'alert');
         $sent[] = "pool_{$safe}_critical";
     } elseif ($level === 'warning' && sg_should_send("pool_{$safe}_warning")) {
-        $msg = $th['custom']
-            ? "Custom warning threshold {$th['warn_label']}. Pool '{$pname}' free space is " . round($pool_free, 1) . " TB."
-            : "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below warning threshold {$th['warn_label']}.";
-        sg_send_notify("Pool {$pname} Warning", $msg, 'warning');
+        $msg = sg_pool_notify_body('warning', $pname, $pool_free, $th, $profile, $class);
+        sg_send_notify("Storage Guard: Pool {$pname} free space warning", $msg, 'warning');
         $sent[] = "pool_{$safe}_warning";
     }
 }
 
-echo json_encode(['sent' => !empty($sent), 'alerts' => $sent, 'array_free_tb' => round($array_free, 3)]);
+echo json_encode([
+    'sent' => !empty($sent),
+    'alerts' => $sent,
+    'array_free_tb' => round($array_free, 3),
+]);

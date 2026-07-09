@@ -25,6 +25,8 @@ The idea is simple. Disk prices are rising. If a drive fails, you may still have
 - **Warning** and **Critical** levels, or **None** to leave a level unused
 - Main coloring: **Solid** (default) or **Outline** per array/pool; optional outline pulse; optional **green outline when free space is still OK**
 - Optional Unraid notifications (default: Array Warning only)
+- **Dynamic array alerts** name matching data disks and explain evacuate-room risk
+- **Pool alerts** adapt wording by BTRFS profile class (RAID1 vs RAID5/6 vs RAID10 vs none)
 - Default Array Warning = largest data disk; pool thresholds start at None
 - Works with the array and all your pools (any Unraid pool names)
 

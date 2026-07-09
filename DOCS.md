@@ -191,6 +191,93 @@ Checked = send an Unraid notification when that target hits that level.
 Nothing checked for a row = silent for that target.  
 Alerts use the **same free-space thresholds and severity ranking** as Main coloring (including custom values and the “lower free amount = critical” rule). They do **not** require Main coloring to be on.
 
+If free space is in the critical band but only the warning checkbox is enabled, you get a **warning** notification (highest enabled severity that matches).
+
+### What notifications say (current)
+
+#### Array Warning
+
+**Subject:** `Storage Guard: Array free space warning`
+
+**Body covers:**
+
+1. Current free space and your warning threshold  
+2. **If you lost …**  
+   - Disk-size match: names matching data disks, e.g. `disk1 (26T) or disk2 (26T)`  
+   - Custom threshold: “your custom free-space threshold of 7.5T”  
+   - No exact match: “a data disk of about {threshold}”  
+3. Risk: may not have enough free space on the **rest of the array** to move that disk’s data off without a replacement  
+4. Parity can keep the array online (emulated disk); this is about **evacuation room**, not instant total data loss  
+
+#### Array Critical
+
+**Subject:** `Storage Guard: Array free space critical`
+
+Same structure as warning, stronger language (“likely not enough…”, plan replacement or free substantial space).
+
+#### Pool Warning / Critical
+
+**Subject:** `Storage Guard: Pool {name} free space warning|critical`
+
+Always includes free space, threshold, and detected **BTRFS data profile** (when available). Wording then follows **profile class**:
+
+| Class | Profiles (examples) | Message focus |
+|-------|---------------------|---------------|
+| **Mirror** | RAID1, RAID1c3, RAID1c4 | One-disk loss usually still leaves a full copy; free space matters for **rebuild after replace** / balance / profile change—not array-style evacuate |
+| **Parity** | RAID5, RAID6 | Free space ≈ **recovery/rebalance headroom** after failure (closer to array anxiety) |
+| **Striped mirror** | RAID10 | One failure often OK for data; restoring full redundancy may need free space |
+| **No redundancy** | single, RAID0 | Capacity policy only; disk loss **risks data** |
+| **Unknown** | other / non-BTRFS | Generic free-space threshold text |
+
+Pool thresholds remain **manual** (default None). Profile-aware **suggested** thresholds are planned (below).
+
+### Notification outcomes (summary)
+
+| Condition | Main | Notify (if that level enabled) |
+|-----------|------|--------------------------------|
+| Free above all thresholds | OK / optional green outline | none |
+| Free ≤ Warning, > Critical | Yellow | Array/Pool **warning** text |
+| Free ≤ Critical | Red | **Critical** text (or warning if only warning enabled) |
+| Array threshold = disk size(s) | same | Names those disk(s) |
+| Array custom threshold | same | Custom free wording, no fake disk names |
+| Pool RAID1 + free low | same paint | Mirror narrative (not “evacuate like array”) |
+| Pool RAID5 + free low | same paint | Rebalance/recovery headroom narrative |
+
+---
+
+## Pool free-space logic (today vs planned)
+
+### Today (simple)
+
+- Paint and thresholds: **raw free space** on `/mnt/{pool}` vs your Warning/Critical values (same math as array).  
+- Defaults: pool thresholds **None**; pool alerts **off**.  
+- Notifications: **profile-class wording** so RAID1 is not described like parity array evacuate.
+
+### Why profile matters (scenarios)
+
+| Layout | One disk fails — data? | Need free space to “move data off” failed disk? | Free-space meaning |
+|--------|------------------------|--------------------------------------------------|--------------------|
+| **Array (parity)** | Yes (emulated) | **Yes**, to evacuate without buying a disk | Evacuation room |
+| **RAID1 (2 equal disks)** | Yes (mirror) | **No** for data access | Rebuild/rebalance after replace; policy |
+| **RAID1c3 / RAID1c4** | Yes (extra copies) | **No** for single loss | Same as mirror |
+| **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; need room to **rebalance/replace** | Recovery headroom |
+| **RAID10** | Often yes | Often need free space to **restore full redundancy** | Layout-dependent |
+| **single / RAID0** | **No** | N/A | Capacity only; data at risk |
+
+**Profile conversion** (e.g. RAID10 → RAID5) can **gain usable free space** after or before a failure, at the cost of different failure tolerance. Storage Guard will never auto-convert; guidance is planned.
+
+---
+
+## Planned / future
+
+1. **Profile-aware suggested thresholds** for pools (opt-in “Suggest” or soft defaults by class).  
+2. **Per-failure-device analysis** (“if disk X fails…”).  
+3. **Approximate BTRFS rebalance free-space estimator.**  
+4. **Profile conversion guidance** in Settings/docs/notifications.  
+5. **Array vs cache free space education** (cache free ≠ array evacuate room).  
+6. **ZFS pool awareness.**  
+7. Richer notify formatting if Unraid allows.
+
 ---
 
 ## How coloring works (technical, brief)

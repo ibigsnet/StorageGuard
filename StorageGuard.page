@@ -415,6 +415,15 @@ Remaining free space for each level (<code>1.5T</code>, <code>7.5T</code>, <code
 
 Pool names come from your server. Unraid often defaults the first pool to <strong>cache</strong>, but every pool—including the first—can be named however you like.
 
+Defaults for pool thresholds are <strong>None</strong> (opt-in). Free-space paint is still a simple free-space check today; <strong>notifications</strong> already adapt wording by BTRFS profile class (mirror vs RAID5/6 vs RAID10 vs no redundancy). Profile-aware <em>suggested</em> thresholds are planned—see docs.
+
+<blockquote class="inline_help">
+<strong>RAID1 / multi-mirror:</strong> losing one disk usually still leaves your data on remaining copies—free space is more about rebuild/rebalance after replace, not “evacuate like the array.”<br>
+<strong>RAID5/6:</strong> free space is closer to recovery headroom after a failure (rebalance/replace).<br>
+<strong>RAID10:</strong> one failure often OK for data; restoring full redundancy may need free space.<br>
+<strong>single/RAID0:</strong> free thresholds are capacity policy only—disk loss risks data.
+</blockquote>
+
 _(Color pool free space on Main?)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
   <?=mk_option($pool_coloring, "yes", _("Yes"))?>
