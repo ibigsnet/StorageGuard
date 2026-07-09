@@ -162,6 +162,10 @@
     return (tr && tr.textContent ? tr.textContent : '').toLowerCase();
   }
 
+  function isPoolOfDevicesRow(tr) {
+    return /pool of\s/.test(rowText(tr));
+  }
+
   function isTotalsOnlyRow(tr) {
     var t = rowText(tr);
     return /pool of\s/.test(t) || /array of\s/.test(t);
@@ -235,12 +239,25 @@
     var seen = {};
     function add(el) {
       if (!el || seen[el.id || el]) return;
+      // Never treat the array table/tbody as a pool root (would wipe array free-bar paint)
+      if (el.id === 'array_devices' || el.id === 'array_list') return;
+      if (el.querySelector && el.querySelector('#array_devices')) return;
       seen[el.id || el] = true;
       list.push(el);
     }
     document.querySelectorAll('[id^="pool_device"]').forEach(add);
     add(document.getElementById('boot_device'));
-    document.querySelectorAll('.TableContainer table.disk_status').forEach(add);
+    // Fallback tables — skip any that are the array section
+    document.querySelectorAll('.TableContainer table.disk_status').forEach(function (el) {
+      if (el.id === 'array_devices' || (el.querySelector && el.querySelector('#array_devices'))) return;
+      // Parent section often labeled Array Devices
+      var wrap = el.closest ? el.closest('.TableContainer, .tabs, #tab1, #array') : null;
+      var label = wrap ? (wrap.textContent || '').slice(0, 80).toLowerCase() : '';
+      if (/^[\s]*array devices/.test(label) || (el.previousElementSibling && /array devices/i.test(el.previousElementSibling.textContent || ''))) {
+        // still allow if it also has pool devices — rare; prefer id filters above
+      }
+      add(el);
+    });
     return list;
   }
 
@@ -309,8 +326,10 @@
 
     for (var r = 0; r < roots.length; r++) {
       var root = roots[r];
+      // Strip paint only from pool totals / boot summary — never the array totals row
       root.querySelectorAll('tr').forEach(function (tr) {
-        if (isTotalsOnlyRow(tr) || isBootSummaryRow(tr)) clearPaint(tr);
+        if (isArrayOfDevicesRow(tr)) return;
+        if (isPoolOfDevicesRow(tr) || isBootSummaryRow(tr)) clearPaint(tr);
       });
 
       var names = namesInRoot(root);
@@ -331,6 +350,8 @@
       });
 
       if (!prow) continue;
+      // Safety: never paint pool status onto the array totals row
+      if (isArrayOfDevicesRow(prow)) continue;
       matched[key] = true;
       paintTarget(prow, st, opts);
     }
