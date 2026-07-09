@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09s">
+<!ENTITY version "2026.07.09t">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -30,7 +30,10 @@
 
 <CHANGES>
 ###&version;
-- Slim README to short ####Storage Guard#### Plugins-list blurb only; full docs stay in DOCS.md.
+- README is Plugins-page blurb only (####Name#### + one short paragraph), matching CA/FCP/User Scripts. Full docs in DOCS.md.
+
+###2026.07.09s
+- Slim README attempt (still too long for Plugins list).
 
 ###2026.07.09r
 - Fix Plugins list description and README layout for Unraid (####Name#### blurb).
@@ -156,7 +159,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09s"
+[ -z "$VER" ] && VER="2026.07.09t"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

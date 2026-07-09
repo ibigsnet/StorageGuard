@@ -2,7 +2,13 @@
 
 How thresholds, Main-tab coloring, and alerts work—plus examples for the array and BTRFS pools.
 
-Install URL and the short Plugins-page blurb are in [README.md](README.md). This file is the full documentation.
+**Install:** Plugins → Install Plugin →  
+`https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg`
+
+**Support / source:** [github.com/ibigsnet/StorageGuard](https://github.com/ibigsnet/StorageGuard)  
+**Support development:** [Patreon](https://www.patreon.com/cw/IBIGSNet) · [PayPal](https://www.paypal.com/paypalme/RifleJock)
+
+`README.md` is only the short Unraid Plugins-list blurb (`####Name####` + one paragraph)—that is Unraid’s convention, not full documentation. This file is the full documentation.
 
 ---
 
