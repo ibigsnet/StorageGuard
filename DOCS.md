@@ -57,7 +57,7 @@ Example array (data only): 8T, 8T, 8T, 4T, 2T
 - **Warning = 8T** — free space is less than one large disk; replacing/evacuating a large disk may force a purchase  
 - **Critical = 2T** — free space is less than your smallest data disk; even a small failure may leave no room to move data  
 
-You can set Critical higher (e.g. 4T) if a particular drive worries you and you want an earlier red flag.
+You can set Critical higher (e.g. 4T) if a particular drive worries you and you want an earlier red flag—or to match the **combined size of a few questionable drives**, so free space still covers evacuating more than one at-risk disk.
 
 ### Custom values
 
