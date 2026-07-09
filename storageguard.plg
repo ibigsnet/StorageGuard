@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09v">
+<!ENTITY version "2026.07.09w">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,12 +24,15 @@
   pluginURL="&pluginURL;"
   icon="shield"
   min="6.12.0"
-  support="https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/"
+  support="https://github.com/&github;"
   project="https://github.com/&github;"
   readme="https://raw.githubusercontent.com/&github;/main/README.md">
 
 <CHANGES>
 ###&version;
+- support URL back to GitHub for now; Unraid forum later.
+
+###2026.07.09v
 - support URL set to Unraid forum thread (topic 199796). project remains GitHub.
 
 ###2026.07.09u
@@ -177,7 +180,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09v"
+[ -z "$VER" ] && VER="2026.07.09w"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
