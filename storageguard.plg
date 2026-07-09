@@ -76,7 +76,16 @@ echo "StorageGuard: directories ready."
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: injecting Main-tab color CSS/JS into page layout..."
-VER="2026.07.06-16"
+# Prefer version from the .plg just downloaded (never hardcode — avoids drift)
+VER=""
+for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard.plg; do
+  if [ -f "$candidate" ]; then
+    VER=$(sed -n 's/.*ENTITY version "\([^"]*\)".*/\1/p' "$candidate" | head -1)
+    [ -n "$VER" ] && break
+  fi
+done
+[ -z "$VER" ] && VER="2026.07.06-16"
+echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
 for f in \
