@@ -90,7 +90,9 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 ---
 
-## Pool thresholds
+## Pool thresholds (WIP)
+
+> **Work in progress.** Pool free-space thresholds, Main coloring, and alerts are usable, but pool logic is still being refined (profile-aware suggested thresholds, multi-device free-bar targeting, etc.). Prefer the array path as the more settled behavior for now.
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
 

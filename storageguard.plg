@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09y">
+<!ENTITY version "2026.07.09z">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -30,6 +30,9 @@
 
 <CHANGES>
 ###&version;
+- Fix cache/pool free-bar flashing when pulse is off: solid color on parent disk cell (survives Main live DOM updates); paint pool total free only, not every member disk.
+
+###2026.07.09x
 - Recovery notifies: when free space rises above thresholds after warning/critical, send Unraid normal (green/OK) notification, similar to parity complete.
 
 ###2026.07.09w
@@ -183,7 +186,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09x"
+[ -z "$VER" ] && VER="2026.07.09y"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
