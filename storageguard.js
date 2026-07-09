@@ -1,4 +1,4 @@
-// Storage Guard settings UI — section show/hide + pool checkboxes
+// Storage Guard settings page — show/hide sections, custom thresholds, pool multi-select
 function initStorageGuardUI() {
   function setVisible(el, on) {
     if (!el) return;
@@ -24,6 +24,26 @@ function initStorageGuardUI() {
     updateArrayCustom();
   }
 
+  // Per-pool: custom vs disk sizes
+  function updatePoolCustom(safe) {
+    const sel = document.getElementById('pool_' + safe + '_use_custom');
+    if (!sel) return;
+    const isCustom = sel.value === 'yes';
+    setVisible(document.getElementById('pool-' + safe + '-disk-selects'), !isCustom);
+    setVisible(document.getElementById('pool-' + safe + '-custom-fields'), isCustom);
+    const w = document.getElementById('pool_' + safe + '_warning');
+    const c = document.getElementById('pool_' + safe + '_critical');
+    if (w) w.disabled = !!isCustom;
+    if (c) c.disabled = !!isCustom;
+  }
+
+  document.querySelectorAll('.pool-use-custom').forEach(function (sel) {
+    const safe = sel.getAttribute('data-pool-safe');
+    if (!safe) return;
+    sel.addEventListener('change', function () { updatePoolCustom(safe); });
+    updatePoolCustom(safe);
+  });
+
   // Coloring Yes/No → hide details for that block
   function wireSectionToggle(selectId) {
     const sel = document.getElementById(selectId);
@@ -34,6 +54,12 @@ function initStorageGuardUI() {
       const on = sel.value === 'yes';
       setVisible(section, on);
       if (on && selectId === 'array_coloring') updateArrayCustom();
+      if (on && selectId === 'pool_coloring') {
+        document.querySelectorAll('.pool-use-custom').forEach(function (s) {
+          const safe = s.getAttribute('data-pool-safe');
+          if (safe) updatePoolCustom(safe);
+        });
+      }
     }
     sel.addEventListener('change', apply);
     apply();
@@ -85,7 +111,8 @@ function initStorageGuardUI() {
       updatePoolsHidden();
       // Re-enable fields so hidden section values still POST
       form.querySelectorAll('select:disabled, input:disabled').forEach(el => {
-        if (el.closest('.sg-details') || el.id === 'array_warning' || el.id === 'array_critical') {
+        if (el.closest('.sg-details') || el.classList.contains('pool-size-select') ||
+            el.id === 'array_warning' || el.id === 'array_critical') {
           el.disabled = false;
         }
       });

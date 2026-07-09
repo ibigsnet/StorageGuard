@@ -1,7 +1,6 @@
 <?php
-// Storage Guard - Alert checker
-// Per-target warning/critical: alerts_array_*, alerts_pool_<name>_*
-// No master switch — if neither severity is yes for a target, it is silent.
+// Storage Guard — send Unraid notifications when free space hits a threshold.
+// Per-target flags: alerts_array_*, alerts_pool_<name>_* (nothing set = silent).
 
 header('Content-Type: application/json');
 
@@ -61,7 +60,7 @@ function sg_parse_to_tb($str) {
     return $num;
 }
 
-/** Same order-independent free-space logic as get-config.php */
+/** Same free-space level logic as get-config.php */
 function sg_level($free_tb, $warn_tb, $crit_tb) {
     if ($free_tb === null) return 'ok';
     $w = ($warn_tb > 0) ? (float)$warn_tb : null;
@@ -115,6 +114,26 @@ function sg_array_thresholds($cfg) {
     ];
 }
 
+function sg_pool_thresholds($cfg, $safe) {
+    $use_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
+    if ($use_custom) {
+        return [
+            'warn' => sg_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? ''),
+            'crit' => sg_parse_to_tb($cfg["pool_{$safe}_critical_custom"] ?? ''),
+            'warn_label' => $cfg["pool_{$safe}_warning_custom"] ?? '',
+            'crit_label' => $cfg["pool_{$safe}_critical_custom"] ?? '',
+            'custom' => true,
+        ];
+    }
+    return [
+        'warn' => sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? ''),
+        'crit' => sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? ''),
+        'warn_label' => $cfg["pool_{$safe}_warning"] ?? '',
+        'crit_label' => $cfg["pool_{$safe}_critical"] ?? '',
+        'custom' => false,
+    ];
+}
+
 $sent = [];
 $array_free = sg_get_array_free_tb();
 
@@ -153,10 +172,12 @@ if ($arr_warn_on || $arr_crit_on) {
 }
 
 // --- Pools (from threshold keys + per-pool alert flags) ---
+$seen_pools = [];
 foreach ($cfg as $k => $v) {
-    if (!preg_match('/^pool_([a-zA-Z0-9_]+)_warning$/', $k, $m)) continue;
+    if (!preg_match('/^pool_([a-zA-Z0-9_]+)_(warning|warning_custom)$/', $k, $m)) continue;
     $safe = $m[1];
-    // Display name is usually same as safe for simple pool names
+    if (isset($seen_pools[$safe])) continue;
+    $seen_pools[$safe] = true;
     $pname = $safe;
 
     $warn_key = "alerts_pool_{$safe}_warning";
@@ -176,18 +197,21 @@ foreach ($cfg as $k => $v) {
     if (!$p_warn_on && !$p_crit_on) continue;
 
     $pool_free = sg_get_pool_free_tb($pname);
-    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? '');
-    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? '');
-    $level = sg_level($pool_free, $warn, $crit);
+    $th = sg_pool_thresholds($cfg, $safe);
+    $level = sg_level($pool_free, $th['warn'], $th['crit']);
     if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$p_warn_on) $level = 'ok';
 
     if ($level === 'critical' && sg_should_send("pool_{$safe}_critical")) {
-        $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below critical threshold. Rebalance after a drive failure may not fit.";
+        $msg = $th['custom']
+            ? "Custom critical threshold {$th['crit_label']}. Pool '{$pname}' free space is " . round($pool_free, 1) . " TB."
+            : "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below critical threshold {$th['crit_label']}. Rebalance after a drive failure may not fit.";
         sg_send_notify("Pool {$pname} Critical", $msg, 'alert');
         $sent[] = "pool_{$safe}_critical";
     } elseif ($level === 'warning' && sg_should_send("pool_{$safe}_warning")) {
-        $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below warning threshold.";
+        $msg = $th['custom']
+            ? "Custom warning threshold {$th['warn_label']}. Pool '{$pname}' free space is " . round($pool_free, 1) . " TB."
+            : "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below warning threshold {$th['warn_label']}.";
         sg_send_notify("Pool {$pname} Warning", $msg, 'warning');
         $sent[] = "pool_{$safe}_warning";
     }

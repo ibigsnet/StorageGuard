@@ -1,15 +1,19 @@
-// Storage Guard — color Free usage-bar fill only.
-// Array: "Array of N devices" totals Free bar.
-// Pool: Data Partition Free bar (NOT "Pool of N devices", NOT Internal Boot).
-// Supports pools-only + internal-boot-on-cache (Unraid 7 boot partition scheme).
+// Storage Guard — paint Free bars on Main.
+// Array: "Array of N devices" free bar.
+// Pool: Data Partition free bar (not "Pool of N devices", not Internal Boot).
 
 (function () {
   'use strict';
 
   var lastStatus = null;
-  var lastStyle = 'outline'; // outline | solid
   var BAR_WARN = '#ffc107';
   var BAR_CRIT = '#e53935';
+
+  function resolveStyle(obj, fallback) {
+    if (obj && obj.style === 'solid') return 'solid';
+    if (obj && obj.style === 'outline') return 'outline';
+    return fallback === 'solid' ? 'solid' : 'outline';
+  }
 
   function log() {
     if (window.StorageGuardDebug) {
@@ -248,21 +252,19 @@
     return null;
   }
 
-  function applyStatus(status, style) {
+  function applyStatus(status) {
     if (!status) return;
     lastStatus = status;
-    if (style) lastStyle = style === 'solid' ? 'solid' : 'outline';
     if (!onMainLikePage()) {
       log('not on Main');
       return;
     }
-    var mode = lastStyle;
 
     // --- Array (skipped when array_coloring=no or pools-only) ---
     var arow = findArrayFreeRow();
     if (arow) {
       if (status.array && status.array.enabled && (status.array.level === 'warning' || status.array.level === 'critical')) {
-        paintFreeBar(arow, status.array.level, mode);
+        paintFreeBar(arow, status.array.level, resolveStyle(status.array, 'outline'));
       } else {
         clearPaint(arow);
       }
@@ -288,12 +290,14 @@
       if (!st) continue;
 
       var prow = findPoolDataFreeRow(root);
+      var pStyle = resolveStyle(st, 'outline');
       log('pool match', {
         root: root.id || root.className,
         key: key,
         names: names,
         level: st.level,
         enabled: st.enabled,
+        style: pStyle,
         foundRow: !!(prow),
         rowHint: prow ? rowText(prow).slice(0, 80) : null
       });
@@ -302,23 +306,24 @@
       matched[key] = true;
 
       if (st.enabled && (st.level === 'warning' || st.level === 'critical')) {
-        paintFreeBar(prow, st.level, mode);
+        paintFreeBar(prow, st.level, pStyle);
       } else {
         clearPaint(prow);
       }
     }
 
-    // Last resort: one critical pool, paint any unmatched Data Partition free bar on Main
+    // Last resort: paint any unmatched Data Partition free bar on Main
     Object.keys(pools).forEach(function (pk) {
       if (matched[pk]) return;
       var st = pools[pk];
       if (!st || !st.enabled || (st.level !== 'warning' && st.level !== 'critical')) return;
+      var pStyle = resolveStyle(st, 'outline');
       document.querySelectorAll('tr').forEach(function (tr) {
         if (matched[pk]) return;
         if (!isDataPartitionRow(tr) && rowText(tr).indexOf(pk.toLowerCase()) === -1) return;
         if (isBootSummaryRow(tr) || isTotalsOnlyRow(tr)) return;
         if (!freeUsageDisk(tr)) return;
-        if (paintFreeBar(tr, st.level, mode)) {
+        if (paintFreeBar(tr, st.level, pStyle)) {
           matched[pk] = true;
           log('last-resort paint', pk, rowText(tr).slice(0, 60));
         }
@@ -334,9 +339,8 @@
       })
       .then(function (data) {
         if (!data || !data._status) return;
-        var style = (data.color_style === 'solid') ? 'solid' : 'outline';
-        log('status', data._status, 'style', style);
-        applyStatus(data._status, style);
+        log('status', data._status);
+        applyStatus(data._status);
         fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
       })
       .catch(function (err) {
@@ -347,13 +351,13 @@
   function boot() {
     fetchAndApply();
     setInterval(function () {
-      if (lastStatus) applyStatus(lastStatus, lastStyle);
+      if (lastStatus) applyStatus(lastStatus);
     }, 1200);
     setInterval(fetchAndApply, 12000);
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
-        if (lastStatus) applyStatus(lastStatus, lastStyle);
+        if (lastStatus) applyStatus(lastStatus);
       });
       var main = document.getElementById('content') || document.body;
       obs.observe(main, { childList: true, subtree: true });
@@ -376,5 +380,5 @@
       fetchAndApply();
     }
   };
-  console.log('Storage Guard color injector ready (outline default / solid optional)');
+  console.log('Storage Guard: Main free-bar coloring ready');
 })();
