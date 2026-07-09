@@ -24,8 +24,8 @@
 
 <CHANGES>
 ###&version;
-- CRITICAL: inject color JS/CSS into HeadInlineJS.php (Unraid 7 never loads HeadInclude.php — coloring never ran).
-- Clean legacy HeadInclude stubs; versioned script URLs.
+- Color free-space *bars* (not whole row); stronger pool DOM matching for pools-only systems.
+- Inject into HeadInlineJS.php (Unraid 7).
 
 ###2026.07.06-5
 - Run block CDATA formatting.
@@ -76,7 +76,7 @@ echo "StorageGuard: directories ready."
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: injecting Main-tab color CSS/JS into page layout..."
-VER="2026.07.06-14"
+VER="2026.07.06-15"
 
 # Strip any prior Storage Guard tags from known include sites
 for f in \
