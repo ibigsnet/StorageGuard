@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09o">
+<!ENTITY version "2026.07.09p">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,28 +34,73 @@
 
 <CHANGES>
 ###&version;
-- Product defaults: Array Warning=largest disk; pool free thresholds None; Array Warning alert only.
+- Restore full rolling CHANGES history (keep every letter).
+- Deploy via GitHub plugin install/update only (no scp of .plg).
+
+###2026.07.09o
+- Fix Open pool link (markdown left PHP unparsed in the URL).
+
+###2026.07.09n
+- Product defaults via sg_defaults=1: Array Warning=largest disk; pool free thresholds None; alerts=Array Warning only (not critical, not pool).
 
 ###2026.07.09m
-- Dynamic array notifications; pool profile-class messages; docs catalog.
+- Dynamic array notifications (name disks matching threshold; evacuate-room wording).
+- Pool notifications by BTRFS profile class (mirror vs parity vs RAID10 vs none).
+- DOCS: notification catalog, pool scenarios, planned features.
 
 ###2026.07.09l
-- Green OK state; threshold order notice; severity by free-space amount.
+- Docs/settings: green OK state; notice if Critical free amount is higher than Warning.
+- Severity always by free-space amount (lower free = critical).
 
 ###2026.07.09k
-- Array Warning default largest disk; pool thresholds None; alerts Array Warning only.
+- Defaults: Array Warning = largest data disk; pool thresholds None.
+- Alerts default: Array Warning only (critical and all pool alerts off).
 
 ###2026.07.09j
-- Fix array free-bar paint cleared by pool-root walks.
+- Fix array free-bar paint wiped by pool-root walks (Array of N devices row).
+- Solid default; optional outline pulse; optional green outline when free space OK.
 
 ###2026.07.09i
-- Solid default; optional outline pulse; optional green when OK.
+- Solid is default highlight style; Outline pulse is optional (off by default).
+- Optional green outline when free space is OK (Outline only, off by default).
+- Fix outline pulse thrashing (re-paint only when status changes).
+
+###2026.07.09h
+- Docs and settings copy cleanup (README, DOCS, UI help text).
+- Alerts: checkbox matrix restored (Warning/Critical per target).
+- Clearer free-space wording (any unit, not TB only).
+- Per-block styles and pool custom thresholds already from prior letters; packaging/docs polish.
+
+###2026.07.09g
+- Per-block Outline/Solid: Array and each pool independently.
+- Custom free-space values for pools (same as array: 1.5T, 500G, 7.5T, etc.).
+- Friendlier custom placeholders/examples.
+
+###2026.07.09f
+- Settings cleanup: uniform Array/Pools layout; hide details when coloration is No.
+- Threshold None option; default Warning=largest disk, Critical=None.
+- Outline/solid highlight style (global, later made per-block).
+
+###2026.07.09e
+- Only re-fetch assets if color.js stale (avoid CDN overwrite).
+
+###2026.07.09d
+- Outline (default pulse) or solid free-bar highlight style.
+
+###2026.07.09c
+- Order-independent thresholds + cleaner settings layout.
+
+###2026.07.09b
+- Boot-pool Data Partition coloring + asset re-fetch.
+
+###2026.07.09a
+- Fix pool coloring for internal-boot-on-cache / pools-only.
 
 ###2026.07.09
-- Free-bar coloring on Main; HeadInlineJS inject.
+- Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
 
 ###2026.07.06
-- Initial public development series.
+- Initial public development series (array/pool thresholds, alerts, Plugins metadata).
 </CHANGES>
 
 <!-- Ensure directories exist (do NOT wipe emhttp dir here — files land next) -->
@@ -111,7 +156,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09n"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09p"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
