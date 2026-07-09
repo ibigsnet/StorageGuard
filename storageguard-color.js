@@ -16,7 +16,8 @@
   function resolveStyle(obj, fallback) {
     if (obj && obj.style === 'outline') return 'outline';
     if (obj && obj.style === 'solid') return 'solid';
-    return fallback === 'outline' ? 'outline' : 'solid';
+    // Product default is outline when status omits style
+    return fallback === 'solid' ? 'solid' : 'outline';
   }
 
   function log() {
@@ -96,7 +97,7 @@
 
   /**
    * Paint free bar for level: ok | warning | critical
-   * style: solid (default) | outline
+   * style: outline (default) | solid
    * opts: { pulse, showOk }
    */
   function paintFreeBar(tr, level, style, opts) {
@@ -104,7 +105,7 @@
     opts = opts || {};
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
-    style = style === 'outline' ? 'outline' : 'solid';
+    style = style === 'solid' ? 'solid' : 'outline';
 
     // Nothing to draw for OK unless outline + show healthy
     if (level === 'ok') {
@@ -344,7 +345,7 @@
       clearPaint(tr);
       return;
     }
-    var style = resolveStyle(st, 'solid');
+    var style = resolveStyle(st, 'outline');
     var level = st.level || 'ok';
     paintFreeBar(tr, level, style, opts);
   }
@@ -390,7 +391,7 @@
         key: key,
         level: st.level,
         enabled: st.enabled,
-        style: resolveStyle(st, 'solid'),
+        style: resolveStyle(st, 'outline'),
         foundRow: !!prow
       });
 
@@ -409,7 +410,7 @@
       var st = pools[pk];
       if (!st || !st.enabled) return;
       if (st.level !== 'warning' && st.level !== 'critical' &&
-          !(st.level === 'ok' && opts.showOk && resolveStyle(st, 'solid') === 'outline')) {
+          !(st.level === 'ok' && opts.showOk && resolveStyle(st, 'outline') === 'outline')) {
         return;
       }
       var candidates = [];
@@ -426,7 +427,7 @@
           candidates.push(tr);
         }
       });
-      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'solid'), opts)) {
+      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'outline'), opts)) {
         matched[pk] = true;
       }
     });

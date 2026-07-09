@@ -169,8 +169,8 @@ Each target (array, and every pool) has its own style:
 
 | Style | Effect |
 |--------|--------|
-| **Solid** (default) | Free bar **fill** becomes yellow or red when a threshold is hit. Healthy = normal Unraid fill (no green fill paint). |
-| **Outline** | Keeps the normal free fill; draws a **border** for status |
+| **Outline** (default) | Keeps the normal free fill; draws a **border** for status (yellow/red; optional green when OK) |
+| **Solid** | Free bar **fill** becomes yellow or red when a threshold is hit. Healthy = normal Unraid fill (no green fill paint). |
 
 **Outline-only options** (global; ignored for Solid):
 

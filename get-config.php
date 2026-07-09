@@ -51,11 +51,11 @@ function sg_level($free_tb, $warn_tb, $crit_tb) {
   return 'ok';
 }
 
-/** solid (default) | outline — per target; falls back to legacy color_style */
+/** outline (default) | solid — per target; falls back to legacy color_style */
 function sg_style($cfg, $key) {
-  $legacy = $cfg['color_style'] ?? 'solid';
+  $legacy = $cfg['color_style'] ?? 'outline';
   $s = $cfg[$key] ?? $legacy;
-  return ($s === 'outline') ? 'outline' : 'solid';
+  return ($s === 'solid') ? 'solid' : 'outline';
 }
 
 /** Largest array data disk size in TB (decimal), or 0 if none. */
