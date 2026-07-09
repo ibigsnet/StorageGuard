@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09z">
+<!ENTITY version "2026.07.10">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -30,6 +30,12 @@
 
 <CHANGES>
 ###&version;
+- Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
+
+###2026.07.09z
+- Settings/docs: mark Pools section as WIP while pool logic is still being refined.
+
+###2026.07.09y
 - Fix cache/pool free-bar flashing when pulse is off: solid color on parent disk cell (survives Main live DOM updates); paint pool total free only, not every member disk.
 
 ###2026.07.09x
@@ -186,7 +192,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09y"
+[ -z "$VER" ] && VER="2026.07.10"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

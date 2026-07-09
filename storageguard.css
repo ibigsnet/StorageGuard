@@ -1,5 +1,19 @@
 /* Storage Guard — Free bar highlight styles + settings notices */
 
+/* Settings: advanced / WIP pools toggle */
+.sg-advanced-btn {
+  cursor: pointer;
+  padding: 6px 12px;
+  font-size: 0.95em;
+}
+.sg-pools-wip {
+  margin-top: 0.5em;
+  padding: 12px 14px;
+  border: 1px dashed #ff9800;
+  border-radius: 4px;
+  background: rgba(255, 152, 0, 0.06);
+}
+
 /* Settings: unusual Warning/Critical free-space order */
 .sg-order-note {
   margin: 0.75em 0 1em;

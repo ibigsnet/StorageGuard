@@ -260,6 +260,42 @@ function initStorageGuardUI() {
   });
   updateOrderNote();
 
+  // Advanced: pool settings (WIP) hidden by default — array is primary
+  (function wirePoolsWipToggle() {
+    var btn = document.getElementById('sg-toggle-pools-wip');
+    var panel = document.getElementById('sg-pools-wip');
+    var hint = document.getElementById('sg-pools-wip-hint');
+    if (!btn || !panel) return;
+    var key = 'sg_show_pools_wip';
+    function setOpen(open) {
+      panel.style.display = open ? '' : 'none';
+      document.querySelectorAll('.sg-pool-alert-row').forEach(function (tr) {
+        tr.style.display = open ? '' : 'none';
+      });
+      btn.textContent = open
+        ? 'Hide advanced pool settings (WIP)'
+        : 'Show advanced pool settings (WIP)…';
+      if (hint) hint.style.display = open ? 'none' : '';
+      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) { /* ignore */ }
+      if (open) {
+        var pc = document.getElementById('pool_coloring');
+        if (pc && pc.value === 'yes') {
+          document.querySelectorAll('.pool-use-custom').forEach(function (s) {
+            var safe = s.getAttribute('data-pool-safe');
+            if (safe) updatePoolCustom(safe);
+          });
+        }
+        updateOrderNote();
+      }
+    }
+    var saved = false;
+    try { saved = localStorage.getItem(key) === '1'; } catch (e) { /* ignore */ }
+    setOpen(saved);
+    btn.addEventListener('click', function () {
+      setOpen(panel.style.display === 'none');
+    });
+  })();
+
   const form = document.getElementById('storageguard-form');
   if (form) {
     form.addEventListener('submit', function () {

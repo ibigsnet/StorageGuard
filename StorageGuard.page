@@ -288,7 +288,7 @@ Set free-space thresholds for Main. Thresholds are **remaining free space** (how
 **Usual order:** Warning = larger free amount (earlier heads-up), Critical = **smaller** free amount (more severe).  
 If both are set, the plugin always uses **severity by free-space amount**: the **lower** free amount is treated as critical (red), the **higher** as warning (yellow)—even if you assign the numbers the other way around. A notice appears below if Critical is set higher than Warning.
 
-Highlight style is chosen **separately** for the array and for each pool. **Solid** (default) recolors the free fill yellow/red. **Outline** keeps Unraid’s fill and draws a border (yellow/red, optional pulse; optional green when still OK).
+Highlight style is for the **array** (primary focus of this plugin). **Solid** (default) recolors the free fill yellow/red. **Outline** keeps Unraid’s fill and draws a border (yellow/red, optional pulse; optional green when still OK). Pool options are under Advanced (WIP).
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
@@ -341,7 +341,7 @@ _(Array highlight style)_:
 <blockquote class="inline_help">
 <strong>Solid</strong> recolors the free fill yellow/red when thresholds are hit.<br>
 <strong>Outline</strong> keeps the normal fill and adds a border (pulse / green-when-OK are the global Outline options above).<br>
-Applies only to the <strong>array</strong>. Each pool has its own style.
+Applies to the <strong>array</strong> free bar on Main.
 </blockquote>
 
 _(Array thresholds from)_:
@@ -394,9 +394,67 @@ Remaining free space for each level (<code>1.5T</code>, <code>7.5T</code>, <code
 
 ---
 
-### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span>
+### Alerts
 
-> **Work in progress.** Pool free-space thresholds, Main coloring, and alerts work, but pool logic is still evolving (profile-aware threshold suggestions, multi-device free-bar targeting, etc.). Expect refinements. Array behavior is the stable path for now.
+Unraid notifications when free space crosses a threshold. <strong>Independent of Main coloring.</strong> Nothing checked = no alerts. <strong>Primary focus: the array.</strong>
+
+<div style="margin:0.5em 0 1em; overflow-x:auto;">
+<table class="tablesorter" style="width:auto; min-width:320px;">
+<thead>
+<tr>
+  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
+  <th style="padding:4px 12px; text-align:center;">Warning</th>
+  <th style="padding:4px 12px; text-align:center;">Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no data disks)</span>' ?></td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_warning" value="no">
+    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_critical" value="no">
+    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+  </td>
+</tr>
+<?php foreach ($pool_alert_cfg as $p => $ac): ?>
+<tr class="sg-pool-alert-row" style="display:none">
+  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars($p)?> <span style="color:#888;font-size:0.85em;">(pool · WIP)</span></td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+</tr>
+<?php endforeach; ?>
+<?php if (!$has_array_disks && empty($pool_alert_cfg)): ?>
+<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected.</td></tr>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+
+<blockquote class="inline_help">
+Uses the free-space thresholds above (including custom values). Default: Array Warning only. Pool alert rows appear when you open Advanced pool settings (WIP).
+</blockquote>
+
+---
+
+<p style="margin:1.25em 0 0.75em;">
+  <button type="button" id="sg-toggle-pools-wip" class="sg-advanced-btn">Show advanced pool settings (WIP)…</button>
+  <span id="sg-pools-wip-hint" style="margin-left:0.75em;color:#888;font-size:0.9em;">Hidden by default — plugin focus is the array.</span>
+</p>
+
+<div id="sg-pools-wip" class="sg-pools-wip" style="display:none" markdown="1">
+
+### Pools <span style="color:#ff9800;font-weight:600;">(WIP — advanced)</span>
+
+> <strong>Work in progress — not the primary product path.</strong> Pool free-space thresholds, Main coloring, and alerts are experimental. Logic is still evolving (profile-aware suggestions, multi-device free-bar targeting, etc.). Prefer the <strong>array</strong> settings above for production use. Defaults leave pools inactive (thresholds None, pool alerts off).
 
 Pool names come from your server. Unraid often defaults the first pool to <strong>cache</strong>, but every pool—including the first—can be named however you like.
 
@@ -523,57 +581,7 @@ Remaining free space for this pool (<code>1.5T</code>, <code>7.5T</code>, <code>
 <?php endforeach; ?>
 
 </div>
-
----
-
-### Alerts
-
-Unraid notifications when free space crosses a threshold. **Independent of Main coloring.** Nothing checked = no alerts.
-
-<div style="margin:0.5em 0 1em; overflow-x:auto;">
-<table class="tablesorter" style="width:auto; min-width:320px;">
-<thead>
-<tr>
-  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
-  <th style="padding:4px 12px; text-align:center;">Warning</th>
-  <th style="padding:4px 12px; text-align:center;">Critical</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no data disks)</span>' ?></td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_array_warning" value="no">
-    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
-  </td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_array_critical" value="no">
-    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
-  </td>
-</tr>
-<?php foreach ($pool_alert_cfg as $p => $ac): ?>
-<tr>
-  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars($p)?> <span style="color:#888;font-size:0.85em;">(pool)</span></td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-</tr>
-<?php endforeach; ?>
-<?php if (empty($pool_alert_cfg) && !$has_array_disks): ?>
-<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected.</td></tr>
-<?php endif; ?>
-</tbody>
-</table>
-</div>
-
-<blockquote class="inline_help">
-Uses the free-space thresholds above (including custom values). Check Warning and/or Critical per target. Example: Array warning only; a pool both warning and critical.
-</blockquote>
+</div><!-- /#sg-pools-wip -->
 
 <input type="submit" name="#default" value="_(Default)_">
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
