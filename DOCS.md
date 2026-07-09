@@ -106,7 +106,7 @@ For each pool you can:
 - Use **member disk sizes** or **custom free-space values**  
 - Enable Warning / Critical **alerts** separately  
 
-**Defaults:** Warning = **None**, Critical = **None** (pools are opt-in; set thresholds only if you want pool coloring/alerts).
+**Defaults:** Main pool coloring = **No**; Warning = **None**, Critical = **None** (pools are opt-in — turn on coloring and set thresholds only when you want them).
 
 ### Why free space matters on BTRFS pools
 

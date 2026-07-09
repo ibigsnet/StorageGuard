@@ -345,8 +345,8 @@ function initStorageGuardUI() {
     else setCheckbox('alerts_array_warning', false);
     setCheckbox('alerts_array_critical', false);
 
-    // Pools: coloring on, all pools, thresholds None, style outline, alerts off
-    setSelect('pool_coloring', 'yes');
+    // Pools: coloring off by default; thresholds None, style outline, alerts off
+    setSelect('pool_coloring', 'no');
     if (poolAll) {
       poolAll.checked = true;
       poolAll.indeterminate = false;

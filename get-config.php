@@ -99,7 +99,7 @@ if ($use_custom) {
 }
 
 $array_coloring = ($cfg['array_coloring'] ?? 'yes') === 'yes';
-$pool_coloring = ($cfg['pool_coloring'] ?? 'yes') === 'yes';
+$pool_coloring = ($cfg['pool_coloring'] ?? 'no') === 'yes';
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';
 $array_style = sg_style($cfg, 'array_color_style');
 

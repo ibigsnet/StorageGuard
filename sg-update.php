@@ -89,7 +89,7 @@ $default['array_color_style'] = 'outline';
 $default['array_coloring'] = 'yes';
 $default['outline_pulse'] = 'no';
 $default['outline_show_ok'] = 'no';
-$default['pool_coloring'] = 'yes';
+$default['pool_coloring'] = 'no';
 $default['pools_to_color'] = 'all';
 $default['alerts_array_warning'] = $largest_warn !== '' ? 'yes' : 'no';
 $default['alerts_array_critical'] = 'no';

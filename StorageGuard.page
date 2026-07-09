@@ -217,7 +217,7 @@ if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
 }
 
 $array_coloring = $cfg['array_coloring'] ?? 'yes';
-$pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
+$pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'no';
 $array_color_style = sg_resolve_style($cfg, 'array_color_style');
 $outline_pulse = (($cfg['outline_pulse'] ?? 'no') === 'yes') ? 'yes' : 'no';
 $outline_show_ok = (($cfg['outline_show_ok'] ?? 'no') === 'yes') ? 'yes' : 'no';

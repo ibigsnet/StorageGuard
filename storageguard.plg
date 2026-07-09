@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.09ze">
+<!ENTITY version "2026.07.09zf">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Pool free-space coloring on Main defaults to No (array coloring still Yes). Opt in under Advanced pools when ready.
+
+###2026.07.09ze
 - Outline wording: border only (free fill unchanged), not “keep free fill…”. Solid = recolor fill. Docs + CSS comments match.
 - Verify pulse vs solid: pulse/green-OK are Outline-only; solid never pulses; soft re-apply without clearPaint to avoid flash/pulse restart.
 
@@ -216,7 +219,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09ze"
+[ -z "$VER" ] && VER="2026.07.09zf"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
