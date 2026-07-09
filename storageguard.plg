@@ -3,12 +3,17 @@
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
 <!--
-  Versioning — Unraid plugin updates use strcmp() (lexicographic), NOT version_compare:
-    YYYY.MM.DD      first release that calendar day
-    YYYY.MM.DDa     2nd same day (b, c, ... z)
-    YYYY.MM.DDza    after z (then zb ... zz, then zza, zzb, ...)
-  Do NOT use aa after z — strcmp treats "aa" as OLDER than "z" (no update offered).
-  Next calendar day YYYY.MM.DD+1 always works. No hyphens. Bump only this entity.
+  Versioning — Unraid plugin updates use strcmp() (lexicographic), NOT version_compare.
+  No hyphens. Bump only this entity; asset ?v= uses it.
+
+  Going forward (new calendar days):
+    YYYY.MM.DD       first release that day
+    YYYY.MM.DDaa     2nd same day, then ab, ac, ... az, ba, bb, ...
+  Two-letter only after the bare date — never single a–z on new days (avoids the
+  z-then-aa trap: strcmp treats "aa" as older than "z").
+
+  Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
+  after z (update would not be offered).
 -->
 <!ENTITY version "2026.07.09zb">
 <!ENTITY launch "Settings/StorageGuard">
