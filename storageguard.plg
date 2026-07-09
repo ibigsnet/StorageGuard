@@ -3,12 +3,14 @@
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
 <!--
-  Versioning (Unraid convention):
-    YYYY.MM.DD       first release of that calendar day
-    YYYY.MM.DD-N     Nth same-day revision (1, 2, 3, …)
-  Always set this to *today's* date when you ship. Unraid compares versions
-  as strings — a newer calendar day must increase YYYY.MM.DD so plugin update works.
-  Bump only this entity; asset URLs use &version; automatically.
+  Versioning — match Unraid community / CA plugins (Squid, dlandon, etc.):
+    YYYY.MM.DD     first release of that calendar day
+    YYYY.MM.DDa    second release same day (then b, c, …)
+    YYYY.MM.DDgh   multi-letter ok when needed (e.g. CA style)
+
+  Do NOT use hyphen suffixes (2026.07.06-17) — not the community norm.
+  Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
+  Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
 <!ENTITY version "2026.07.09">
 <!ENTITY launch "Settings/StorageGuard">
@@ -32,7 +34,7 @@
 
 <CHANGES>
 ###&version;
-- Versioning: use real ship date YYYY.MM.DD (same-day revisions YYYY.MM.DD-N).
+- Versioning aligned with community: YYYY.MM.DD + letter same-day suffixes (a, b, …).
 - Color Free usage bars only; pool colors Data Partition row (not "Pool of N devices").
 - Inject color JS via HeadInlineJS.php (Unraid 7).
 

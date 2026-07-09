@@ -23,27 +23,31 @@ Paste this in Plugins → Install Plugin:
 https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg
 
 ## Versioning
-Unraid plugins use a **calendar version** (string-compared by the plugin manager):
+Unraid’s plugin manager string-compares the `version` attribute. The **community standard** (CA / Squid, dlandon, most popular plugins) is:
 
-| Form | Meaning |
-|------|---------|
-| `YYYY.MM.DD` | First release shipped that calendar day |
-| `YYYY.MM.DD-N` | Same-day revision (`-1`, `-2`, …) |
+| Form | Meaning | Real examples |
+|------|---------|----------------|
+| `YYYY.MM.DD` | First release that calendar day | `2025.07.29`, `2026.07.09` |
+| `YYYY.MM.DDa` | 2nd release same day | `2025.08.05a` (Unassigned Devices Plus) |
+| `YYYY.MM.DDb` … | Further same-day revs | `…b`, `…c`, … |
+| `YYYY.MM.DDgh` | Multi-letter same-day (optional) | `2026.05.15gh` (Community Applications) |
+
+**Do not use** hyphen builds like `2026.07.06-17` — that was our mistake and is not how the community versions plugins.
 
 **Rules when shipping:**
-1. Set `<!ENTITY version "…">` in `storageguard.plg` to **today’s date** (not the project-start date).
-2. Same day, another change → bump the `-N` suffix (`2026.07.09` → `2026.07.09-1`).
-3. Do not keep incrementing an old day (`2026.07.06-17` is wrong if you ship on 07.09).
-4. Asset `?v=` query strings and inject tags read that entity — bump only the entity.
+1. Set `<!ENTITY version "…">` in `storageguard.plg` to **today’s date** when you publish.
+2. First ship of the day → `2026.07.09`. Next ship same day → `2026.07.09a`, then `b`, …
+3. Next calendar day → new `YYYY.MM.DD` (letters reset).
+4. Bump **only** that entity; asset `?v=` URLs and the install inject script read it from the `.plg`.
 
-**Update on a server that already has the plugin** (preferred over remove/reinstall):
+**Update** (preferred over remove/reinstall):
 
 ```bash
 plugin check storageguard
 plugin update storageguard
 ```
 
-Or Plugins tab → check for updates → Update. Settings under `/boot/config/plugins/StorageGuard/` are kept.
+Or Plugins → check for updates → **Update**. Config stays in `/boot/config/plugins/StorageGuard/`.
 
 ## Usage Notes (Array)
 - Uniform disks (e.g. 3×26T data): both dropdowns show 26T.
