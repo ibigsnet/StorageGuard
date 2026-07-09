@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09t">
+<!ENTITY version "2026.07.09u">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -30,7 +30,10 @@
 
 <CHANGES>
 ###&version;
-- README is Plugins-page blurb only (####Name#### + one short paragraph), matching CA/FCP/User Scripts. Full docs in DOCS.md.
+- Plugins README is INLINE blurb only (**Name** + one paragraph), matching LXC/UD/Dynamix. Real Markdown on Plugins page; no ####Name####. Full docs in DOCS.md.
+
+###2026.07.09t
+- README blurb-only in repo; GitHub raw CDN still served long copy to some installs.
 
 ###2026.07.09s
 - Slim README attempt (still too long for Plugins list).
@@ -129,8 +132,20 @@ echo "StorageGuard: directories ready."
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
 <URL>&raw;/storageguard.js?v=&version;</URL>
 </FILE>
+<!--
+  Plugins page: Markdown(file_get_contents(README.md)) for the whole description.
+  Keep this to **Name** + one short paragraph (LXC / UD / Dynamix style).
+  INLINE so install never depends on a stale GitHub raw CDN README.
+  Repo README.md matches; full docs are DOCS.md.
+-->
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/README.md">
-<URL>&raw;/README.md?v=&version;</URL>
+<INLINE>
+<![CDATA[
+**Storage Guard**
+
+Free-space thresholds for your array and pools. Colors free bars on Main (and optional Unraid alerts) so you know before a drive fails whether you still have room to move data or rebalance.
+]]>
+</INLINE>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
 <URL>&raw;/storageguard.css?v=&version;</URL>
@@ -159,7 +174,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09t"
+[ -z "$VER" ] && VER="2026.07.09u"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
