@@ -266,19 +266,20 @@ foreach ($pool_names as $p) {
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
 
 <?php if (!empty($dev_mode)): ?>
-<p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — using example disk sizes (no /var/local/emhttp/disks.ini detected on this system).</p>
+<p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — example disk sizes (no disks.ini on this system).</p>
 <?php endif; ?>
 
-<p>
-Storage Guard enhances redundancy awareness: set free-space thresholds so you know <em>before</em> a drive fails whether you still have room to migrate data or rebalance—without an immediate replacement.
+<p style="margin-bottom:1em">
+Set <strong>free-space thresholds</strong> for the Main tab. When free space falls <em>at or below</em> a threshold, that bar turns yellow (warning) or red (critical).<br>
+<span style="color:#888;font-size:0.92em">Tip: Critical should usually be the <em>smaller</em> free amount (more severe). If you reverse them, we still treat the smaller TB value as critical.</span>
 </p>
 
-<!-- ARRAY SECTION -->
+<!-- ========== ARRAY ========== -->
 <div class="title">Array</div>
 
 <?php if (!$has_array_disks): ?>
-<p style="color:#888; font-size:0.95em; margin:0.5em 0 1em;">
-<strong>No array data disks detected</strong> (pools-only setup, or no data disks assigned). Array thresholds and Main-tab array coloring apply only when you have array data disks. Pool settings below still work.
+<p style="color:#888; font-size:0.95em; margin:0.4em 0 1em">
+<strong>No array data disks</strong> — array options apply when you add data disks. Pool settings below still work.
 </p>
 <?php endif; ?>
 
@@ -291,58 +292,57 @@ _(Enable Array Coloration?)_:
   </select>
 
 <blockquote class="inline_help">
-Master switch for coloring total free space on the array on the Main tab when free space falls below your warning/critical thresholds.
+Color the Array Free bar on Main when free space is at or below your thresholds.
+</blockquote>
+
+_(Use custom capacity?)_:
+: <select name="array_use_custom" id="array_use_custom">
+  <?=mk_option($array_use_custom, "no", _("No — use disk sizes"))?>
+  <?=mk_option($array_use_custom, "yes", _("Yes — enter values"))?>
+  </select>
+
+<blockquote class="inline_help">
+No = pick Warning/Critical from your real data-disk sizes (defaults: largest / second-largest).<br>
+Yes = type any size (e.g. 50T, 40T, 1.5T).
 </blockquote>
 
 <div id="array-disk-selects">
-_(Choose Array Total Warning Capacity)_:
+_(Array Warning (free space))_:
 : <select name="array_warning" id="array_warning">
   <?=sg_size_options($array_sizes, $array_warning)?>
   </select>
 
 <blockquote class="inline_help">
-Total free space on the array (data disks) drops below this → yellow warning.<br><br>
-The goal is to know *before* a drive fails whether you will still have enough room across the remaining disks to move its data (and rebalance) without an immediate replacement.<br><br>
-<b>Examples:</b><br>
-Uniform 4×26TB (1 parity + 3 data): choose 26T.<br>
-Mixed (Parity 12T + 8T×3 + 4T + 2T): Warning=8T (largest data disk), Critical=2T (smallest data disk).<br>
-If free space &lt; 8T and your largest disk fails, you may not have room to move its data off the failed disk without buying a new drive.
+Yellow when array free ≤ this. Goal: still enough free to move data off a failed disk.
 </blockquote>
 
-_(Choose Array Total Critical Capacity)_:
+_(Array Critical (free space))_:
 : <select name="array_critical" id="array_critical">
   <?=sg_size_options($array_sizes, $array_critical)?>
   </select>
 
 <blockquote class="inline_help">
-Total free space on the array drops below this → red critical.<br><br>
-<b>Critical example (mixed array):</b> Set to 2T. If free &lt; 2T and the 2T disk fails, there is not enough room on remaining disks to move that data without buying a replacement.
+Red when array free ≤ this (usually a lower free amount than Warning).
 </blockquote>
 </div>
-
-_(Use custom capacity?)_:
-: <select name="array_use_custom" id="array_use_custom">
-  <?=mk_option($array_use_custom, "no", _("No"))?>
-  <?=mk_option($array_use_custom, "yes", _("Yes"))?>
-  </select>
-
-<blockquote class="inline_help">
-Yes = hide the disk-size dropdowns and use the manual values below instead (e.g. 7.5T, 1.5T, 500G).
-</blockquote>
 
 <div id="array-custom-fields" style="display:none">
-_(Custom Array Warning Capacity)_:
-: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 8T or 1.5T or 500G">
+_(Array Warning (custom))_:
+: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 50T">
 
-_(Custom Array Critical Capacity)_:
-: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T or 500G">
+_(Array Critical (custom))_:
+: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 40T">
+
+<blockquote class="inline_help">
+Either order works: we treat the <strong>smaller TB</strong> as critical and the <strong>larger TB</strong> as warning.
+</blockquote>
 </div>
 
-</div><!-- /array-settings-block -->
+</div>
 
 <hr>
 
-<!-- POOLS SECTION -->
+<!-- ========== POOLS ========== -->
 <div class="title">Pools</div>
 
 _(Enable Pool Coloration?)_:
@@ -352,185 +352,107 @@ _(Enable Pool Coloration?)_:
   </select>
 
 <blockquote class="inline_help">
-Master switch for coloring total free space on pools on the Main tab.
+Color pool Free bars on Main (Data Partition row for multi-device / boot-on-cache pools).
 </blockquote>
 
-_(Select Pools to color)_:
+_(Pools to color)_:
 : <label><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label>
-<?php foreach ($pool_names as $p): 
+<?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
 ?>
-  <label style="margin-left:8px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
+  <label style="margin-left:10px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
 <?php endforeach; ?>
 <?php if (empty($pool_names)): ?>
   <span class="hint">(No pools detected)</span>
 <?php endif; ?>
 
 <blockquote class="inline_help">
-Choose which pools get Main-tab coloring. "All" selects every pool. Thresholds below exist so you know—*before* a drive fails—whether you still have room to rebalance or evacuate data.
+Which pools get Free-bar coloring. Thresholds are per pool below.
 </blockquote>
 
 <?php if (!empty($pool_names)): ?>
-<div class="title" style="margin-top:16px">Per-pool thresholds (free space)</div>
-<?php foreach ($pool_names as $p): 
+<?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $w_key = "pool_{$safe}_warning";
   $c_key = "pool_{$safe}_critical";
   $def = $pool_defaults[$p] ?? ['warning' => '2T', 'critical' => '1T'];
   $w_val = $cfg[$w_key] ?? $def['warning'];
   $c_val = $cfg[$c_key] ?? $def['critical'];
-
-  // Dynamic BTRFS profile detection for this pool
   $current_profile = get_btrfs_profile($p);
   $devices_summary = get_pool_devices_summary($pools[$p]);
 ?>
-<div class="pool-section" id="pool-section-<?=htmlspecialchars($safe)?>" style="margin-bottom:12px; border-left:3px solid #ccc; padding-left:10px;">
-  <strong><?=htmlspecialchars($p)?></strong> (Free) — Current profile: <strong><?=htmlspecialchars($current_profile)?></strong> (devices: <?=htmlspecialchars($devices_summary)?>)
+<div class="pool-section" id="pool-section-<?=htmlspecialchars($safe)?>" style="margin:12px 0; padding:8px 0 8px 12px; border-left:3px solid #666;">
+<strong><?=htmlspecialchars($p)?></strong>
+<span style="color:#888; font-size:0.9em"> — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?></span>
+ · <a href="/Main/Device?name=<?=urlencode($p)?>" target="_blank">Pool settings</a>
 
-  <div>
-    _(Choose <?=htmlspecialchars($p)?> Total Warning Capacity (Free))_:
-    : <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select">
-      <?=sg_size_options($pools[$p], $w_val)?>
-      </select>
-  </div>
+_(<?=htmlspecialchars($p)?> Warning (free))_:
+: <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select">
+  <?=sg_size_options($pools[$p], $w_val)?>
+  </select>
 
-  <div>
-    _(Choose <?=htmlspecialchars($p)?> Total Critical Capacity (Free))_:
-    : <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select">
-      <?=sg_size_options($pools[$p], $c_val)?>
-      </select>
-  </div>
-</div>
+_(<?=htmlspecialchars($p)?> Critical (free))_:
+: <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select">
+  <?=sg_size_options($pools[$p], $c_val)?>
+  </select>
 
 <blockquote class="inline_help">
-For pool <strong><?=htmlspecialchars($p)?></strong> (detected profile: <strong><?=htmlspecialchars($current_profile)?></strong>, devices: <?=htmlspecialchars($devices_summary)?>):<br><br>
-
-We are enhancing the awareness of redundancy, and how much space we have pre-failure leaving us options for migration of data to other disks, should a disk fail. Prices of disks are rising, so this plugin aims to aid users in understanding that they still have space left to move data in the event of a disk failure.
-
-These thresholds can be set to make clear to the user at first glance on the main page, that they are still safe, even after a disk failure to move data around and not have to worry about replacing the disks right away.
-
-<b>All BTRFS RAID Profiles (mixed sizes supported!)</b><br>
-BTRFS allocates in chunks and handles mixed disk sizes very well. See your RAID calculator sheet for how speeds are calculated based on base single-disk numbers per RAID type (e.g. for these drives ~540/550 MB/s 4TB, ~520/540 8TB):<br>
-• <b>Single</b>: No redundancy. 100% space. Any failure = data loss.<br>
-• <b>RAID 0</b>: Striping only. Max speed/space. No redundancy.<br>
-• <b>RAID 1</b>: 2 copies on different devices. ~50% usable. Tolerates 1 failure.<br>
-• <b>RAID 1c3</b>: 3 copies. ~33% usable. Tolerates 2 failures.<br>
-• <b>RAID 1c4</b>: 4 copies. ~25% usable. Tolerates 3 failures.<br>
-• <b>RAID 10</b>: Striped mirrors. ~50% usable. Good perf. Tolerates multiple failures (layout dependent).<br>
-• <b>RAID 5</b>: Striping + 1 parity. ~(N-1)/N usable. Tolerates 1 failure.<br>
-• <b>RAID 6</b>: Striping + 2 parity. ~(N-2)/N usable. Tolerates 2 failures.<br><br>
-
-<b>Speed calculation method (per your sheet)</b><br>
-Base single disk speeds (read/write) are measured, then for each RAID type the pool max is calculated as:<br>
-- RAID0: sum of all individual read/write speeds<br>
-- RAID1: read up to sum, write = single slowest<br>
-- RAID10: read sum, write ~2x single (for mirrors)<br>
-- RAID5: read sum, write ~(N-1) x single (parity)<br>
-- etc. (see sheet for exact formula used for this drive set)<br><br>
-
-<b>Speed calculation (per your sheet's method)</b><br>
-Base single-disk speeds, then scaled per RAID (full sum for RAID0, limited for others).<br><br>
-
-<b>Speed examples for this pool (based on sheet's base calc method for these drives):</b><br>
-- RAID 0: ~2,080 MB/s read, ~2,160 write<br>
-- RAID 1: ~2,080 read, ~540 write<br>
-- RAID 5: ~2,080 read, ~820 write<br>
-- RAID 6: ~2,080 read, ~547 write<br>
-- RAID 1c3: ~2,080 read, ~540 write<br>
-- RAID 1c4: ~2,080 read, ~540 write<br>
-- RAID 10: ~2,080 read, ~1,080 write<br><br>
-
-<b>What happens when a disk fails</b><br>
-Pool goes degraded but stays usable. Reads come from remaining copies/parity. Writes lose redundancy until fixed.<br>
-Recovery steps: replace the disk → <code>btrfs replace</code> or <code>btrfs device delete missing</code> + rebalance.<br>
-Or temporarily convert to a lower-redundancy profile to free space, then convert back.<br>
-Rebalance (<code>btrfs balance start -f /mnt/<?=htmlspecialchars($p)?></code>) moves chunks — it needs free space roughly equal to the data that was on the failed drive.<br><br>
-
-<b>View in Unraid</b><br>
-Go to <b>Main</b> tab → click the pool name → scroll to the <b>Balance Status</b> section.<br>
-Direct link: <a href="/Main/Device?name=<?=urlencode($p)?>" target="_blank">/Main/Device?name=<?=htmlspecialchars($p)?></a><br><br>
-
-<b>Example: 4×4 TB + 2×8 TB (32 TB raw)</b><br>
-Possible profiles & usable space (approximate):<br>
-• RAID0: 32 TB (no safety)<br>
-• RAID1: ~16 TB (1 failure tolerance)<br>
-• RAID10: ~16 TB (good perf)<br>
-• RAID5: ~28 TB (1 failure, excellent space)<br>
-• RAID6: ~24 TB (2 failures)<br><br>
-
-<b>If you lose a 4 TB drive in RAID10</b><br>
-Stripes that used it become single-copy. Performance drops. You can keep using the pool. To rebalance and restore full redundancy you typically need ~4 TB free (the volume of data that was on the failed drive needs new copies). <strong>Recommendation:</strong> Warning ≈ 8 T, Critical ≈ 4–5 T.<br><br>
-
-<b>If you lose an 8 TB drive</b><br>
-Larger device usually held more chunks → bigger rebalance requirement (often 6–8 TB free recommended). <strong>Recommendation:</strong> Warning 10–12 T, Critical 6–8 T.<br><br>
-
-<b>Converting profiles (e.g. RAID10 → RAID5)</b><br>
-RAID10 ~16 TB usable → RAID5 ~28 TB usable = you gain ~12 TB!<br>
-Trade-off: you go from tolerating multiple failures to only 1.<br>
-Rebalance to convert requires substantial free space (plan for 8–12+ TB during the operation).<br>
-Performance: RAID5/6 has write parity overhead (slower small random writes). RAID10 is often snappier for mixed workloads. Reads are usually fine on both.<br><br>
-
-<b>Our recommendations as the plugin</b><br>
-Set your thresholds so the Main tab coloring already tells you that you are still safe to move data around and rebalance even after a disk failure—without having to replace disks right away.<br><br>
-
-More advanced BTRFS guidance and dynamic per-pool suggestions are planned.
+Yellow / red when this pool's free space is at or below the threshold (same order-independent rules as array).<br>
+Profile <strong><?=htmlspecialchars($current_profile)?></strong> — rebalance after a failure needs free space roughly the size of the lost device.<br>
+<a href="/Main/Device?name=<?=urlencode($p)?>" target="_blank">Main → <?=htmlspecialchars($p)?> → Balance Status</a>
 </blockquote>
+</div>
 <?php endforeach; ?>
 <?php endif; ?>
 
 <hr>
 
-<!-- ALERTS SECTION: per-target severity (no master switch — unchecked = no alerts for that target/level) -->
-<div class="title">Alerts (Unraid notifications)</div>
+<!-- ========== ALERTS ========== -->
+<div class="title">Alerts</div>
 
-<p style="font-size:0.95em; margin:0.4em 0 1em;">
-Choose <strong>Warning</strong> and/or <strong>Critical</strong> per target. Example: Array = Warning only, cache = Warning + Critical.
-Nothing checked = no notifications. Coloring on Main is separate (above).
+<p style="font-size:0.95em; margin:0.3em 0 0.8em">
+Unraid notifications when free space crosses a threshold. Check Warning and/or Critical per target. Nothing checked = no alerts. (Separate from Main coloring.)
 </p>
 
 <blockquote class="inline_help">
-Notifications use Unraid's notify system when free space on that target falls below the matching threshold.
-Warning and Critical are independent per target (array or pool). Leave both unchecked for a target to silence it completely.
+Example: Array = Warning only; cache = Warning + Critical. Order of threshold sizes does not matter for severity (smaller free TB = critical).
 </blockquote>
 
-<div style="margin: 0.5em 0 1.2em; overflow-x:auto;">
-<table class="tablesorter" style="width:auto; min-width:320px;">
+<div style="margin:0.5em 0 1em; overflow-x:auto">
+<table class="tablesorter" style="width:auto; min-width:280px">
 <thead>
 <tr>
-  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
-  <th style="padding:4px 12px; text-align:center;">Warning</th>
-  <th style="padding:4px 12px; text-align:center;">Critical</th>
+  <th style="text-align:left; padding:4px 16px 4px 0">Target</th>
+  <th style="text-align:center; padding:4px 12px">Warning</th>
+  <th style="text-align:center; padding:4px 12px">Critical</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no data disks)</span>' ?></td>
-  <td style="padding:6px 12px; text-align:center;">
+  <td style="padding:6px 16px 6px 0">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em">(n/a)</span>' ?></td>
+  <td style="text-align:center; padding:6px 12px">
     <input type="hidden" name="alerts_array_warning" value="no">
-    <input type="checkbox" name="alerts_array_warning" value="yes" class="alert-sev" data-target="array" data-level="warning" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
   </td>
-  <td style="padding:6px 12px; text-align:center;">
+  <td style="text-align:center; padding:6px 12px">
     <input type="hidden" name="alerts_array_critical" value="no">
-    <input type="checkbox" name="alerts_array_critical" value="yes" class="alert-sev" data-target="array" data-level="critical" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
   </td>
 </tr>
 <?php foreach ($pool_alert_cfg as $p => $ac): ?>
 <tr>
-  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars($p)?> <span style="color:#888;font-size:0.85em;">(pool)</span></td>
-  <td style="padding:6px 12px; text-align:center;">
+  <td style="padding:6px 16px 6px 0"><?=htmlspecialchars($p)?></td>
+  <td style="text-align:center; padding:6px 12px">
     <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" class="alert-sev" data-target="<?=htmlspecialchars($p)?>" data-level="warning" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
   </td>
-  <td style="padding:6px 12px; text-align:center;">
+  <td style="text-align:center; padding:6px 12px">
     <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" class="alert-sev" data-target="<?=htmlspecialchars($p)?>" data-level="critical" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
   </td>
 </tr>
 <?php endforeach; ?>
-<?php if (empty($pool_alert_cfg) && !$has_array_disks): ?>
-<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected for alerts.</td></tr>
-<?php endif; ?>
 </tbody>
 </table>
 </div>

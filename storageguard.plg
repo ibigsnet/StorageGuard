@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09b">
+<!ENTITY version "2026.07.09c">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">

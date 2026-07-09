@@ -32,12 +32,11 @@ $state_dir = '/tmp/storageguard_alerts';
 @mkdir($state_dir, 0755, true);
 
 function sg_get_array_free_tb() {
-    // Prefer user0 if present (array only); else user (includes pools)
     foreach (['/mnt/user0', '/mnt/user'] as $mnt) {
         if (!is_dir($mnt)) continue;
-        $cmd = "df -BG --output=avail " . escapeshellarg($mnt) . " 2>/dev/null | tail -1 | tr -d 'G '";
-        $gb = (int)trim(@shell_exec($cmd));
-        if ($gb > 0 || $mnt === '/mnt/user') return $gb / 1024.0;
+        $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mnt) . " 2>/dev/null | tail -1");
+        $bytes = (float)trim((string)$out);
+        if ($bytes > 0 || $mnt === '/mnt/user') return $bytes / 1e12; // decimal TB
     }
     return 0.0;
 }
@@ -45,9 +44,9 @@ function sg_get_array_free_tb() {
 function sg_get_pool_free_tb($pool) {
     $mount = "/mnt/" . $pool;
     if (!is_dir($mount)) return 0.0;
-    $cmd = "df -BG --output=avail " . escapeshellarg($mount) . " 2>/dev/null | tail -1 | tr -d 'G '";
-    $gb = (int)trim(@shell_exec($cmd));
-    return $gb / 1024.0;
+    $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mount) . " 2>/dev/null | tail -1");
+    $bytes = (float)trim((string)$out);
+    return $bytes / 1e12;
 }
 
 function sg_parse_to_tb($str) {
@@ -56,10 +55,25 @@ function sg_parse_to_tb($str) {
     $num = (float)$m[1];
     $u = strtoupper($m[2] ?: 'T');
     if ($u === 'T') return $num;
-    if ($u === 'G') return $num / 1024.0;
-    if ($u === 'M') return $num / 1024.0 / 1024.0;
-    if ($u === 'K') return $num / 1024.0 / 1024.0 / 1024.0;
+    if ($u === 'G') return $num / 1000.0;
+    if ($u === 'M') return $num / 1e6;
+    if ($u === 'K') return $num / 1e9;
     return $num;
+}
+
+/** Same order-independent free-space logic as get-config.php */
+function sg_level($free_tb, $warn_tb, $crit_tb) {
+    if ($free_tb === null) return 'ok';
+    $w = ($warn_tb > 0) ? (float)$warn_tb : null;
+    $c = ($crit_tb > 0) ? (float)$crit_tb : null;
+    if ($w === null && $c === null) return 'ok';
+    if ($w === null) return ($free_tb <= $c) ? 'critical' : 'ok';
+    if ($c === null) return ($free_tb <= $w) ? 'warning' : 'ok';
+    $severe = min($w, $c);
+    $mild = max($w, $c);
+    if ($free_tb <= $severe) return 'critical';
+    if ($free_tb <= $mild) return 'warning';
+    return 'ok';
 }
 
 function sg_send_notify($subject, $desc, $priority = 'warning') {
@@ -118,25 +132,23 @@ if (!isset($cfg['alerts_array_warning']) && !isset($cfg['alerts_array_critical']
 
 if ($arr_warn_on || $arr_crit_on) {
     $th = sg_array_thresholds($cfg);
-    $warn = $th['warn'];
-    $crit = $th['crit'];
+    $level = sg_level($array_free, $th['warn'], $th['crit']);
+    // Respect which severities the user enabled for this target
+    if ($level === 'critical' && !$arr_crit_on) $level = $arr_warn_on ? 'warning' : 'ok';
+    if ($level === 'warning' && !$arr_warn_on) $level = 'ok';
 
-    if ($arr_crit_on && $crit > 0 && $array_free <= $crit) {
-        if (sg_should_send('array_critical')) {
-            $msg = $th['custom']
-                ? "Custom critical threshold {$th['crit_label']}. Array free space is " . round($array_free, 1) . " TB (below critical)."
-                : "Array free space is " . round($array_free, 1) . " TB, at or below critical threshold {$th['crit_label']}. You may not have room to move data off a failed disk without replacement.";
-            sg_send_notify('Array Critical Low Space', $msg, 'alert');
-            $sent[] = 'array_critical';
-        }
-    } elseif ($arr_warn_on && $warn > 0 && $array_free <= $warn) {
-        if (sg_should_send('array_warning')) {
-            $msg = $th['custom']
-                ? "Custom warning threshold {$th['warn_label']}. Array free space is " . round($array_free, 1) . " TB."
-                : "Array free space is " . round($array_free, 1) . " TB, at or below warning threshold {$th['warn_label']}.";
-            sg_send_notify('Array Warning Low Space', $msg, 'warning');
-            $sent[] = 'array_warning';
-        }
+    if ($level === 'critical' && sg_should_send('array_critical')) {
+        $msg = $th['custom']
+            ? "Custom critical threshold {$th['crit_label']}. Array free space is " . round($array_free, 1) . " TB (below critical)."
+            : "Array free space is " . round($array_free, 1) . " TB, at or below critical threshold {$th['crit_label']}. You may not have room to move data off a failed disk without replacement.";
+        sg_send_notify('Array Critical Low Space', $msg, 'alert');
+        $sent[] = 'array_critical';
+    } elseif ($level === 'warning' && sg_should_send('array_warning')) {
+        $msg = $th['custom']
+            ? "Custom warning threshold {$th['warn_label']}. Array free space is " . round($array_free, 1) . " TB."
+            : "Array free space is " . round($array_free, 1) . " TB, at or below warning threshold {$th['warn_label']}.";
+        sg_send_notify('Array Warning Low Space', $msg, 'warning');
+        $sent[] = 'array_warning';
     }
 }
 
@@ -166,19 +178,18 @@ foreach ($cfg as $k => $v) {
     $pool_free = sg_get_pool_free_tb($pname);
     $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? '');
     $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? '');
+    $level = sg_level($pool_free, $warn, $crit);
+    if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
+    if ($level === 'warning' && !$p_warn_on) $level = 'ok';
 
-    if ($p_crit_on && $crit > 0 && $pool_free <= $crit) {
-        if (sg_should_send("pool_{$safe}_critical")) {
-            $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below critical " . round($crit, 1) . " TB. Rebalance after a drive failure may not fit.";
-            sg_send_notify("Pool {$pname} Critical", $msg, 'alert');
-            $sent[] = "pool_{$safe}_critical";
-        }
-    } elseif ($p_warn_on && $warn > 0 && $pool_free <= $warn) {
-        if (sg_should_send("pool_{$safe}_warning")) {
-            $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below warning " . round($warn, 1) . " TB.";
-            sg_send_notify("Pool {$pname} Warning", $msg, 'warning');
-            $sent[] = "pool_{$safe}_warning";
-        }
+    if ($level === 'critical' && sg_should_send("pool_{$safe}_critical")) {
+        $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below critical threshold. Rebalance after a drive failure may not fit.";
+        sg_send_notify("Pool {$pname} Critical", $msg, 'alert');
+        $sent[] = "pool_{$safe}_critical";
+    } elseif ($level === 'warning' && sg_should_send("pool_{$safe}_warning")) {
+        $msg = "Pool '{$pname}' free space is " . round($pool_free, 1) . " TB, at or below warning threshold.";
+        sg_send_notify("Pool {$pname} Warning", $msg, 'warning');
+        $sent[] = "pool_{$safe}_warning";
     }
 }
 
