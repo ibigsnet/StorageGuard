@@ -1,37 +1,23 @@
-/* Storage Guard — free-space *bar* coloring (Main tab)
-   Primary paint is inline style from JS; these classes are backup/enhancement. */
+/* Storage Guard — Free-column bar fill only (matches Unraid bar shape) */
 
-.usage-disk span.sg-warning.sg-bar,
-.usage-disk > span.sg-warning:first-child {
+.usage-disk > span.sg-bar.sg-warning,
+.usage-disk > span[data-sg-bar="warning"] {
   background-color: #ffc107 !important;
   background: #ffc107 !important;
 }
 
-.usage-disk span.sg-critical.sg-bar,
-.usage-disk > span.sg-critical:first-child {
-  background-color: #f44336 !important;
-  background: #f44336 !important;
+.usage-disk > span.sg-bar.sg-critical,
+.usage-disk > span[data-sg-bar="critical"] {
+  background-color: #e53935 !important;
+  background: #e53935 !important;
 }
 
-.usage-disk[data-sg="warning"] {
-  outline: 2px solid #ffc107 !important;
-  outline-offset: 1px;
-}
-
-.usage-disk[data-sg="critical"] {
-  outline: 2px solid #f44336 !important;
-  outline-offset: 1px;
-}
-
-/* Plain free text mode (bars disabled in Display settings) */
-td[data-sg="warning"] {
-  background-color: #ffc107 !important;
-  color: #000 !important;
+/* Plain-text Free column (bars off in Display settings) */
+td[data-sg-td="warning"] {
+  color: #ffc107 !important;
   font-weight: 700 !important;
 }
-
-td[data-sg="critical"] {
-  background-color: #f44336 !important;
-  color: #fff !important;
+td[data-sg-td="critical"] {
+  color: #e53935 !important;
   font-weight: 700 !important;
 }
