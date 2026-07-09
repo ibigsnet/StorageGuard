@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.09zc">
+<!ENTITY version "2026.07.09zd">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,12 @@
 
 <CHANGES>
 ###&version;
+- Default button: fully reset pool thresholds/alerts/styles (and array product defaults). Unraid only restores default.cfg keys; dynamic pool_* keys needed an #include + form UI reset.
+
+###2026.07.09zc
+- Array highlight style default is Outline (not Solid); solid fill optional. Same default for pool style when unset.
+
+###2026.07.09zb
 - Advanced pools WIP note: alerts and coloring are fine to use; BTRFS profile math/suggestions not yet — custom free-space thresholds OK for alerting.
 
 ###2026.07.09za
@@ -158,6 +164,9 @@ echo "StorageGuard: directories ready."
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg">
 <URL>&raw;/default.cfg?v=&version;</URL>
 </FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
+<URL>&raw;/sg-update.php?v=&version;</URL>
+</FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
 <URL>&raw;/storageguard.js?v=&version;</URL>
 </FILE>
@@ -203,7 +212,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09zb"
+[ -z "$VER" ] && VER="2026.07.09zd"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

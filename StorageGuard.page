@@ -268,6 +268,7 @@ foreach ($pool_names as $p) {
 
 <form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
 <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
+<input type="hidden" name="#include" value="plugins/StorageGuard/sg-update.php">
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
 <input type="hidden" name="sg_defaults" value="1">
 
@@ -483,10 +484,10 @@ Yes = paint Free bars for the pools you check below. No = hide pool options (sav
 <div id="pool-details" class="sg-details" markdown="1">
 
 _(Pools to color)_:
-: <label style="margin-right:12px"><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
+: <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
-?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
+?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
 
 <blockquote class="inline_help">
 Only checked pools are colored on Main. Each pool can have its own highlight style and thresholds.

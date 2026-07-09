@@ -296,13 +296,106 @@ function initStorageGuardUI() {
     });
   })();
 
+  /**
+   * Unraid posts Default into a progress iframe — the page does not reload.
+   * Also, update.php only restores keys present in default.cfg; pool_* keys
+   * are dynamic and would keep the form's current values without sg-update.php.
+   * Reset the form UI to product defaults so what you see matches the cfg write.
+   */
+  function resetFormToProductDefaults() {
+    function setSelect(id, value) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.value = value;
+      // If value not found, leave as-is for selects; try matching option
+      if (el.tagName === 'SELECT' && el.value !== value) {
+        for (var i = 0; i < el.options.length; i++) {
+          if (el.options[i].value === value) {
+            el.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+    function setInput(id, value) {
+      var el = document.getElementById(id);
+      if (el) el.value = value;
+    }
+    function setCheckbox(name, on) {
+      var boxes = form.querySelectorAll('input[type="checkbox"][name="' + name + '"]');
+      boxes.forEach(function (cb) { cb.checked = !!on; });
+    }
+
+    setSelect('outline_pulse', 'no');
+    setSelect('outline_show_ok', 'no');
+    setSelect('array_coloring', 'yes');
+    setSelect('array_color_style', 'outline');
+    setSelect('array_use_custom', 'no');
+    setInput('array_warning_custom', '');
+    setInput('array_critical_custom', '');
+
+    var arrWarn = document.getElementById('array_warning');
+    var defWarn = arrWarn ? (arrWarn.getAttribute('data-sg-default-warn') || '') : '';
+    setSelect('array_warning', defWarn);
+    setSelect('array_critical', '');
+
+    // Array alerts: Warning on (if available), Critical off
+    var arrWarnCb = form.querySelector('input[type="checkbox"][name="alerts_array_warning"]');
+    if (arrWarnCb && !arrWarnCb.disabled) setCheckbox('alerts_array_warning', true);
+    else setCheckbox('alerts_array_warning', false);
+    setCheckbox('alerts_array_critical', false);
+
+    // Pools: coloring on, all pools, thresholds None, style outline, alerts off
+    setSelect('pool_coloring', 'yes');
+    if (poolAll) {
+      poolAll.checked = true;
+      poolAll.indeterminate = false;
+    }
+    poolCbs.forEach(function (cb) { cb.checked = true; });
+    updatePoolsHidden();
+
+    form.querySelectorAll('.pool-use-custom').forEach(function (sel) {
+      var safe = sel.getAttribute('data-pool-safe');
+      if (!safe) return;
+      sel.value = 'no';
+      setSelect('pool_' + safe + '_color_style', 'outline');
+      setSelect('pool_' + safe + '_warning', '');
+      setSelect('pool_' + safe + '_critical', '');
+      setInput('pool_' + safe + '_warning_custom', '');
+      setInput('pool_' + safe + '_critical_custom', '');
+      setCheckbox('alerts_pool_' + safe + '_warning', false);
+      setCheckbox('alerts_pool_' + safe + '_critical', false);
+    });
+
+    // Re-apply show/hide (do not re-bind wireSectionToggle — would stack listeners)
+    ['array_coloring', 'pool_coloring'].forEach(function (selectId) {
+      var sel = document.getElementById(selectId);
+      if (!sel) return;
+      var sectionId = sel.getAttribute('data-sg-section');
+      var section = sectionId ? document.getElementById(sectionId) : null;
+      setVisible(section, sel.value === 'yes');
+    });
+    updateArrayCustom();
+    document.querySelectorAll('.pool-use-custom').forEach(function (s) {
+      var safe = s.getAttribute('data-pool-safe');
+      if (safe) updatePoolCustom(safe);
+    });
+    updateOrderNote();
+  }
+
   const form = document.getElementById('storageguard-form');
   if (form) {
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (e) {
+      var submitter = e.submitter || document.activeElement;
+      var isDefault = submitter && submitter.name === '#default';
+      if (isDefault) {
+        resetFormToProductDefaults();
+      }
       updatePoolsHidden();
       form.querySelectorAll('select:disabled, input:disabled').forEach(el => {
         if (el.closest('.sg-details') || el.classList.contains('pool-size-select') ||
-            el.id === 'array_warning' || el.id === 'array_critical') {
+            el.id === 'array_warning' || el.id === 'array_critical' ||
+            (el.id && /^pool_.*_(warning|critical)$/.test(el.id))) {
           el.disabled = false;
         }
       });
