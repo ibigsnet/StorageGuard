@@ -22,6 +22,29 @@ Supports largest-disk auto-detect and flexible units.
 Paste this in Plugins → Install Plugin:
 https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg
 
+## Versioning
+Unraid plugins use a **calendar version** (string-compared by the plugin manager):
+
+| Form | Meaning |
+|------|---------|
+| `YYYY.MM.DD` | First release shipped that calendar day |
+| `YYYY.MM.DD-N` | Same-day revision (`-1`, `-2`, …) |
+
+**Rules when shipping:**
+1. Set `<!ENTITY version "…">` in `storageguard.plg` to **today’s date** (not the project-start date).
+2. Same day, another change → bump the `-N` suffix (`2026.07.09` → `2026.07.09-1`).
+3. Do not keep incrementing an old day (`2026.07.06-17` is wrong if you ship on 07.09).
+4. Asset `?v=` query strings and inject tags read that entity — bump only the entity.
+
+**Update on a server that already has the plugin** (preferred over remove/reinstall):
+
+```bash
+plugin check storageguard
+plugin update storageguard
+```
+
+Or Plugins tab → check for updates → Update. Settings under `/boot/config/plugins/StorageGuard/` are kept.
+
 ## Usage Notes (Array)
 - Uniform disks (e.g. 3×26T data): both dropdowns show 26T.
 - Mixed disks (Parity 12T, 8T×3, 4T, 2T data): choose Warning=8T, Critical=2T so you know when you no longer have space to "move data off" a failed drive of that size.

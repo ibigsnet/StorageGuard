@@ -2,7 +2,15 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-17">
+<!--
+  Versioning (Unraid convention):
+    YYYY.MM.DD       first release of that calendar day
+    YYYY.MM.DD-N     Nth same-day revision (1, 2, 3, …)
+  Always set this to *today's* date when you ship. Unraid compares versions
+  as strings — a newer calendar day must increase YYYY.MM.DD so plugin update works.
+  Bump only this entity; asset URLs use &version; automatically.
+-->
+<!ENTITY version "2026.07.09">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,14 +32,12 @@
 
 <CHANGES>
 ###&version;
-- Array: paint Free bar fill only (no red cell chrome).
-- Pool: paint Data Partition Free bar, not empty "Pool of N devices" row.
+- Versioning: use real ship date YYYY.MM.DD (same-day revisions YYYY.MM.DD-N).
+- Color Free usage bars only; pool colors Data Partition row (not "Pool of N devices").
+- Inject color JS via HeadInlineJS.php (Unraid 7).
 
-###2026.07.06-5
-- Run block CDATA formatting.
-
-###2026.07.06-4
-- Menu="Utilities", README shipping, metadata attrs.
+###2026.07.06
+- Initial development series (array/pool thresholds, alerts matrix, Plugins metadata).
 </CHANGES>
 
 <!-- Ensure directories exist (do NOT wipe emhttp dir here — files land next) -->
@@ -84,7 +90,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.06-17"
+[ -z "$VER" ] && VER="2026.07.09"
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites
