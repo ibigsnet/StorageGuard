@@ -2,7 +2,7 @@
 
 How thresholds, Main-tab coloring, and alerts work—plus examples for the array and BTRFS pools.
 
-For install steps and a short overview, see [README.md](README.md).
+Install URL and the short Plugins-page blurb are in [README.md](README.md). This file is the full documentation.
 
 ---
 

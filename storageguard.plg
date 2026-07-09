@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09r">
+<!ENTITY version "2026.07.09s">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
