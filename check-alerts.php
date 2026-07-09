@@ -94,6 +94,32 @@ function sg_flag($cfg, $key) {
     return ($cfg[$key] ?? 'no') === 'yes';
 }
 
+/** Largest array data disk in decimal TB (0 if none). */
+function sg_largest_data_disk_tb() {
+    $disks_ini = '/var/local/emhttp/disks.ini';
+    if (!file_exists($disks_ini)) return 0.0;
+    $disks = @parse_ini_file($disks_ini, true) ?: [];
+    $max_kb = 0;
+    foreach ($disks as $key => $d) {
+        if (empty($d['device'])) continue;
+        $type = $d['type'] ?? '';
+        $name = $d['name'] ?? $key;
+        $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
+        if (!$is_data) continue;
+        $sz = isset($d['size']) ? (int)$d['size'] : 0;
+        if ($sz > $max_kb) $max_kb = $sz;
+    }
+    if ($max_kb <= 0) return 0.0;
+    return ($max_kb * 1024.0) / 1e12;
+}
+
+function sg_largest_data_disk_label() {
+    $tb = sg_largest_data_disk_tb();
+    if ($tb <= 0) return '';
+    $val = round($tb, 1);
+    return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+}
+
 function sg_array_thresholds($cfg) {
     $use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
     if ($use_custom) {
@@ -105,10 +131,18 @@ function sg_array_thresholds($cfg) {
             'custom' => true,
         ];
     }
+    // Missing array_warning → default largest data disk; empty string → None
+    if (array_key_exists('array_warning', $cfg)) {
+        $warn_label = $cfg['array_warning'];
+        $warn = sg_parse_to_tb($warn_label);
+    } else {
+        $warn_label = sg_largest_data_disk_label();
+        $warn = sg_largest_data_disk_tb();
+    }
     return [
-        'warn' => sg_parse_to_tb($cfg['array_warning'] ?? ''),
+        'warn' => $warn,
         'crit' => sg_parse_to_tb($cfg['array_critical'] ?? ''),
-        'warn_label' => $cfg['array_warning'] ?? '',
+        'warn_label' => $warn_label,
         'crit_label' => $cfg['array_critical'] ?? '',
         'custom' => false,
     ];
@@ -138,15 +172,28 @@ $sent = [];
 $array_free = sg_get_array_free_tb();
 
 // --- Array ---
-$arr_warn_on = sg_flag($cfg, 'alerts_array_warning');
-$arr_crit_on = sg_flag($cfg, 'alerts_array_critical');
-// Legacy fallback if new keys absent
-if (!isset($cfg['alerts_array_warning']) && !isset($cfg['alerts_array_critical'])) {
+// Defaults: Array Warning yes; Array Critical no. Legacy only if old keys present and new ones absent.
+$has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
+    || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
+if (isset($cfg['alerts_array_warning'])) {
+    $arr_warn_on = sg_flag($cfg, 'alerts_array_warning');
+} elseif ($has_legacy_alerts) {
     $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
     $legacy_for = $cfg['alerts_for'] ?? 'all';
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_warn_on = $legacy_on && $array_selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
+} else {
+    $arr_warn_on = true; // default: array warning only
+}
+if (isset($cfg['alerts_array_critical'])) {
+    $arr_crit_on = sg_flag($cfg, 'alerts_array_critical');
+} elseif ($has_legacy_alerts) {
+    $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
+    $legacy_for = $cfg['alerts_for'] ?? 'all';
+    $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_crit_on = $legacy_on && $array_selected && (($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes');
+} else {
+    $arr_crit_on = false;
 }
 
 if ($arr_warn_on || $arr_crit_on) {
@@ -182,16 +229,26 @@ foreach ($cfg as $k => $v) {
 
     $warn_key = "alerts_pool_{$safe}_warning";
     $crit_key = "alerts_pool_{$safe}_critical";
-    $p_warn_on = sg_flag($cfg, $warn_key);
-    $p_crit_on = sg_flag($cfg, $crit_key);
-
-    // Legacy fallback
-    if (!isset($cfg[$warn_key]) && !isset($cfg[$crit_key])) {
+    // Default: pool alerts off unless explicitly enabled
+    if (isset($cfg[$warn_key])) {
+        $p_warn_on = sg_flag($cfg, $warn_key);
+    } elseif ($has_legacy_alerts) {
         $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
         $legacy_for = $cfg['alerts_for'] ?? 'all';
         $selected = ($legacy_for === 'all') || in_array($pname, array_map('trim', explode(',', $legacy_for)), true);
         $p_warn_on = $legacy_on && $selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
+    } else {
+        $p_warn_on = false;
+    }
+    if (isset($cfg[$crit_key])) {
+        $p_crit_on = sg_flag($cfg, $crit_key);
+    } elseif ($has_legacy_alerts) {
+        $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
+        $legacy_for = $cfg['alerts_for'] ?? 'all';
+        $selected = ($legacy_for === 'all') || in_array($pname, array_map('trim', explode(',', $legacy_for)), true);
         $p_crit_on = $legacy_on && $selected && (($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes');
+    } else {
+        $p_crit_on = false;
     }
 
     if (!$p_warn_on && !$p_crit_on) continue;

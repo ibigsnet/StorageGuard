@@ -156,15 +156,10 @@ if (!empty($array_raw_sizes)) {
     $array_defaults = ['warning' => $array_sizes[0], 'critical' => ''];
 }
 
-// Pool defaults: Warning = largest member; Critical = None
+// Pool defaults: Warning = None; Critical = None (user opts in per pool)
 $pool_defaults = [];
 foreach ($pools_raw as $pname => $raws) {
-    if (!empty($raws)) {
-        rsort($raws, SORT_NUMERIC);
-        $pool_defaults[$pname] = ['warning' => sg_format_size($raws[0]), 'critical' => ''];
-    } else {
-        $pool_defaults[$pname] = ['warning' => '', 'critical' => ''];
-    }
+    $pool_defaults[$pname] = ['warning' => '', 'critical' => ''];
 }
 
 // Build <option>s; include leading "None" (empty value = no threshold for that level)
@@ -222,14 +217,17 @@ $outline_show_ok = (($cfg['outline_show_ok'] ?? 'no') === 'yes') ? 'yes' : 'no';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 
-// --- Alerts: per-target severity (warning / critical independently) ---
+// --- Alerts: per-target severity ---
+// Fresh defaults: Array Warning only. Everything else off.
+// Legacy keys (alerts_enabled / alerts_for / warning_alerts_enabled) only if new keys absent.
+$has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
+    || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
 $legacy_alerts_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
 $legacy_warn = ($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes';
 $legacy_crit = ($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes';
 $legacy_for = $cfg['alerts_for'] ?? 'all';
 
-function sg_alert_default($cfg, $key, $legacy_on, $legacy_level_on, $legacy_for, $target) {
-    if (isset($cfg[$key])) return $cfg[$key];
+function sg_alert_legacy($legacy_on, $legacy_level_on, $legacy_for, $target) {
     if (!$legacy_on || !$legacy_level_on) return 'no';
     if ($legacy_for === 'all') return 'yes';
     $list = array_map('trim', explode(',', $legacy_for));
@@ -237,18 +235,51 @@ function sg_alert_default($cfg, $key, $legacy_on, $legacy_level_on, $legacy_for,
 }
 
 $has_array_disks = !empty($array_raw_sizes);
-$alerts_array_warning = sg_alert_default($cfg, 'alerts_array_warning', $legacy_alerts_on, $legacy_warn, $legacy_for, 'array');
-$alerts_array_critical = sg_alert_default($cfg, 'alerts_array_critical', $legacy_alerts_on, $legacy_crit, $legacy_for, 'array');
-if (!$has_array_disks && !isset($cfg['alerts_array_warning'])) $alerts_array_warning = 'no';
-if (!$has_array_disks && !isset($cfg['alerts_array_critical'])) $alerts_array_critical = 'no';
+
+if (isset($cfg['alerts_array_warning'])) {
+    $alerts_array_warning = $cfg['alerts_array_warning'];
+} elseif ($has_legacy_alerts) {
+    $alerts_array_warning = sg_alert_legacy($legacy_alerts_on, $legacy_warn, $legacy_for, 'array');
+} else {
+    $alerts_array_warning = $has_array_disks ? 'yes' : 'no';
+}
+
+if (isset($cfg['alerts_array_critical'])) {
+    $alerts_array_critical = $cfg['alerts_array_critical'];
+} elseif ($has_legacy_alerts) {
+    $alerts_array_critical = sg_alert_legacy($legacy_alerts_on, $legacy_crit, $legacy_for, 'array');
+} else {
+    $alerts_array_critical = 'no';
+}
+
+if (!$has_array_disks) {
+    if (!isset($cfg['alerts_array_warning'])) $alerts_array_warning = 'no';
+    if (!isset($cfg['alerts_array_critical'])) $alerts_array_critical = 'no';
+}
 
 $pool_alert_cfg = [];
 foreach ($pool_names as $p) {
     $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+    $wk = "alerts_pool_{$safe}_warning";
+    $ck = "alerts_pool_{$safe}_critical";
+    if (isset($cfg[$wk])) {
+        $pw = $cfg[$wk];
+    } elseif ($has_legacy_alerts) {
+        $pw = sg_alert_legacy($legacy_alerts_on, $legacy_warn, $legacy_for, $p);
+    } else {
+        $pw = 'no';
+    }
+    if (isset($cfg[$ck])) {
+        $pc = $cfg[$ck];
+    } elseif ($has_legacy_alerts) {
+        $pc = sg_alert_legacy($legacy_alerts_on, $legacy_crit, $legacy_for, $p);
+    } else {
+        $pc = 'no';
+    }
     $pool_alert_cfg[$p] = [
         'safe' => $safe,
-        'warning' => sg_alert_default($cfg, "alerts_pool_{$safe}_warning", $legacy_alerts_on, $legacy_warn, $legacy_for, $p),
-        'critical' => sg_alert_default($cfg, "alerts_pool_{$safe}_critical", $legacy_alerts_on, $legacy_crit, $legacy_for, $p),
+        'warning' => $pw,
+        'critical' => $pc,
     ];
 }
 ?>
@@ -324,7 +355,7 @@ _(Array thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Disk sizes</strong> — choose from your array data disks (default Warning = largest disk; Critical = None).<br>
+<strong>Disk sizes</strong> — choose from your array data disks. Default: Warning = <strong>largest data disk</strong> (enough free space to absorb losing that disk), Critical = None.<br>
 <strong>Custom values</strong> — type free space yourself, e.g. <code>1.5T</code>, <code>500G</code>, <code>7.5T</code>.
 </blockquote>
 
@@ -437,7 +468,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Disk sizes</strong> — member disks of this pool (default Warning = largest member; Critical = None).<br>
+<strong>Disk sizes</strong> — member disks of this pool. Default: Warning and Critical both <strong>None</strong> (pools are opt-in).<br>
 <strong>Custom values</strong> — type free space yourself, e.g. <code>1.5T</code>, <code>500G</code>, <code>7.5T</code>.
 </blockquote>
 

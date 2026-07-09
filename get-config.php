@@ -58,6 +58,45 @@ function sg_style($cfg, $key) {
   return ($s === 'outline') ? 'outline' : 'solid';
 }
 
+/** Largest array data disk size in TB (decimal), or 0 if none. */
+function sg_largest_data_disk_tb() {
+  $disks_ini = '/var/local/emhttp/disks.ini';
+  if (!file_exists($disks_ini)) return 0.0;
+  $disks = @parse_ini_file($disks_ini, true) ?: [];
+  $max_kb = 0;
+  foreach ($disks as $key => $d) {
+    if (empty($d['device'])) continue;
+    $type = $d['type'] ?? '';
+    $name = $d['name'] ?? $key;
+    $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
+    if (!$is_data) continue;
+    $sz = isset($d['size']) ? (int)$d['size'] : 0; // KB
+    if ($sz > $max_kb) $max_kb = $sz;
+  }
+  if ($max_kb <= 0) return 0.0;
+  // size in KB → bytes → decimal TB
+  return ($max_kb * 1024.0) / 1e12;
+}
+
+/**
+ * Array warning threshold string from cfg.
+ * Missing key → default largest data disk. Present empty → None (user choice).
+ */
+function sg_array_warning_str($cfg) {
+  if (($cfg['array_use_custom'] ?? 'no') === 'yes') {
+    return $cfg['array_warning_custom'] ?? '';
+  }
+  if (array_key_exists('array_warning', $cfg)) {
+    return $cfg['array_warning'];
+  }
+  // Unset: default to largest data disk label via TB parse of computed size
+  $tb = sg_largest_data_disk_tb();
+  if ($tb <= 0) return '';
+  // Prefer one-decimal T labels like the Settings UI (e.g. 23.6T)
+  $val = round($tb, 1);
+  return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+}
+
 $array_free = sg_free_tb_mount('/mnt/user0');
 if ($array_free === null || $array_free <= 0) {
   $array_free = sg_free_tb_mount('/mnt/user');
@@ -68,7 +107,11 @@ if ($use_custom) {
   $arr_warn = sg_parse_to_tb($cfg['array_warning_custom'] ?? '');
   $arr_crit = sg_parse_to_tb($cfg['array_critical_custom'] ?? '');
 } else {
-  $arr_warn = sg_parse_to_tb($cfg['array_warning'] ?? '');
+  if (array_key_exists('array_warning', $cfg)) {
+    $arr_warn = sg_parse_to_tb($cfg['array_warning']);
+  } else {
+    $arr_warn = sg_largest_data_disk_tb();
+  }
   $arr_crit = sg_parse_to_tb($cfg['array_critical'] ?? '');
 }
 
