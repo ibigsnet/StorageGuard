@@ -190,17 +190,24 @@ $array_use_custom = $cfg['array_use_custom'] ?? 'no';
 $array_warning_custom = $cfg['array_warning_custom'] ?? '';
 $array_critical_custom = $cfg['array_critical_custom'] ?? '';
 
-// Warning: default largest if unset/invalid; empty string only if user chose None
-if (array_key_exists('array_warning', $cfg)) {
+// Product defaults locked once user Applies with sg_defaults=1 (hidden field).
+// Until then: fix first-run / broken cfgs (empty array warning, pool alerts on, etc.).
+$sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
+$has_array_disks = !empty($array_raw_sizes);
+
+// Array Warning: largest data disk until user has saved defaults (or explicitly set a size / None after seed)
+if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
     $array_warning = $cfg['array_warning'];
     if ($array_use_custom !== 'yes' && $array_warning !== '' && !empty($array_sizes) && !in_array($array_warning, $array_sizes, true)) {
         $array_warning = $array_defaults['warning'] ?? '';
     }
 } else {
-    $array_warning = $array_defaults['warning'] ?? '';
+    // Unseeded / first open: always prefer largest when data disks exist
+    $array_warning = $has_array_disks ? ($array_defaults['warning'] ?? '') : '';
 }
-// Critical: default None; keep saved value including empty
-if (array_key_exists('array_critical', $cfg)) {
+
+// Critical: default None
+if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
     $array_critical = $cfg['array_critical'];
     if ($array_use_custom !== 'yes' && $array_critical !== '' && !empty($array_sizes) && !in_array($array_critical, $array_sizes, true)) {
         $array_critical = '';
@@ -217,44 +224,22 @@ $outline_show_ok = (($cfg['outline_show_ok'] ?? 'no') === 'yes') ? 'yes' : 'no';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 
-// --- Alerts: per-target severity ---
-// Fresh defaults: Array Warning only. Everything else off.
-// Legacy keys (alerts_enabled / alerts_for / warning_alerts_enabled) only if new keys absent.
-$has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
-    || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
-$legacy_alerts_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
-$legacy_warn = ($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes';
-$legacy_crit = ($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes';
-$legacy_for = $cfg['alerts_for'] ?? 'all';
-
-function sg_alert_legacy($legacy_on, $legacy_level_on, $legacy_for, $target) {
-    if (!$legacy_on || !$legacy_level_on) return 'no';
-    if ($legacy_for === 'all') return 'yes';
-    $list = array_map('trim', explode(',', $legacy_for));
-    return in_array($target, $list, true) ? 'yes' : 'no';
-}
-
-$has_array_disks = !empty($array_raw_sizes);
-
-if (isset($cfg['alerts_array_warning'])) {
+// --- Alerts: product default = Array Warning only (when array exists). All pool alerts off. ---
+if ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) {
     $alerts_array_warning = $cfg['alerts_array_warning'];
-} elseif ($has_legacy_alerts) {
-    $alerts_array_warning = sg_alert_legacy($legacy_alerts_on, $legacy_warn, $legacy_for, 'array');
 } else {
     $alerts_array_warning = $has_array_disks ? 'yes' : 'no';
 }
 
-if (isset($cfg['alerts_array_critical'])) {
+if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $alerts_array_critical = $cfg['alerts_array_critical'];
-} elseif ($has_legacy_alerts) {
-    $alerts_array_critical = sg_alert_legacy($legacy_alerts_on, $legacy_crit, $legacy_for, 'array');
 } else {
     $alerts_array_critical = 'no';
 }
 
 if (!$has_array_disks) {
-    if (!isset($cfg['alerts_array_warning'])) $alerts_array_warning = 'no';
-    if (!isset($cfg['alerts_array_critical'])) $alerts_array_critical = 'no';
+    $alerts_array_warning = ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) ? $cfg['alerts_array_warning'] : 'no';
+    $alerts_array_critical = ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) ? $cfg['alerts_array_critical'] : 'no';
 }
 
 $pool_alert_cfg = [];
@@ -262,17 +247,14 @@ foreach ($pool_names as $p) {
     $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
     $wk = "alerts_pool_{$safe}_warning";
     $ck = "alerts_pool_{$safe}_critical";
-    if (isset($cfg[$wk])) {
+    // Until defaults are seeded, never show pool alerts as on
+    if ($sg_defaults_ok && isset($cfg[$wk])) {
         $pw = $cfg[$wk];
-    } elseif ($has_legacy_alerts) {
-        $pw = sg_alert_legacy($legacy_alerts_on, $legacy_warn, $legacy_for, $p);
     } else {
         $pw = 'no';
     }
-    if (isset($cfg[$ck])) {
+    if ($sg_defaults_ok && isset($cfg[$ck])) {
         $pc = $cfg[$ck];
-    } elseif ($has_legacy_alerts) {
-        $pc = sg_alert_legacy($legacy_alerts_on, $legacy_crit, $legacy_for, $p);
     } else {
         $pc = 'no';
     }
@@ -287,6 +269,7 @@ foreach ($pool_names as $p) {
 <form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
 <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
+<input type="hidden" name="sg_defaults" value="1">
 
 <?php if (!empty($dev_mode)): ?>
 **Preview mode** — showing example sizes (no live disks.ini on this system).
@@ -375,7 +358,7 @@ _(Array thresholds from)_:
 <div id="array-disk-selects" markdown="1">
 
 _(Array free space — Warning)_:
-: <select name="array_warning" id="array_warning" class="sg-thresh" data-sg-pair="array" data-sg-level="warn">
+: <select name="array_warning" id="array_warning" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" data-sg-default-warn="<?=htmlspecialchars($array_defaults['warning'] ?? '')?>">
   <?=sg_size_options($array_sizes, $array_warning)?>
   </select>
 
@@ -459,10 +442,19 @@ Only checked pools are colored on Main. Each pool can have its own highlight sty
   $p_warn_custom = $cfg[$wc_key] ?? '';
   $p_crit_custom = $cfg[$cc_key] ?? '';
   $p_style = sg_resolve_style($cfg, $style_key);
-  $w_val = array_key_exists($w_key, $cfg) ? $cfg[$w_key] : $def['warning'];
-  $c_val = array_key_exists($c_key, $cfg) ? $cfg[$c_key] : '';
-  if ($p_use_custom !== 'yes' && $w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true) && !array_key_exists($w_key, $cfg)) {
-    $w_val = $def['warning'];
+  // Pool free thresholds default None (never auto largest member)
+  if ($sg_defaults_ok && array_key_exists($w_key, $cfg)) {
+    $w_val = $cfg[$w_key];
+  } else {
+    $w_val = '';
+  }
+  if ($sg_defaults_ok && array_key_exists($c_key, $cfg)) {
+    $c_val = $cfg[$c_key];
+  } else {
+    $c_val = '';
+  }
+  if ($p_use_custom !== 'yes' && $w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true)) {
+    $w_val = '';
   }
   if ($p_use_custom !== 'yes' && $c_val !== '' && !empty($pools[$p]) && !in_array($c_val, $pools[$p], true)) {
     $c_val = '';

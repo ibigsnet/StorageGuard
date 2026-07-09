@@ -6,6 +6,26 @@ function initStorageGuardUI() {
     el.style.display = on ? '' : 'none';
   }
 
+  // First open / unseeded: ensure Array Warning select is largest disk (not None)
+  // when the page was rendered with a non-empty default selection.
+  (function ensureArrayWarningDefault() {
+    var sel = document.getElementById('array_warning');
+    if (!sel || sel.disabled) return;
+    var useCustom = document.getElementById('array_use_custom');
+    if (useCustom && useCustom.value === 'yes') return;
+    // data-sg-default-warn set by PHP when product default is largest disk
+    var def = sel.getAttribute('data-sg-default-warn') || '';
+    if (!def) return;
+    if (sel.value === '' || sel.value === null) {
+      for (var i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === def) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  })();
+
   /** Parse free-space strings (8T, 500G, 1.5T) to decimal TB; null if empty/invalid. */
   function parseToTB(str) {
     if (str === null || str === undefined) return null;

@@ -12,7 +12,7 @@
   Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
   Unraid string-compares versions so a newer day (or letter) triggers Update.
 -->
-<!ENTITY version "2026.07.09m">
+<!ENTITY version "2026.07.09n">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,9 +34,11 @@
 
 <CHANGES>
 ###&version;
-- Dynamic array notifications (name disks matching threshold; evacuate-room wording).
-- Pool notifications by BTRFS profile class (mirror vs parity vs RAID10 vs none).
-- DOCS: notification catalog, pool scenarios, planned features.
+- Bulletproof defaults via sg_defaults=1: Array Warning=largest disk; pool thresholds None;
+  alerts = Array Warning only (not critical, not pool).
+
+###2026.07.09m
+- Dynamic array notifications; pool profile-class messages; docs catalog.
 
 ###2026.07.09l
 - Docs/settings: green OK state; threshold order notice if Critical free > Warning.
@@ -122,7 +124,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09m"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09n"   # fallback only; prefer ENTITY from .plg
 echo "StorageGuard: asset version tag $VER"
 
 # Strip any prior Storage Guard tags from known include sites

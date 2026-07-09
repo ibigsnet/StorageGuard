@@ -120,7 +120,9 @@ function sg_array_thresholds($cfg) {
             'custom' => true,
         ];
     }
-    if (array_key_exists('array_warning', $cfg)) {
+    // Until sg_defaults=1, empty/missing array_warning → largest disk
+    $sg_ok = (($cfg['sg_defaults'] ?? '') === '1');
+    if ($sg_ok && array_key_exists('array_warning', $cfg)) {
         $warn_label = $cfg['array_warning'];
         $warn = sg_parse_to_tb($warn_label);
     } else {
@@ -161,19 +163,21 @@ $array_free = sg_get_array_free_tb();
 
 $has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
     || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
-if (isset($cfg['alerts_array_warning'])) {
+// Product default until user Applies Settings (sg_defaults=1): array warning on, critical off
+$sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
+if ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) {
     $arr_warn_on = sg_flag($cfg, 'alerts_array_warning');
-} elseif ($has_legacy_alerts) {
+} elseif ($has_legacy_alerts && $sg_defaults_ok) {
     $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
     $legacy_for = $cfg['alerts_for'] ?? 'all';
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_warn_on = $legacy_on && $array_selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
 } else {
-    $arr_warn_on = true;
+    $arr_warn_on = true; // default: array warning only
 }
-if (isset($cfg['alerts_array_critical'])) {
+if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $arr_crit_on = sg_flag($cfg, 'alerts_array_critical');
-} elseif ($has_legacy_alerts) {
+} elseif ($has_legacy_alerts && $sg_defaults_ok) {
     $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
     $legacy_for = $cfg['alerts_for'] ?? 'all';
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
@@ -210,23 +214,14 @@ foreach ($cfg as $k => $v) {
 
     $warn_key = "alerts_pool_{$safe}_warning";
     $crit_key = "alerts_pool_{$safe}_critical";
-    if (isset($cfg[$warn_key])) {
+    // Pool alerts off by default; only honor saved keys after sg_defaults=1
+    if ($sg_defaults_ok && isset($cfg[$warn_key])) {
         $p_warn_on = sg_flag($cfg, $warn_key);
-    } elseif ($has_legacy_alerts) {
-        $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
-        $legacy_for = $cfg['alerts_for'] ?? 'all';
-        $selected = ($legacy_for === 'all') || in_array($pname, array_map('trim', explode(',', $legacy_for)), true);
-        $p_warn_on = $legacy_on && $selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
     } else {
         $p_warn_on = false;
     }
-    if (isset($cfg[$crit_key])) {
+    if ($sg_defaults_ok && isset($cfg[$crit_key])) {
         $p_crit_on = sg_flag($cfg, $crit_key);
-    } elseif ($has_legacy_alerts) {
-        $legacy_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
-        $legacy_for = $cfg['alerts_for'] ?? 'all';
-        $selected = ($legacy_for === 'all') || in_array($pname, array_map('trim', explode(',', $legacy_for)), true);
-        $p_crit_on = $legacy_on && $selected && (($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes');
     } else {
         $p_crit_on = false;
     }

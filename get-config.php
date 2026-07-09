@@ -78,37 +78,20 @@ function sg_largest_data_disk_tb() {
   return ($max_kb * 1024.0) / 1e12;
 }
 
-/**
- * Array warning threshold string from cfg.
- * Missing key → default largest data disk. Present empty → None (user choice).
- */
-function sg_array_warning_str($cfg) {
-  if (($cfg['array_use_custom'] ?? 'no') === 'yes') {
-    return $cfg['array_warning_custom'] ?? '';
-  }
-  if (array_key_exists('array_warning', $cfg)) {
-    return $cfg['array_warning'];
-  }
-  // Unset: default to largest data disk label via TB parse of computed size
-  $tb = sg_largest_data_disk_tb();
-  if ($tb <= 0) return '';
-  // Prefer one-decimal T labels like the Settings UI (e.g. 23.6T)
-  $val = round($tb, 1);
-  return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
-}
-
 $array_free = sg_free_tb_mount('/mnt/user0');
 if ($array_free === null || $array_free <= 0) {
   $array_free = sg_free_tb_mount('/mnt/user');
 }
 
+// Until Settings is Applied with sg_defaults=1, treat empty/missing array_warning as largest disk
+$sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
 $use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
 if ($use_custom) {
   $arr_warn = sg_parse_to_tb($cfg['array_warning_custom'] ?? '');
   $arr_crit = sg_parse_to_tb($cfg['array_critical_custom'] ?? '');
 } else {
-  if (array_key_exists('array_warning', $cfg)) {
-    $arr_warn = sg_parse_to_tb($cfg['array_warning']);
+  if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
+    $arr_warn = sg_parse_to_tb($cfg['array_warning']); // empty = None
   } else {
     $arr_warn = sg_largest_data_disk_tb();
   }
