@@ -347,7 +347,7 @@ Enter remaining free space that triggers each level (<code>1.5T</code>, <code>7.
 
 ### Pools
 
-Pool names come from your server (usually <strong>cache</strong> for the default; extras use the names you assigned).
+Pool names come from your server. Unraid often defaults the first pool to <strong>cache</strong>, but every pool—including the first—can be named however you like.
 
 _(Color pool free space on Main?)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">

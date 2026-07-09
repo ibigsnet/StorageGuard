@@ -11,7 +11,7 @@ For install steps and a short overview, see [README.md](README.md).
 Storage Guard watches **remaining free space** on:
 
 - the **array** (data disks), and  
-- each **pool** Unraid reports (often named `cache`, or names you assigned)
+- each **pool** Unraid reports (whatever names you configured)
 
 You set a **Warning** and/or **Critical** free-space threshold for each. When free space falls to or below a threshold, Storage Guard colors that target’s **total free space bar** on the Main tab (the Free usage bar for the array totals row, or for a pool’s data free space—not the whole page):
 
@@ -67,7 +67,7 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 ## Pool thresholds
 
-Pools are detected from Unraid (not hard-coded names). The default pool is usually **`cache`**; extra pools use the names you gave them.
+Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
 
 For each pool you can:
 
@@ -142,7 +142,7 @@ Each target (array, and every pool) has its own style:
 | **Outline** (default) | Keeps Unraid’s green free fill; yellow/red outline pulses around the free bar |
 | **Solid** | Free bar fill becomes yellow or red |
 
-Array can be Outline while `cache` is Solid, and so on.
+Array can be Outline while one pool is Solid, and so on.
 
 ---
 

@@ -15,7 +15,7 @@ The idea is simple. Disk prices are rising. If a drive fails, you may still have
 - **Warning** and **Critical** levels, or **None** to leave a level unused
 - Main-tab coloring: **Outline** (pulse border, keep green fill) or **Solid** (recolor the free bar) — set **per array / per pool**
 - Optional Unraid notifications, independent of coloring
-- Works with the array and all your pools (names come from Unraid; default pool is usually `cache`)
+- Works with the array and all your pools (names come from Unraid—any pool name, not just `cache`)
 
 ## Install
 
