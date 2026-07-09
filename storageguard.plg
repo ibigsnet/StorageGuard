@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-9">
+<!ENTITY version "2026.07.06-10">
 <!ENTITY launch "Utilities/Storage Guard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,9 +24,9 @@
 
 <CHANGES>
 ###&version;
-- Pool detection: type=Cache + Unraid prefix() groups cache/cache2 as one pool "cache"; Boot (flash/flash2) excluded.
-- Asset URLs include ?v=version to avoid stale download caches.
-- CRITICAL (earlier): Method="remove" not Type="remove".
+- Alerts: per-target Warning/Critical matrix (e.g. array warn only, cache warn+crit). No redundant master switch.
+- Hide custom capacity fields unless Use custom = Yes; hide disk dropdowns when custom.
+- Clear notice when no array data disks (pools-only); fix get-config.cfg path.
 
 ###2026.07.06-5
 - Run block CDATA formatting.

@@ -213,30 +213,64 @@ $array_coloring = $cfg['array_coloring'] ?? 'yes';
 $pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
-$alerts_enabled = $cfg['alerts_enabled'] ?? 'yes';
-$warning_alerts_enabled = $cfg['warning_alerts_enabled'] ?? 'yes';
-$critical_alerts_enabled = $cfg['critical_alerts_enabled'] ?? 'yes';
-$alerts_for = $cfg['alerts_for'] ?? 'all';
+
+// --- Alerts: per-target severity (warning / critical independently) ---
+// Keys: alerts_array_warning, alerts_array_critical, alerts_pool_<safe>_warning, alerts_pool_<safe>_critical
+// Migration from older global flags (alerts_enabled / warning_alerts_enabled / critical_alerts_enabled / alerts_for)
+$legacy_alerts_on = ($cfg['alerts_enabled'] ?? 'yes') === 'yes';
+$legacy_warn = ($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes';
+$legacy_crit = ($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes';
+$legacy_for = $cfg['alerts_for'] ?? 'all';
+
+function sg_alert_default($cfg, $key, $legacy_on, $legacy_level_on, $legacy_for, $target) {
+    if (isset($cfg[$key])) return $cfg[$key];
+    if (!$legacy_on || !$legacy_level_on) return 'no';
+    if ($legacy_for === 'all') return 'yes';
+    $list = array_map('trim', explode(',', $legacy_for));
+    return in_array($target, $list, true) ? 'yes' : 'no';
+}
+
+$has_array_disks = !empty($array_raw_sizes);
+$alerts_array_warning = sg_alert_default($cfg, 'alerts_array_warning', $legacy_alerts_on, $legacy_warn, $legacy_for, 'array');
+$alerts_array_critical = sg_alert_default($cfg, 'alerts_array_critical', $legacy_alerts_on, $legacy_crit, $legacy_for, 'array');
+// Default off for array if no disks present (pools-only)
+if (!$has_array_disks && !isset($cfg['alerts_array_warning'])) $alerts_array_warning = 'no';
+if (!$has_array_disks && !isset($cfg['alerts_array_critical'])) $alerts_array_critical = 'no';
+
+$pool_alert_cfg = [];
+foreach ($pool_names as $p) {
+    $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+    $pool_alert_cfg[$p] = [
+        'safe' => $safe,
+        'warning' => sg_alert_default($cfg, "alerts_pool_{$safe}_warning", $legacy_alerts_on, $legacy_warn, $legacy_for, $p),
+        'critical' => sg_alert_default($cfg, "alerts_pool_{$safe}_critical", $legacy_alerts_on, $legacy_crit, $legacy_for, $p),
+    ];
+}
 ?>
 
 <form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
 <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
-<input type="hidden" name="alerts_for" id="alerts_for" value="<?=htmlspecialchars($alerts_for)?>">
 
 <?php if (!empty($dev_mode)): ?>
 <p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — using example disk sizes (no /var/local/emhttp/disks.ini detected on this system).</p>
 <?php endif; ?>
 
 <p>
-Storage Guard enhances your awareness of redundancy and how much space you have pre-failure. 
-This leaves you options for migration of data to other disks should a disk fail. 
-Prices of disks are rising, so this plugin aims to aid users in understanding that they still have space left to move data in the event of a disk failure. 
-
-These thresholds can be set to make clear to you at first glance on the Main page that you are still safe, even after a disk failure, to move data around and not have to worry about replacing the disks right away.
+Storage Guard enhances redundancy awareness: set free-space thresholds so you know <em>before</em> a drive fails whether you still have room to migrate data or rebalance—without an immediate replacement.
 </p>
 
 <!-- ARRAY SECTION -->
+<div class="title">Array</div>
+
+<?php if (!$has_array_disks): ?>
+<p style="color:#888; font-size:0.95em; margin:0.5em 0 1em;">
+<strong>No array data disks detected</strong> (pools-only setup, or no data disks assigned). Array thresholds and Main-tab array coloring apply only when you have array data disks. Pool settings below still work.
+</p>
+<?php endif; ?>
+
+<div id="array-settings-block" style="<?= $has_array_disks ? '' : 'opacity:0.65;' ?>">
+
 _(Enable Array Coloration)_:
 : <select name="array_coloring" id="array_coloring">
   <?=mk_option($array_coloring, "yes", _("Yes"))?>
@@ -244,12 +278,10 @@ _(Enable Array Coloration)_:
   </select>
 
 <blockquote class="inline_help">
-Enable coloring of the Array total free space on the Main tab. 
-These thresholds can be set to make clear to you at first glance that you are still safe, even after a disk failure, to move data around and not have to worry about replacing the disks right away.
+Enable coloring of the Array total free space on the Main tab when free space falls below your warning/critical thresholds.
 </blockquote>
 
-_(Hint: If no array is present, these settings will be ignored.)_
-
+<div id="array-disk-selects">
 _(Choose Array Total Warning Capacity)_:
 : <select name="array_warning" id="array_warning">
   <?=sg_size_options($array_sizes, $array_warning)?>
@@ -261,8 +293,7 @@ The goal is to know *before* a drive fails whether you will still have enough ro
 <b>Examples:</b><br>
 Uniform 4×26TB (1 parity + 3 data): choose 26T.<br>
 Mixed (Parity 12T + 8T×3 + 4T + 2T): Warning=8T (largest data disk), Critical=2T (smallest data disk).<br>
-If free space &lt; 8T and your largest disk fails, you may not have room to move its data off the failed disk without buying a new drive.<br><br>
-You may even want to raise the Warning (or Critical) threshold if you don't trust a disk in your array or suspect one is failing. Set it so you know you still have space across the rest of the array to move that data over.
+If free space &lt; 8T and your largest disk fails, you may not have room to move its data off the failed disk without buying a new drive.
 </blockquote>
 
 _(Choose Array Total Critical Capacity)_:
@@ -272,10 +303,9 @@ _(Choose Array Total Critical Capacity)_:
 
 <blockquote class="inline_help">
 Total free space on the array drops below this → red critical.<br><br>
-<b>Critical example (mixed array):</b><br>
-Set to 2T. If you have &lt; 2T free and the 2T disk fails, there is not enough room on remaining disks to move the data that was on the failed drive (even using parity). You would need to purchase a new disk instead of "moving" data.<br><br>
-You may even want to choose Critical=4T if you don't trust a disk in your array, or suspect one is failing. Set the threshold so you know you still have space across the rest of the array to move that data over.
+<b>Critical example (mixed array):</b> Set to 2T. If free &lt; 2T and the 2T disk fails, there is not enough room on remaining disks to move that data without buying a replacement.
 </blockquote>
+</div>
 
 _(Use custom capacity?)_:
 : <select name="array_use_custom" id="array_use_custom">
@@ -284,19 +314,24 @@ _(Use custom capacity?)_:
   </select>
 
 <blockquote class="inline_help">
-Yes = ignore the disk dropdowns above and use the manual values below instead. Useful for fine-tuned values not exactly matching a disk size (e.g. 7.5T, 1.5T, 500G).<br><br>
-For example, in a mixed array you might set Custom Critical to 4T if you don't trust one of the disks or suspect it is failing. This lets you know you still have enough space across the rest of the array to move its data.
+Yes = hide the disk-size dropdowns and use the manual values below instead (e.g. 7.5T, 1.5T, 500G).
 </blockquote>
 
+<div id="array-custom-fields" style="display:none">
 _(Custom Array Warning Capacity)_:
 : <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 8T or 1.5T or 500G">
 
 _(Custom Array Critical Capacity)_:
 : <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T or 500G">
+</div>
+
+</div><!-- /array-settings-block -->
 
 <hr>
 
 <!-- POOLS SECTION -->
+<div class="title">Pools</div>
+
 _(Enable Pool Coloration?)_:
 : <select name="pool_coloring" id="pool_coloring">
   <?=mk_option($pool_coloring, "yes", _("Yes"))?>
@@ -304,8 +339,7 @@ _(Enable Pool Coloration?)_:
   </select>
 
 <blockquote class="inline_help">
-Master switch for coloring total free space on your pools. 
-These thresholds can be set to make clear to you at first glance that you are still safe, even after a disk failure, to move data around and not have to worry about replacing the disks right away.
+Master switch for coloring total free space on pools on the Main tab.
 </blockquote>
 
 _(Select Pools to color)_:
@@ -321,12 +355,11 @@ _(Select Pools to color)_:
 <?php endif; ?>
 
 <blockquote class="inline_help">
-Choose which pools participate in coloration. "All" selects everything. Individual checkboxes allow granular control.<br><br>
-Thresholds here exist so you know—*before* a drive fails—whether you will still have room in the pool to rebalance or move data off a degraded pool without being forced to buy a replacement immediately.
+Choose which pools get Main-tab coloring. "All" selects every pool. Thresholds below exist so you know—*before* a drive fails—whether you still have room to rebalance or evacuate data.
 </blockquote>
 
 <?php if (!empty($pool_names)): ?>
-<h3 style="margin-top:16px">Per-Pool Thresholds (Free Space)</h3>
+<div class="title" style="margin-top:16px">Per-pool thresholds (free space)</div>
 <?php foreach ($pool_names as $p): 
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $w_key = "pool_{$safe}_warning";
@@ -435,59 +468,59 @@ More advanced BTRFS guidance and dynamic per-pool suggestions are planned.
 
 <hr>
 
-<!-- ALERTS SECTION -->
-_(Enable Storage Guard Alerts?)_:
-: <select name="alerts_enabled" id="alerts_enabled">
-  <?=mk_option($alerts_enabled, "yes", _("Yes"))?>
-  <?=mk_option($alerts_enabled, "no", _("No"))?>
-  </select>
+<!-- ALERTS SECTION: per-target severity (no master switch — unchecked = no alerts for that target/level) -->
+<div class="title">Alerts (Unraid notifications)</div>
+
+<p style="font-size:0.95em; margin:0.4em 0 1em;">
+Choose <strong>Warning</strong> and/or <strong>Critical</strong> per target. Example: Array = Warning only, cache = Warning + Critical.
+Nothing checked = no notifications. Coloring on Main is separate (above).
+</p>
 
 <blockquote class="inline_help">
-When enabled, Storage Guard sends native Unraid notifications when your total free space buffers are breached. 
-This gives you proactive awareness so you know you are still safe to move data around even after a disk failure, without having to replace disks right away.
+Notifications use Unraid's notify system when free space on that target falls below the matching threshold.
+Warning and Critical are independent per target (array or pool). Leave both unchecked for a target to silence it completely.
 </blockquote>
 
-_(Array / Pools alerts enabled)_:
-: <label><input type="checkbox" id="alert_all" name="alert_all" value="yes"> All</label>
-<label style="margin-left:8px"><input type="checkbox" class="alert-cb" name="alert_array" value="array" <?= (strpos(','.$alerts_for.',', ',array,')!==false || $alerts_for==='all') ? 'checked' : '' ?>> Array</label>
-<?php foreach ($pool_names as $p): 
-  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
-  $checked = (strpos(','.$alerts_for.',', ','.$p.',') !== false || $alerts_for === 'all') ? 'checked' : '';
-?>
-  <label style="margin-left:8px"><input type="checkbox" class="alert-cb" name="alert_pool_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
+<div style="margin: 0.5em 0 1.2em; overflow-x:auto;">
+<table class="tablesorter" style="width:auto; min-width:320px;">
+<thead>
+<tr>
+  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
+  <th style="padding:4px 12px; text-align:center;">Warning</th>
+  <th style="padding:4px 12px; text-align:center;">Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no data disks)</span>' ?></td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_warning" value="no">
+    <input type="checkbox" name="alerts_array_warning" value="yes" class="alert-sev" data-target="array" data-level="warning" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_critical" value="no">
+    <input type="checkbox" name="alerts_array_critical" value="yes" class="alert-sev" data-target="array" data-level="critical" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+  </td>
+</tr>
+<?php foreach ($pool_alert_cfg as $p => $ac): ?>
+<tr>
+  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars($p)?> <span style="color:#888;font-size:0.85em;">(pool)</span></td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" class="alert-sev" data-target="<?=htmlspecialchars($p)?>" data-level="warning" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" class="alert-sev" data-target="<?=htmlspecialchars($p)?>" data-level="critical" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+</tr>
 <?php endforeach; ?>
-
-<blockquote class="inline_help">
-Select which components generate alerts. "All" covers Array + every pool.<br>
-Individual control lets you silence noisy pools or only alert on the Array.
-</blockquote>
-
-_(Warning alerts enabled)_:
-: <select name="warning_alerts_enabled" id="warning_alerts_enabled">
-  <?=mk_option($warning_alerts_enabled, "yes", _("Yes"))?>
-  <?=mk_option($warning_alerts_enabled, "no", _("No"))?>
-  </select>
-
-<blockquote class="inline_help">
-If disabled, you will not receive warning level alerts (only critical if enabled). A notice will be shown.
-</blockquote>
-
-_(Critical alerts enabled)_:
-: <select name="critical_alerts_enabled" id="critical_alerts_enabled">
-  <?=mk_option($critical_alerts_enabled, "yes", _("Yes"))?>
-  <?=mk_option($critical_alerts_enabled, "no", _("No"))?>
-  </select>
-
-<blockquote class="inline_help">
-If disabled, you will not receive critical level alerts. A notice will be shown on the settings page.
-</blockquote>
-
-<?php if ($warning_alerts_enabled !== 'yes'): ?>
-<p style="color:#c33; font-weight:bold;">⚠️ Warning alerts are disabled. You will not be notified at warning level.</p>
+<?php if (empty($pool_alert_cfg) && !$has_array_disks): ?>
+<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected for alerts.</td></tr>
 <?php endif; ?>
-<?php if ($critical_alerts_enabled !== 'yes'): ?>
-<p style="color:#c33; font-weight:bold;">⚠️ Critical alerts are disabled. You will only be notified at critical level if enabled.</p>
-<?php endif; ?>
+</tbody>
+</table>
+</div>
 
 <hr>
 
