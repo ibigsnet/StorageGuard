@@ -76,18 +76,81 @@ function sg_level($free_tb, $warn_tb, $crit_tb) {
 }
 
 function sg_send_notify($subject, $desc, $priority = 'warning') {
+    // -i normal|warning|alert  (normal = green/cleared style, same family as parity complete)
     $cmd = "/usr/local/emhttp/webGui/scripts/notify -e 'Storage Guard' -s " . escapeshellarg($subject)
         . " -d " . escapeshellarg($desc) . " -i " . escapeshellarg($priority) . " -l '/Main'";
     @shell_exec($cmd);
 }
 
+function sg_state_key($key) {
+    return preg_replace('/[^a-zA-Z0-9_-]/', '_', $key);
+}
+
 function sg_should_send($key, $min_interval = 3600) {
     global $state_dir;
-    $file = $state_dir . '/' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $key);
+    $file = $state_dir . '/' . sg_state_key($key);
     $last = @filemtime($file);
     if ($last && (time() - $last) < $min_interval) return false;
     @touch($file);
     return true;
+}
+
+/** Last alert level for a target: ok|warning|critical (empty = never seen). */
+function sg_get_last_level($key) {
+    global $state_dir;
+    $file = $state_dir . '/' . sg_state_key($key) . '.level';
+    if (!is_file($file)) return '';
+    $v = strtolower(trim((string)@file_get_contents($file)));
+    return in_array($v, ['ok', 'warning', 'critical'], true) ? $v : '';
+}
+
+function sg_set_last_level($key, $level) {
+    global $state_dir;
+    $file = $state_dir . '/' . sg_state_key($key) . '.level';
+    @file_put_contents($file, $level);
+}
+
+/**
+ * Send warning/critical (with re-alert throttle), or one recovery notify when
+ * free space rises back above thresholds (Unraid -i normal, like parity done).
+ */
+function sg_process_level($key, $level, $warn_subject, $crit_subject, $ok_subject, $warn_body, $crit_body, $ok_body) {
+    global $sent, $state_dir;
+    $last = sg_get_last_level($key);
+
+    if ($level === 'critical') {
+        if ($last !== 'critical') {
+            // level changed — send immediately
+            sg_send_notify($crit_subject, $crit_body, 'alert');
+            @touch($state_dir . '/' . sg_state_key($key));
+            $sent[] = $key . '_critical';
+        } elseif (sg_should_send($key)) {
+            sg_send_notify($crit_subject, $crit_body, 'alert');
+            $sent[] = $key . '_critical';
+        }
+        sg_set_last_level($key, 'critical');
+        return;
+    }
+
+    if ($level === 'warning') {
+        if ($last !== 'warning') {
+            sg_send_notify($warn_subject, $warn_body, 'warning');
+            @touch($state_dir . '/' . sg_state_key($key));
+            $sent[] = $key . '_warning';
+        } elseif (sg_should_send($key)) {
+            sg_send_notify($warn_subject, $warn_body, 'warning');
+            $sent[] = $key . '_warning';
+        }
+        sg_set_last_level($key, 'warning');
+        return;
+    }
+
+    // ok — recovery only if we previously warned/alerted
+    if ($last === 'warning' || $last === 'critical') {
+        sg_send_notify($ok_subject, $ok_body, 'normal');
+        $sent[] = $key . '_recovered';
+    }
+    sg_set_last_level($key, 'ok');
 }
 
 function sg_flag($cfg, $key) {
@@ -192,14 +255,21 @@ if ($arr_warn_on || $arr_crit_on) {
     if ($level === 'critical' && !$arr_crit_on) $level = $arr_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$arr_warn_on) $level = 'ok';
 
-    if ($level === 'critical' && sg_should_send('array_critical')) {
-        $msg = sg_array_notify_body('critical', $array_free, $th);
-        sg_send_notify('Storage Guard: Array free space critical', $msg, 'alert');
-        $sent[] = 'array_critical';
-    } elseif ($level === 'warning' && sg_should_send('array_warning')) {
-        $msg = sg_array_notify_body('warning', $array_free, $th);
-        sg_send_notify('Storage Guard: Array free space warning', $msg, 'warning');
-        $sent[] = 'array_warning';
+    if ($level === 'critical' || $level === 'warning' || $level === 'ok') {
+        $warn_body = sg_array_notify_body('warning', $array_free, $th);
+        $crit_body = sg_array_notify_body('critical', $array_free, $th);
+        $free_h = function_exists('sg_human_free') ? sg_human_free($array_free) : (round($array_free, 2) . 'T');
+        $ok_body = "Array free space is back above your thresholds ({$free_h} free). No longer at warning or critical free-space levels.";
+        sg_process_level(
+            'array',
+            $level,
+            'Storage Guard: Array free space warning',
+            'Storage Guard: Array free space critical',
+            'Storage Guard: Array free space recovered',
+            $warn_body,
+            $crit_body,
+            $ok_body
+        );
     }
 }
 
@@ -237,14 +307,21 @@ foreach ($cfg as $k => $v) {
     $profile = sg_pool_btrfs_profile($pname);
     $class = sg_pool_profile_class($profile);
 
-    if ($level === 'critical' && sg_should_send("pool_{$safe}_critical")) {
-        $msg = sg_pool_notify_body('critical', $pname, $pool_free, $th, $profile, $class);
-        sg_send_notify("Storage Guard: Pool {$pname} free space critical", $msg, 'alert');
-        $sent[] = "pool_{$safe}_critical";
-    } elseif ($level === 'warning' && sg_should_send("pool_{$safe}_warning")) {
-        $msg = sg_pool_notify_body('warning', $pname, $pool_free, $th, $profile, $class);
-        sg_send_notify("Storage Guard: Pool {$pname} free space warning", $msg, 'warning');
-        $sent[] = "pool_{$safe}_warning";
+    if ($level === 'critical' || $level === 'warning' || $level === 'ok') {
+        $warn_body = sg_pool_notify_body('warning', $pname, $pool_free, $th, $profile, $class);
+        $crit_body = sg_pool_notify_body('critical', $pname, $pool_free, $th, $profile, $class);
+        $free_h = function_exists('sg_human_free') ? sg_human_free($pool_free) : (round($pool_free, 2) . 'T');
+        $ok_body = "Pool {$pname} free space is back above your thresholds ({$free_h} free). No longer at warning or critical free-space levels.";
+        sg_process_level(
+            "pool_{$safe}",
+            $level,
+            "Storage Guard: Pool {$pname} free space warning",
+            "Storage Guard: Pool {$pname} free space critical",
+            "Storage Guard: Pool {$pname} free space recovered",
+            $warn_body,
+            $crit_body,
+            $ok_body
+        );
     }
 }
 

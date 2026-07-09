@@ -26,8 +26,9 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | Free space | Main free bar | Alerts (if enabled) |
 |------------|---------------|---------------------|
 | **Above** all thresholds (healthy) | Normal Unraid look, **or** optional **green outline** (Outline style + “green when OK”) | Silent |
-| At or below **Warning** | **Yellow** | Unraid warning notification |
-| At or below **Critical** | **Red** | Unraid alert notification |
+| At or below **Warning** | **Yellow** | Unraid **warning** notification |
+| At or below **Critical** | **Red** | Unraid **alert** notification |
+| Back **above** all thresholds after a warn/alert | Normal / optional green outline | Unraid **normal** notification (“recovered”) — same severity family as parity complete |
 
 **None** (or a blank custom field) means that level is unused.
 
@@ -198,6 +199,14 @@ Nothing checked for a row = silent for that target.
 Alerts use the **same free-space thresholds and severity ranking** as Main coloring (including custom values and the “lower free amount = critical” rule). They do **not** require Main coloring to be on.
 
 If free space is in the critical band but only the warning checkbox is enabled, you get a **warning** notification (highest enabled severity that matches).
+
+### Recovery (cleared) notifications
+
+When free space was at warning or critical and later rises **above** your thresholds again, Storage Guard sends one **recovered** notification using Unraid importance `normal` (the green/OK style used when parity finishes successfully).
+
+- Only fires after a prior warning/critical for that target (array or a pool).
+- Does **not** fire on first install just because free space is already healthy.
+- Warning/critical can re-notify about once per hour while still degraded; recovery fires once when you return to OK.
 
 ### What notifications say (current)
 
