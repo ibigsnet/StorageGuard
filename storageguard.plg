@@ -33,7 +33,7 @@
 <CHANGES>
 ###&version;
 - Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
-- Versioning: after letter z same day, continue aa, ab, ... (not next calendar day). Retag of short-lived 2026.07.10 label.
+- Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z). Retag of brief 2026.07.10 / 2026.07.09za labels.
 
 ###2026.07.09z
 - Settings/docs: mark Pools section as WIP while pool logic is still being refined.
@@ -195,7 +195,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09aa"
+[ -z "$VER" ] && VER="2026.07.09za"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
