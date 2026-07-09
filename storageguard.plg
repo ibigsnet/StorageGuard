@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-11">
+<!ENTITY version "2026.07.06-12">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,9 +24,8 @@
 
 <CHANGES>
 ###&version;
-- Alerts: per-target Warning/Critical matrix (e.g. array warn only, cache warn+crit). No redundant master switch.
-- Hide custom capacity fields unless Use custom = Yes; hide disk dropdowns when custom.
-- Clear notice when no array data disks (pools-only); fix get-config.cfg path.
+- Plugins icon launch: Settings/StorageGuard (was wrong Utilities/Storage Guard blank page).
+- Alerts matrix, custom hide, pools-only notice (from -10).
 
 ###2026.07.06-5
 - Run block CDATA formatting.
