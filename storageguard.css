@@ -1,50 +1,37 @@
-/* Storage Guard — free-space warning/critical on Main tab totals */
+/* Storage Guard — free-space *bar* coloring (Main tab)
+   Primary paint is inline style from JS; these classes are backup/enhancement. */
 
-/* Whole totals row */
-tr.sg-warning > td,
-.sg-warning {
-  background-color: rgba(255, 193, 7, 0.45) !important;
-}
-tr.sg-critical > td,
-.sg-critical {
-  background-color: rgba(244, 67, 54, 0.55) !important;
-  color: #fff !important;
+.usage-disk span.sg-warning.sg-bar,
+.usage-disk > span.sg-warning:first-child {
+  background-color: #ffc107 !important;
+  background: #ffc107 !important;
 }
 
-/* Free column / usage bar text stand out */
-tr.sg-warning > td:last-child,
-td.sg-warning,
-span.sg-warning {
+.usage-disk span.sg-critical.sg-bar,
+.usage-disk > span.sg-critical:first-child {
+  background-color: #f44336 !important;
+  background: #f44336 !important;
+}
+
+.usage-disk[data-sg="warning"] {
+  outline: 2px solid #ffc107 !important;
+  outline-offset: 1px;
+}
+
+.usage-disk[data-sg="critical"] {
+  outline: 2px solid #f44336 !important;
+  outline-offset: 1px;
+}
+
+/* Plain free text mode (bars disabled in Display settings) */
+td[data-sg="warning"] {
   background-color: #ffc107 !important;
   color: #000 !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
 }
-tr.sg-critical > td:last-child,
-td.sg-critical,
-span.sg-critical {
+
+td[data-sg="critical"] {
   background-color: #f44336 !important;
   color: #fff !important;
-  font-weight: 600 !important;
-}
-
-/* Legacy class names still used by injector */
-.array-warning,
-.pool-warning {
-  background-color: rgba(255, 193, 7, 0.45) !important;
-}
-.array-critical,
-.pool-critical {
-  background-color: rgba(244, 67, 54, 0.55) !important;
-}
-
-/* Dashboard list blocks */
-#array_list.sg-warning,
-#array_list.array-warning,
-[id^="pool_list"].sg-warning {
-  outline: 3px solid #ffc107;
-}
-#array_list.sg-critical,
-#array_list.array-critical,
-[id^="pool_list"].sg-critical {
-  outline: 3px solid #f44336;
+  font-weight: 700 !important;
 }

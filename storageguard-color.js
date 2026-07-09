@@ -1,97 +1,142 @@
-// Storage Guard — color array/pool free space on Main (and Dashboard when present)
-// Free space + level are computed server-side in get-config.php (_status).
-// DOM is re-colored on a timer because Unraid nchan replaces tbody HTML.
+// Storage Guard — color free-space *bars* on Main (not whole rows)
+// Levels come from get-config.php (_status). Re-applies after nchan DOM refresh.
 
 (function () {
   'use strict';
 
-  var path = window.location.pathname || '';
-  if (path.indexOf('/Main') === -1 && path.indexOf('/Dashboard') === -1) return;
-
   var lastStatus = null;
-  var CLASSES = ['sg-warning', 'sg-critical', 'array-warning', 'array-critical', 'pool-warning', 'pool-critical'];
+  var BAR_WARN = '#ffc107';
+  var BAR_CRIT = '#f44336';
 
   function log() {
-    if (window.StorageGuardDebug) console.log.apply(console, ['[StorageGuard]'].concat([].slice.call(arguments)));
+    if (window.StorageGuardDebug) {
+      console.log.apply(console, ['[StorageGuard]'].concat([].slice.call(arguments)));
+    }
   }
 
-  function clearClasses(el) {
-    if (!el) return;
-    CLASSES.forEach(function (c) { el.classList.remove(c); });
+  function onMainLikePage() {
+    // Prefer element detection over pathname (more reliable across Unraid versions)
+    return !!(
+      document.getElementById('array_devices') ||
+      document.querySelector('[id^="pool_device"]') ||
+      document.getElementById('array_list') ||
+      document.querySelector('[id^="pool_list"]')
+    );
   }
 
-  function paint(el, level, kind) {
-    if (!el) return;
-    clearClasses(el);
+  function clearBarPaint(root) {
+    if (!root) return;
+    root.querySelectorAll('.usage-disk[data-sg], .usage-disk span[data-sg], td[data-sg]').forEach(function (el) {
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('background');
+      el.style.removeProperty('outline');
+      el.style.removeProperty('box-shadow');
+      el.style.removeProperty('color');
+      el.removeAttribute('data-sg');
+      el.classList.remove('sg-warning', 'sg-critical', 'sg-bar');
+    });
+    // also clear legacy row classes if present
+    root.classList.remove('sg-warning', 'sg-critical', 'array-warning', 'array-critical', 'pool-warning', 'pool-critical');
+  }
+
+  /**
+   * Paint the Free column usage bar (first span inside .usage-disk).
+   * Falls back to the Free <td> when bars are disabled in Display settings.
+   */
+  function paintFreeCell(tr, level) {
+    if (!tr) return;
+    var td = tr.querySelector('td:last-child') || tr;
+    var disk = td.querySelector('.usage-disk');
+    var bar = disk ? disk.querySelector('span:first-child') : null;
+    var label = disk ? disk.querySelector('span:last-child') : null;
+    var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
+
+    // Clear previous on this cell first
+    clearBarPaint(td);
+
     if (level !== 'warning' && level !== 'critical') return;
-    el.classList.add(level === 'critical' ? 'sg-critical' : 'sg-warning');
-    el.classList.add(kind === 'array'
-      ? (level === 'critical' ? 'array-critical' : 'array-warning')
-      : (level === 'critical' ? 'pool-critical' : 'pool-warning'));
+
+    if (bar) {
+      // The filled portion of Unraid's free-space bar
+      bar.style.setProperty('background-color', color, 'important');
+      bar.style.setProperty('background', color, 'important');
+      bar.setAttribute('data-sg', level);
+      bar.classList.add('sg-bar', level === 'critical' ? 'sg-critical' : 'sg-warning');
+      if (disk) {
+        disk.style.setProperty('outline', '2px solid ' + color, 'important');
+        disk.setAttribute('data-sg', level);
+      }
+      if (label) {
+        label.style.setProperty('font-weight', '700', 'important');
+        if (level === 'critical') label.style.setProperty('color', '#ffcdd2', 'important');
+        label.setAttribute('data-sg', level);
+      }
+      log('painted bar', level, tr);
+      return;
+    }
+
+    // Plain free text mode (no usage bar)
+    td.style.setProperty('background-color', color, 'important');
+    td.style.setProperty('color', level === 'critical' ? '#fff' : '#000', 'important');
+    td.style.setProperty('font-weight', '700', 'important');
+    td.setAttribute('data-sg', level);
+    log('painted td (no bar)', level, tr);
   }
 
-  /** Free column is typically the last <td> on the totals row */
-  function freeCells(tr) {
-    if (!tr) return [];
-    var tds = tr.querySelectorAll('td');
-    if (!tds.length) return [tr];
-    var last = tds[tds.length - 1];
-    var cells = [last, tr];
-    // Also paint usage-disk free span if present
-    var spans = last.querySelectorAll('.usage-disk span, span');
-    for (var i = 0; i < spans.length; i++) cells.push(spans[i]);
-    return cells;
+  function totalsRows(tbody) {
+    if (!tbody) return [];
+    return Array.prototype.slice.call(tbody.querySelectorAll('tr.tr_last'));
   }
 
-  function findArrayTotalsRow() {
-    var tbody = document.getElementById('array_devices');
-    if (!tbody) return null;
-    var rows = tbody.querySelectorAll('tr.tr_last');
-    var i, tr, t;
-    for (i = 0; i < rows.length; i++) {
-      tr = rows[i];
-      t = (tr.textContent || '').toLowerCase();
-      // "Array of N devices" totals row (localized may vary — also match free-looking sizes)
-      if (t.indexOf('array') !== -1 || /\d+(\.\d+)?\s*[tgm]b/i.test(tr.textContent || '')) {
-        // Prefer row that mentions Array
-        if (t.indexOf('array') !== -1) return tr;
+  function pickTotalsRow(tbody, preferText) {
+    var rows = totalsRows(tbody);
+    var i, t;
+    if (preferText) {
+      for (i = 0; i < rows.length; i++) {
+        t = (rows[i].textContent || '').toLowerCase();
+        if (t.indexOf(preferText) !== -1) return rows[i];
       }
     }
-    // Fallback: last tr_last with numeric size in last cell
+    // Prefer a row that has a free size / usage bar
     for (i = rows.length - 1; i >= 0; i--) {
-      if (/\d/.test(rows[i].textContent || '')) return rows[i];
+      if (rows[i].querySelector('.usage-disk') || /\d+(\.\d+)?\s*[tgm]b/i.test(rows[i].textContent || '')) {
+        return rows[i];
+      }
     }
     return rows.length ? rows[rows.length - 1] : null;
   }
 
-  function findPoolTotalsRow(poolName) {
-    var name = (poolName || '').toLowerCase();
-    var bodies = document.querySelectorAll('[id^="pool_device"]');
-    var b, i, j, rows, tr, t, link;
-    for (b = 0; b < bodies.length; b++) {
-      // Match pool by Device link or text
-      link = bodies[b].querySelector('a[href*="Device?name="]');
-      var href = link ? (link.getAttribute('href') || '') : '';
-      var bodyText = (bodies[b].textContent || '').toLowerCase();
-      var match =
-        href.toLowerCase().indexOf('name=' + name) !== -1 ||
-        bodyText.indexOf(name) !== -1;
-      if (!match) continue;
-
-      rows = bodies[b].querySelectorAll('tr.tr_last');
-      for (j = 0; j < rows.length; j++) {
-        t = (rows[j].textContent || '').toLowerCase();
-        if (t.indexOf('pool') !== -1) return rows[j];
-      }
-      if (rows.length) return rows[rows.length - 1];
+  function poolNamesInTbody(tbody) {
+    var found = [];
+    var links = tbody.querySelectorAll('a[href*="Device?name="], a[href*="Device?name%3D"]');
+    for (var i = 0; i < links.length; i++) {
+      var href = links[i].getAttribute('href') || '';
+      var m = href.match(/name=([^&]+)/i);
+      if (!m) continue;
+      var n = decodeURIComponent(m[1]).replace(/\/$/, '');
+      // strip trailing device index: cache2 -> try as-is and as cache
+      if (found.indexOf(n) === -1) found.push(n);
     }
+    return found;
+  }
 
-    // Dashboard pool list
-    var dash = document.querySelectorAll('[id^="pool_list"]');
-    for (i = 0; i < dash.length; i++) {
-      if ((dash[i].getAttribute('title') || '').toLowerCase().indexOf(name) !== -1 ||
-          (dash[i].textContent || '').toLowerCase().indexOf(name) !== -1) {
-        return dash[i];
+  function resolvePoolKey(names, poolsStatus) {
+    if (!poolsStatus) return null;
+    var keys = Object.keys(poolsStatus);
+    var i, j, n, pref;
+    // Exact match first
+    for (i = 0; i < names.length; i++) {
+      if (poolsStatus[names[i]]) return names[i];
+    }
+    // prefix(cache2) => cache
+    for (i = 0; i < names.length; i++) {
+      pref = names[i].replace(/\d+$/, '');
+      if (pref && poolsStatus[pref]) return pref;
+    }
+    // case-insensitive
+    for (i = 0; i < names.length; i++) {
+      for (j = 0; j < keys.length; j++) {
+        if (keys[j].toLowerCase() === names[i].toLowerCase()) return keys[j];
       }
     }
     return null;
@@ -100,36 +145,85 @@
   function applyStatus(status) {
     if (!status) return;
     lastStatus = status;
-
-    // Array
-    if (status.array && status.array.enabled && status.array.level && status.array.level !== 'ok') {
-      var atr = findArrayTotalsRow();
-      freeCells(atr).forEach(function (el) { paint(el, status.array.level, 'array'); });
-      log('array', status.array);
-    } else if (status.array) {
-      var atr2 = findArrayTotalsRow();
-      freeCells(atr2).forEach(clearClasses);
+    if (!onMainLikePage()) {
+      log('skip apply — not on Main-like page');
+      return;
     }
 
-    // Pools
+    // --- Array ---
+    var arrayBody = document.getElementById('array_devices');
+    if (arrayBody) {
+      var arow = pickTotalsRow(arrayBody, 'array');
+      if (status.array && status.array.enabled && (status.array.level === 'warning' || status.array.level === 'critical')) {
+        paintFreeCell(arow, status.array.level);
+      } else if (arow) {
+        clearBarPaint(arow.querySelector('td:last-child') || arow);
+      }
+    }
+
+    // Dashboard array block
+    var alist = document.getElementById('array_list');
+    if (alist && status.array && status.array.enabled && status.array.level !== 'ok') {
+      // tint free-looking numbers inside dashboard card
+      var bars = alist.querySelectorAll('.usage-disk');
+      if (bars.length) {
+        bars.forEach(function (d) {
+          var fakeTr = { querySelector: function (sel) {
+            if (sel === 'td:last-child') return d.parentElement;
+            return d.parentElement ? d.parentElement.querySelector(sel) : null;
+          }};
+          // simpler: paint disk directly
+          var bar = d.querySelector('span:first-child');
+          var color = status.array.level === 'critical' ? BAR_CRIT : BAR_WARN;
+          if (bar) {
+            bar.style.setProperty('background-color', color, 'important');
+            bar.setAttribute('data-sg', status.array.level);
+          }
+        });
+      }
+    }
+
+    // --- Pools ---
     var pools = status.pools || {};
+    var bodies = document.querySelectorAll('[id^="pool_device"]');
+    var matched = {};
+    for (var b = 0; b < bodies.length; b++) {
+      var tbody = bodies[b];
+      var names = poolNamesInTbody(tbody);
+      var key = resolvePoolKey(names, pools);
+      log('pool tbody', tbody.id, 'names', names, 'key', key);
+      if (!key || matched[key]) continue;
+      var st = pools[key];
+      if (!st) continue;
+      matched[key] = true;
+      var prow = pickTotalsRow(tbody, 'pool');
+      if (!prow) {
+        // last resort: any row with usage-disk
+        prow = tbody.querySelector('tr:has(.usage-disk)') || tbody.querySelector('tr.tr_last');
+      }
+      if (st.enabled && (st.level === 'warning' || st.level === 'critical')) {
+        paintFreeCell(prow, st.level);
+      } else if (prow) {
+        clearBarPaint(prow.querySelector('td:last-child') || prow);
+      }
+    }
+
+    // If a critical/warning pool was never matched, try loose scan (single-pool systems)
     Object.keys(pools).forEach(function (pname) {
+      if (matched[pname]) return;
       var st = pools[pname];
-      var row = findPoolTotalsRow(pname);
-      if (!row) return;
-      if (st.enabled && st.level && st.level !== 'ok') {
-        freeCells(row).forEach(function (el) { paint(el, st.level, 'pool'); });
-        log('pool', pname, st);
-      } else {
-        freeCells(row).forEach(clearClasses);
+      if (!st || !st.enabled || (st.level !== 'warning' && st.level !== 'critical')) return;
+      // find any pool_device whose text mentions the pool name
+      for (var i = 0; i < bodies.length; i++) {
+        if ((bodies[i].textContent || '').toLowerCase().indexOf(pname.toLowerCase()) === -1) continue;
+        var row = pickTotalsRow(bodies[i], 'pool') || pickTotalsRow(bodies[i], null);
+        if (row) {
+          paintFreeCell(row, st.level);
+          log('loose match pool', pname, bodies[i].id);
+          break;
+        }
       }
     });
-
-    // Dashboard array list
-    if (status.array && status.array.enabled && status.array.level !== 'ok') {
-      var al = document.getElementById('array_list');
-      if (al) paint(al, status.array.level, 'array');
-    }
   }
 
   function fetchAndApply() {
@@ -139,12 +233,12 @@
         return r.json();
       })
       .then(function (data) {
-        if (data && data._status) {
-          applyStatus(data._status);
-        } else {
-          log('no _status in config response', data);
+        if (!data || !data._status) {
+          console.warn('Storage Guard: get-config missing _status', data);
+          return;
         }
-        // Alerts (rate-limited server-side)
+        log('status', data._status);
+        applyStatus(data._status);
         fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
       })
       .catch(function (err) {
@@ -152,34 +246,52 @@
       });
   }
 
-  // Initial + periodic re-apply (nchan rebuilds table rows)
-  fetchAndApply();
-  setInterval(function () {
-    if (lastStatus) applyStatus(lastStatus);
-  }, 1500);
-  setInterval(fetchAndApply, 15000);
+  function boot() {
+    fetchAndApply();
+    // nchan rewrites table bodies often
+    setInterval(function () {
+      if (lastStatus) applyStatus(lastStatus);
+    }, 1200);
+    setInterval(fetchAndApply, 12000);
 
-  // Re-apply when Main device tables mutate
-  function observe(id) {
-    var el = document.getElementById(id);
-    if (!el || typeof MutationObserver === 'undefined') return;
-    new MutationObserver(function () {
-      if (lastStatus) applyStatus(lastStatus);
-    }).observe(el, { childList: true, subtree: true });
+    if (typeof MutationObserver !== 'undefined') {
+      var obs = new MutationObserver(function () {
+        if (lastStatus) applyStatus(lastStatus);
+      });
+      var roots = [
+        document.getElementById('array_devices'),
+        document.getElementById('array_list')
+      ];
+      document.querySelectorAll('[id^="pool_device"], [id^="pool_list"]').forEach(function (el) {
+        roots.push(el);
+      });
+      // Also observe a parent that wraps Main tables
+      var main = document.querySelector('.TableContainer') || document.getElementById('content') || document.body;
+      roots.push(main);
+      roots.forEach(function (el) {
+        if (el) obs.observe(el, { childList: true, subtree: true });
+      });
+    }
   }
-  observe('array_devices');
-  // pool_device0..n appear after paint — observe table containers
-  document.querySelectorAll('[id^="pool_device"]').forEach(function (el) {
-    if (typeof MutationObserver === 'undefined') return;
-    new MutationObserver(function () {
-      if (lastStatus) applyStatus(lastStatus);
-    }).observe(el, { childList: true, subtree: true });
-  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  // Retry once after load — nchan may fill tables late
+  setTimeout(fetchAndApply, 2500);
+  setTimeout(fetchAndApply, 6000);
 
   window.StorageGuardColor = {
     refresh: fetchAndApply,
     apply: applyStatus,
-    debug: function (on) { window.StorageGuardDebug = !!on; }
+    debug: function (on) {
+      window.StorageGuardDebug = on !== false;
+      console.log('StorageGuardDebug', window.StorageGuardDebug);
+      fetchAndApply();
+    }
   };
-  console.log('Storage Guard color injector ready');
+  console.log('Storage Guard color injector ready (bar mode)');
 })();
