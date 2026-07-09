@@ -34,35 +34,22 @@
 
 <CHANGES>
 ###&version;
-- Bulletproof defaults via sg_defaults=1: Array Warning=largest disk; pool thresholds None;
-  alerts = Array Warning only (not critical, not pool).
+- Product defaults: Array Warning=largest disk; pool free thresholds None; Array Warning alert only.
 
 ###2026.07.09m
 - Dynamic array notifications; pool profile-class messages; docs catalog.
 
 ###2026.07.09l
-- Docs/settings: green OK state; threshold order notice if Critical free > Warning.
+- Green OK state; threshold order notice; severity by free-space amount.
 
 ###2026.07.09k
-- Defaults: Array Warning = largest data disk; pool thresholds None.
-- Alerts default: Array Warning only (critical + all pool alerts off).
+- Array Warning default largest disk; pool thresholds None; alerts Array Warning only.
 
 ###2026.07.09j
-- Fix array free-bar paint wiped by pool-root walks (Array of N devices row).
-- Solid default; optional outline pulse; optional green outline when free space OK.
+- Fix array free-bar paint cleared by pool-root walks.
 
 ###2026.07.09i
-- Solid default highlight; optional outline pulse; optional green when OK.
-- Fix outline pulse thrashing (re-paint only when status changes).
-
-###2026.07.09h
-- Docs/settings cleanup; alerts checkbox matrix; free-space wording.
-
-###2026.07.09g
-- Per-block Outline/Solid; pool custom free-space values.
-
-###2026.07.09f
-- Uniform layout; None thresholds; default Warning=largest disk.
+- Solid default; optional outline pulse; optional green when OK.
 
 ###2026.07.09
 - Free-bar coloring on Main; HeadInlineJS inject.
