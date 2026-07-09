@@ -2,8 +2,8 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-10">
-<!ENTITY launch "Utilities/Storage Guard">
+<!ENTITY version "2026.07.06-11">
+<!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
 <!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
