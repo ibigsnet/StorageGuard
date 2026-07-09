@@ -8,7 +8,7 @@
     YYYY.MM.DDa    second release same day (then b, c, ...)
   Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09q">
+<!ENTITY version "2026.07.09r">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,13 +26,16 @@
   min="6.12.0"
   support="https://github.com/&github;"
   project="https://github.com/&github;"
-  readme="https://github.com/&github;#readme">
+  readme="https://raw.githubusercontent.com/&github;/main/README.md">
 
 <CHANGES>
 ###&version;
-- Full rolling changelog restored (letters a through p preserved as single-line notes).
-- Open pool Settings link fix included (from 2026.07.09o).
-- Product defaults: Array Warning=largest disk; pool free thresholds None; Array Warning alert only.
+- Fix Plugins list description and README layout for Unraid (####Name#### blurb).
+- Ensure README.md ships with the plugin again.
+
+###2026.07.09q
+- Full rolling changelog restored (letters a through p as single-line notes).
+- Product defaults and Open pool link fixes from prior letters.
 
 ###2026.07.09o
 - Fix Open pool link (markdown left PHP unparsed in the URL).
@@ -150,7 +153,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09q"
+[ -z "$VER" ] && VER="2026.07.09r"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
