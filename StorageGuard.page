@@ -463,7 +463,7 @@ Only checked pools are colored on Main. Each pool can have its own highlight sty
   $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
 ?>
 
-**Pool: <?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · members <?=htmlspecialchars($devices_summary)?> · [Open pool](/Main/Device?name=<?=urlencode($p)?>)
+**Pool: <?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · members <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
 
 _(<?=htmlspecialchars($p)?> highlight style)_:
 : <select name="<?=$style_key?>" id="<?=$style_key?>">
