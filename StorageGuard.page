@@ -454,11 +454,14 @@ Uses the free-space thresholds above (including custom values). Default: Array W
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP — advanced)</span>
 
-> <strong>Work in progress — not the primary product path.</strong> Pool free-space thresholds, Main coloring, and alerts are experimental. Logic is still evolving (profile-aware suggestions, multi-device free-bar targeting, etc.). Prefer the <strong>array</strong> settings above for production use. Defaults leave pools inactive (thresholds None, pool alerts off).
+> <strong>Work in progress — array is still the primary product path.</strong><br>
+> <strong>Fine to use now:</strong> set your own free-space Warning/Critical (disk sizes or custom), Main coloring (solid/outline), and Unraid <strong>alerts</strong> for pools. Thresholds are plain free-space checks; they work for alerting and color changes.<br>
+> <strong>Not there yet:</strong> BTRFS “math” / profile-aware suggested thresholds (e.g. auto headroom by RAID1 vs RAID5/6 vs RAID10). Notification <em>wording</em> already adapts by profile class; recommended numbers do not.<br>
+> Defaults leave pools inactive (thresholds None, pool alerts off) until you configure them here.
 
 Pool names come from your server. Unraid often defaults the first pool to <strong>cache</strong>, but every pool—including the first—can be named however you like.
 
-Defaults for pool thresholds are <strong>None</strong> (opt-in). Free-space paint is a simple free-space check today; <strong>notifications</strong> already adapt wording by BTRFS profile class (mirror vs RAID5/6 vs RAID10 vs no redundancy). Profile-aware <em>suggested</em> thresholds are planned—see docs.
+Defaults for pool thresholds are <strong>None</strong> (opt-in).
 
 <blockquote class="inline_help">
 <strong>RAID1 / multi-mirror:</strong> losing one disk usually still leaves your data on remaining copies—free space is more about rebuild/rebalance after replace, not “evacuate like the array.”<br>

@@ -92,7 +92,10 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 ## Pool thresholds (WIP — advanced)
 
-> **Work in progress.** Pool UI is **hidden by default** in Settings (plugin focus is the **array**). Use **Show advanced pool settings (WIP)** to open it. Defaults leave pools inactive (thresholds None, pool alerts off). Pool logic is still being refined (profile-aware suggestions, multi-device free-bar targeting, etc.).
+> **Work in progress** (array is primary). Pool UI is **hidden by default** — open **Show advanced pool settings (WIP)**.  
+> **OK to use:** custom or disk-size free-space thresholds, Main coloring, and alerts (simple free-space checks).  
+> **Not yet:** BTRFS profile-aware *suggested* thresholds / recovery math. Alert *wording* already varies by profile class.  
+> Defaults leave pools inactive until you set them.
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
 

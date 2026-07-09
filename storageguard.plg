@@ -10,7 +10,7 @@
   Do NOT use aa after z — strcmp treats "aa" as OLDER than "z" (no update offered).
   Next calendar day YYYY.MM.DD+1 always works. No hyphens. Bump only this entity.
 -->
-<!ENTITY version "2026.07.09za">
+<!ENTITY version "2026.07.09zb">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -32,8 +32,11 @@
 
 <CHANGES>
 ###&version;
+- Advanced pools WIP note: alerts and coloring are fine to use; BTRFS profile math/suggestions not yet — custom free-space thresholds OK for alerting.
+
+###2026.07.09za
 - Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
-- Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z). Retag of brief 2026.07.10 / 2026.07.09za labels.
+- Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z).
 
 ###2026.07.09z
 - Settings/docs: mark Pools section as WIP while pool logic is still being refined.
@@ -195,7 +198,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09za"
+[ -z "$VER" ] && VER="2026.07.09zb"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
