@@ -292,9 +292,22 @@ foreach ($pool_names as $p) {
 **Preview mode** — showing example sizes (no live disks.ini on this system).
 <?php endif; ?>
 
-Set free-space thresholds for Main. When **remaining free space** falls to or below a threshold, that Free bar goes **yellow** (warning) or **red** (critical). **None** leaves a level unused. If both levels are set, the **lower free-space amount** is critical and the **higher** is warning. Units can be T, G, etc. (for example `8T` or `500G`).
+Set free-space thresholds for Main. Thresholds are **remaining free space** (how much free is left), in units like `8T` or `500G`.
 
-Highlight style is chosen **separately** for the array and for each pool. **Solid** is the default (recolor the free bar). **Outline** keeps Unraid’s fill and draws a border instead.
+| Free space vs thresholds | Main free bar |
+|--------------------------|---------------|
+| Still **above** all thresholds | Normal Unraid look — or optional **green outline** if Outline style + “green when OK” |
+| At or below **Warning** | **Yellow** (warning) |
+| At or below **Critical** | **Red** (critical) |
+
+**None** (or a blank custom field) turns that level off.
+
+**Usual order:** Warning = larger free amount (earlier heads-up), Critical = **smaller** free amount (more severe).  
+If both are set, the plugin always uses **severity by free-space amount**: the **lower** free amount is treated as critical (red), the **higher** as warning (yellow)—even if you assign the numbers the other way around. A notice appears below if Critical is set higher than Warning.
+
+Highlight style is chosen **separately** for the array and for each pool. **Solid** (default) recolors the free fill yellow/red. **Outline** keeps Unraid’s fill and draws a border (yellow/red, optional pulse; optional green when still OK).
+
+<div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
 _(Outline — pulse on warning/critical?)_:
 : <select name="outline_pulse" id="outline_pulse">
@@ -362,21 +375,21 @@ _(Array thresholds from)_:
 <div id="array-disk-selects" markdown="1">
 
 _(Array free space — Warning)_:
-: <select name="array_warning" id="array_warning">
+: <select name="array_warning" id="array_warning" class="sg-thresh" data-sg-pair="array" data-sg-level="warn">
   <?=sg_size_options($array_sizes, $array_warning)?>
   </select>
 
 <blockquote class="inline_help">
-Yellow when array free space is at or below this amount. <strong>None</strong> = no warning level.
+Yellow when array free space is at or below this amount. Prefer a <strong>larger</strong> free amount than Critical (e.g. Warning 8T, Critical 2T). <strong>None</strong> = no warning level.
 </blockquote>
 
 _(Array free space — Critical)_:
-: <select name="array_critical" id="array_critical">
+: <select name="array_critical" id="array_critical" class="sg-thresh" data-sg-pair="array" data-sg-level="crit">
   <?=sg_size_options($array_sizes, $array_critical)?>
   </select>
 
 <blockquote class="inline_help">
-Red when array free space is at or below this amount. <strong>None</strong> = no critical level.
+Red when array free space is at or below this amount. Prefer a <strong>smaller</strong> free amount than Warning. <strong>None</strong> = no critical level.
 </blockquote>
 
 </div>
@@ -384,13 +397,13 @@ Red when array free space is at or below this amount. <strong>None</strong> = no
 <div id="array-custom-fields" markdown="1" style="display:none">
 
 _(Array free space — Warning (custom))_:
-: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.5T, 500G — blank = None">
+: <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.5T, 500G — blank = None">
 
 _(Array free space — Critical (custom))_:
-: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 500G, 1.5T — blank = None">
+: <input type="text" name="array_critical_custom" id="array_critical_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="crit" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 500G, 1.5T — blank = None">
 
 <blockquote class="inline_help">
-Enter remaining free space that triggers each level (<code>1.5T</code>, <code>7.5T</code>, <code>500G</code>, …). Blank = None. If both are set, the lower free-space amount is critical.
+Remaining free space for each level (<code>1.5T</code>, <code>7.5T</code>, <code>500G</code>, …). Blank = None. Usual: Warning free amount &gt; Critical free amount.
 </blockquote>
 
 </div>
@@ -475,17 +488,17 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
 
 _(<?=htmlspecialchars($p)?> free space — Warning)_:
-: <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select">
+: <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>">
   <?=sg_size_options($pools[$p] ?? [], $w_val)?>
   </select>
 
 _(<?=htmlspecialchars($p)?> free space — Critical)_:
-: <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select">
+: <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>">
   <?=sg_size_options($pools[$p] ?? [], $c_val)?>
   </select>
 
 <blockquote class="inline_help">
-Yellow / red when this pool’s free space is at or below the amount you pick. <strong>None</strong> turns that level off.
+Yellow / red when this pool’s free space is at or below the amount you pick. Prefer Warning free amount &gt; Critical. <strong>None</strong> turns that level off.
 </blockquote>
 
 </div>
@@ -493,13 +506,13 @@ Yellow / red when this pool’s free space is at or below the amount you pick. <
 <div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
 
 _(<?=htmlspecialchars($p)?> free space — Warning (custom))_:
-: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 1.5T, 500G, 7.5T — blank = None">
+: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 1.5T, 500G, 7.5T — blank = None">
 
 _(<?=htmlspecialchars($p)?> free space — Critical (custom))_:
-: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G, 1.5T — blank = None">
+: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G, 1.5T — blank = None">
 
 <blockquote class="inline_help">
-Remaining free space for this pool (<code>1.5T</code>, <code>7.5T</code>, <code>500G</code>, …). Blank = None.
+Remaining free space for this pool (<code>1.5T</code>, <code>7.5T</code>, <code>500G</code>, …). Blank = None. Usual: Warning free amount &gt; Critical.
 </blockquote>
 
 </div>

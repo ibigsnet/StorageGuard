@@ -1,0 +1,218 @@
+# Storage Guard — Documentation
+
+How thresholds, Main-tab coloring, and alerts work—plus examples for the array and BTRFS pools.
+
+For install steps and a short overview, see [README.md](README.md).
+
+---
+
+## What it does
+
+Storage Guard watches **remaining free space** on:
+
+- the **array** (data disks), and  
+- each **pool** Unraid reports (whatever names you configured)
+
+You set a **Warning** and/or **Critical** free-space threshold for each. Thresholds mean: “how much free space is left?” Units can be whatever fits (`8T`, `500G`, `1.5T`, …)—not only terabytes.
+
+When free space crosses a threshold, Storage Guard paints that target’s **total free space bar** on the Main tab (array totals Free bar, or a pool’s data Free bar—not the whole page):
+
+| Free space | Main free bar | Alerts (if enabled) |
+|------------|---------------|---------------------|
+| **Above** all thresholds (healthy) | Normal Unraid look, **or** optional **green outline** (Outline style + “green when OK”) | Silent |
+| At or below **Warning** | **Yellow** | Unraid warning notification |
+| At or below **Critical** | **Red** | Unraid alert notification |
+
+**None** (or a blank custom field) means that level is unused.
+
+Coloring on Main and notifications are **independent**: you can color without alerting, alert without coloring, or both.
+
+### Recommended threshold order
+
+Think of free space falling over time:
+
+1. **Warning** — larger free amount (earlier heads-up), e.g. `8T`  
+2. **Critical** — smaller free amount (more severe), e.g. `2T`
+
+**Example (recommended):** Warning `8T`, Critical `2T`
+
+- Free above 8T → healthy (normal, or green outline if enabled)  
+- Free at or below 8T → yellow (warning)  
+- Free at or below 2T → red (critical)  
+
+### If Critical free space is *higher* than Warning
+
+That is an unusual setup (e.g. Warning `2T`, Critical `8T`). The Settings page shows a notice when this happens.
+
+**What the plugin does:** it does **not** follow the dropdown labels literally for severity. It always ranks by **how low free space is**:
+
+- The **lower** free-space amount → **critical (red)** on Main, and critical alerts if enabled  
+- The **higher** free-space amount → **warning (yellow)** on Main, and warning alerts if enabled  
+
+So with Warning `2T` and Critical `8T`, free space at 5T is still treated as **warning** (because 5 ≤ 8 and 5 > 2), and free at 1T is **critical**. In other words: severity follows free-space math, not which field you typed the number into.
+
+**Tip:** keep Warning free amount **greater than** Critical free amount so the labels match what you expect.
+
+---
+
+## Array thresholds
+
+Dropdowns list **unique sizes of your array data disks** (parity and pools are not included), largest first.
+
+**Defaults (first use):**
+
+- Warning → size of your **largest data disk** (core idea: free space left should still cover losing that disk)  
+- Critical → **None** (you opt in)  
+
+### Why “largest disk” is a useful default
+
+If a data disk fails, you often want enough free space elsewhere to evacuate or reshuffle data. Matching Warning to the largest data disk is a common starting point: below that free space, a full-size failure may leave you short.
+
+### Mixed sizes
+
+Example array (data only): 8T, 8T, 8T, 4T, 2T
+
+- **Warning = 8T** — free space is less than one large disk; evacuating a large disk may force a purchase  
+- **Critical = 2T** — free space is less than your smallest data disk; even a small failure may leave no room to move data  
+
+You can set Critical to something between those (e.g. `4T`) if a particular drive worries you—or to match the **combined size of a few questionable drives**, so free space still covers evacuating more than one at-risk disk. Critical should still be a **smaller free amount** than Warning.
+
+### Custom values
+
+Use **Custom free-space values** when the right number is not a disk size—for example `7.5T` or `500G`. Accepted forms include `1.5T`, `7.5T`, `500G`, `26T`. Leave a field blank for None.
+
+---
+
+## Pool thresholds
+
+Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
+
+For each pool you can:
+
+- Include it in Main coloring (All / individual checkboxes)  
+- Set its own **highlight style** (Outline or Solid)  
+- Use **member disk sizes** or **custom free-space values**  
+- Enable Warning / Critical **alerts** separately  
+
+**Defaults:** Warning = **None**, Critical = **None** (pools are opt-in; set thresholds only if you want pool coloring/alerts).
+
+### Why free space matters on BTRFS pools
+
+Unraid pools are often BTRFS. BTRFS is not classic mdadm RAID: it allocates **chunks**, supports **mixed disk sizes**, and can use different profiles for data and metadata (RAID1, RAID10, RAID5/6, single, …).
+
+After a drive fails, the pool can stay online **degraded**. Restoring full redundancy usually means replace + rebalance (or a profile change). **Rebalance needs free space**—often on the order of the data that must be rewritten (roughly “size of what was on the failed device,” plus overhead).
+
+So the same idea as the array applies: thresholds tell you *before* a failure whether you still have room to recover without an emergency purchase.
+
+Useful Unraid UI: **Main → click the pool name → Balance Status**  
+(direct link form: `http://your-server/Main/Device?name=yourpoolname`)
+
+### BTRFS profiles (short reference)
+
+| Profile | Rough usable | Failure tolerance (typical) |
+|---------|----------------|-----------------------------|
+| single / RAID0 | High | None — any loss can mean data loss |
+| RAID1 | ~50% | 1 device |
+| RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices |
+| RAID10 | ~50% | Layout-dependent (often 1+) |
+| RAID5 | ~(N−1)/N | 1 device |
+| RAID6 | ~(N−2)/N | 2 devices |
+
+When a device fails, the pool goes **degraded** but can stay usable. Full recovery needs either:
+
+1. Replace the device and rebalance / replace, or  
+2. Sometimes convert profile (e.g. RAID10 → RAID5) to free capacity—**conversion itself needs free space**
+
+**Mixed sizes:** BTRFS can combine e.g. 4T and 8T drives; larger drives hold more chunks. Larger failures need more free space to re-mirror or re-stripe.
+
+### Example: 4×4TB + 2×8TB (~32 TB raw)
+
+Approximate usable capacity (varies with metadata and allocation):
+
+| Profile | ~Usable | Notes |
+|---------|---------|--------|
+| RAID0 | ~32 TB | Max space/speed, no safety |
+| RAID1 / RAID10 | ~16 TB | Mirroring / striped mirrors |
+| RAID5 | ~higher | One parity |
+| RAID6 | ~lower than RAID5 | Two parity |
+
+**Lose a 4T member:** rebalance often wants on the order of **~4T free** (plus overhead).  
+**Lose an 8T member:** plan for **more** free space (often several TB more).  
+A conservative pair for a busy mixed pool might be Warning in the **10–12T** free range and Critical around **6–8T** free (Warning free amount still larger than Critical)—tune to your used capacity and risk tolerance.
+
+**Rules of thumb**
+
+- **Warning** ≥ size of the **largest member** (plus a little headroom if you rebalance often)  
+- **Critical** a **smaller free amount** than Warning, still high enough that you can remove a failed device / start recovery without the pool filling solid  
+- Always keep backups; a degraded pool is not the time to discover bitrot  
+
+For detailed speed/capacity tables with mixed drives, this community spreadsheet is useful:  
+https://docs.google.com/spreadsheets/d/1_hyQBpp4EpSqxYUCarDHSfYkRkGiAHMIHbHz4uuAZHs/edit?usp=sharing
+
+---
+
+## Highlight styles (Main)
+
+Each target (array, and every pool) has its own style:
+
+| Style | Effect |
+|--------|--------|
+| **Solid** (default) | Free bar **fill** becomes yellow or red when a threshold is hit. Healthy = normal Unraid fill (no green fill paint). |
+| **Outline** | Keeps the normal free fill; draws a **border** for status |
+
+**Outline-only options** (global; ignored for Solid):
+
+| Option | Default | Effect |
+|--------|---------|--------|
+| **Pulse** | Off | Yellow/red outline gently pulses (static border if off) |
+| **Green when OK** | Off | Static **green** outline when free space is still **above** your thresholds |
+
+| Level (Outline) | Look |
+|-----------------|------|
+| OK + green-when-OK | Green outline (static) |
+| OK without that option | No Storage Guard outline |
+| Warning | Yellow outline (static or pulse) |
+| Critical | Red outline (static or pulse) |
+
+Array can be Solid while one pool is Outline, and so on.
+
+---
+
+## Alerts
+
+On the settings page, a small matrix of **checkboxes** chooses who gets notifications:
+
+- Rows: Array, each pool  
+- Columns: Warning, Critical  
+
+**Default:** only **Array → Warning** is checked. Array Critical and all pool alerts are off until you enable them.
+
+Checked = send an Unraid notification when that target hits that level.  
+Nothing checked for a row = silent for that target.  
+Alerts use the **same free-space thresholds and severity ranking** as Main coloring (including custom values and the “lower free amount = critical” rule). They do **not** require Main coloring to be on.
+
+---
+
+## How coloring works (technical, brief)
+
+- Config is stored under `/boot/config/plugins/StorageGuard/`  
+- A small script on Main loads config + live free space and paints the **Free** usage bars (array totals row; pool **Data Partition** free—not “Pool of N devices”, not Internal Boot)  
+- Alerts are evaluated on a timer and use Unraid’s normal notify system  
+
+Hard-refresh Main after install or update if styles look stale.
+
+---
+
+## Troubleshooting
+
+| Symptom | What to try |
+|---------|-------------|
+| No colors on Main | Hard-refresh Main; confirm coloring is Yes; free space must be at/below a threshold (or enable green-when-OK for Outline healthy state) |
+| Array never colors | Confirm array coloring Yes and Warning/Critical set; free space above both thresholds stays unpainted in Solid mode |
+| Wrong pool / no pool color | Confirm the pool is checked under “Which pools to color”; open the pool page and verify free space |
+| Yellow/red seem “swapped” vs labels | Check whether Critical free amount is higher than Warning—the plugin ranks by free-space severity (see notice on Settings) |
+| Alerts never fire | Check the alert matrix; confirm thresholds; Unraid notification settings must allow warnings/alerts |
+| Settings look empty | Array/pool details hide when Coloration is **No**—turn Yes to edit thresholds (saved values still apply to alerts) |
+
+Config path: `/boot/config/plugins/StorageGuard/StorageGuard.cfg`  
+Plugin files: `/usr/local/emhttp/plugins/StorageGuard/`

@@ -1,8 +1,133 @@
-// Storage Guard settings page — show/hide sections, custom thresholds, pool multi-select
+// Storage Guard settings page — show/hide sections, custom thresholds, pool multi-select,
+// and a notice when Critical free space is set higher than Warning (unusual order).
 function initStorageGuardUI() {
   function setVisible(el, on) {
     if (!el) return;
     el.style.display = on ? '' : 'none';
+  }
+
+  /** Parse free-space strings (8T, 500G, 1.5T) to decimal TB; null if empty/invalid. */
+  function parseToTB(str) {
+    if (str === null || str === undefined) return null;
+    str = String(str).trim();
+    if (!str) return null;
+    var m = str.match(/([0-9]*\.?[0-9]+)\s*([TGMKtgmk]?)/);
+    if (!m) return null;
+    var n = parseFloat(m[1]);
+    if (isNaN(n)) return null;
+    var u = (m[2] || 'T').toUpperCase();
+    if (u === 'T') return n;
+    if (u === 'G') return n / 1000.0;
+    if (u === 'M') return n / 1e6;
+    if (u === 'K') return n / 1e9;
+    return n;
+  }
+
+  function activeThreshValue(pair, level) {
+    // Prefer visible custom inputs when that target is in custom mode
+    var nodes = document.querySelectorAll('.sg-thresh[data-sg-pair="' + pair + '"][data-sg-level="' + level + '"]');
+    var i, el, val = null;
+    for (i = 0; i < nodes.length; i++) {
+      el = nodes[i];
+      // skip hidden ancestors (display:none sections)
+      if (el.offsetParent === null && el.type !== 'hidden') {
+        // still allow if only the sibling block is hidden — check closest custom/disk block
+        var block = el.closest('[id$="-custom-fields"], [id$="-disk-selects"], #array-custom-fields, #array-disk-selects');
+        if (block && block.style.display === 'none') continue;
+      }
+      if (el.disabled) continue;
+      val = el.value;
+      // For selects/inputs that are in a hidden custom/disk block, skip
+      var parent = el.parentElement;
+      while (parent) {
+        if (parent.style && parent.style.display === 'none') { val = null; break; }
+        if (parent.id === 'array-custom-fields' || parent.id === 'array-disk-selects' ||
+            /pool-.*-custom-fields$/.test(parent.id || '') || /pool-.*-disk-selects$/.test(parent.id || '')) {
+          if (parent.style.display === 'none') { val = null; break; }
+        }
+        parent = parent.parentElement;
+      }
+      if (val !== null) break;
+    }
+    return val;
+  }
+
+  /** Better: resolve warn/crit for a pair using custom toggle when present. */
+  function pairValues(pair) {
+    var warnEl, critEl;
+    if (pair === 'array') {
+      var useCustom = document.getElementById('array_use_custom');
+      var isCustom = useCustom && useCustom.value === 'yes';
+      warnEl = document.getElementById(isCustom ? 'array_warning_custom' : 'array_warning');
+      critEl = document.getElementById(isCustom ? 'array_critical_custom' : 'array_critical');
+      return {
+        label: 'Array',
+        warn: warnEl ? warnEl.value : '',
+        crit: critEl ? critEl.value : ''
+      };
+    }
+    // pool-<safe>
+    var safe = pair.replace(/^pool-/, '');
+    var use = document.getElementById('pool_' + safe + '_use_custom');
+    var isC = use && use.value === 'yes';
+    warnEl = document.getElementById(isC ? ('pool_' + safe + '_warning_custom') : ('pool_' + safe + '_warning'));
+    critEl = document.getElementById(isC ? ('pool_' + safe + '_critical_custom') : ('pool_' + safe + '_critical'));
+    var labelNode = warnEl || critEl;
+    var label = (labelNode && labelNode.getAttribute('data-sg-label')) || safe;
+    return {
+      label: label,
+      warn: warnEl ? warnEl.value : '',
+      crit: critEl ? critEl.value : ''
+    };
+  }
+
+  function updateOrderNote() {
+    var note = document.getElementById('sg-order-note');
+    if (!note) return;
+
+    var pairs = {};
+    document.querySelectorAll('.sg-thresh[data-sg-pair]').forEach(function (el) {
+      pairs[el.getAttribute('data-sg-pair')] = true;
+    });
+
+    var inverted = [];
+    Object.keys(pairs).forEach(function (pair) {
+      var v = pairValues(pair);
+      var w = parseToTB(v.warn);
+      var c = parseToTB(v.crit);
+      if (w === null || c === null) return;
+      // Unusual: Critical free amount larger than Warning free amount
+      if (c > w) {
+        inverted.push({
+          label: v.label,
+          warn: String(v.warn).trim(),
+          crit: String(v.crit).trim()
+        });
+      }
+    });
+
+    if (!inverted.length) {
+      note.style.display = 'none';
+      note.innerHTML = '';
+      return;
+    }
+
+    var lines = inverted.map(function (x) {
+      return '<li><strong>' + x.label + '</strong>: Critical free space (<code>' + x.crit +
+        '</code>) is <em>higher</em> than Warning (<code>' + x.warn + '</code>)</li>';
+    }).join('');
+
+    note.style.display = 'block';
+    note.innerHTML =
+      '<strong>Unusual threshold order</strong>' +
+      '<ul style="margin:0.4em 0 0.4em 1.2em">' + lines + '</ul>' +
+      '<p style="margin:0.4em 0 0">' +
+      'Storage Guard always ranks by <strong>how low free space is</strong>, not by which dropdown you used: ' +
+      'the <strong>lower</strong> free-space amount is treated as <strong>critical (red)</strong>, ' +
+      'and the <strong>higher</strong> as <strong>warning (yellow)</strong>. ' +
+      'Main coloring and alerts both use that ranking. ' +
+      'Recommended: Warning = earlier heads-up (more free left), Critical = more severe (less free left)—e.g. Warning <code>8T</code>, Critical <code>2T</code>.' +
+      '</p>';
   }
 
   // Array: custom vs disk sizes
@@ -18,6 +143,7 @@ function initStorageGuardUI() {
     setVisible(customFields, isCustom);
     if (arrWarnSel) arrWarnSel.disabled = !!isCustom;
     if (arrCritSel) arrCritSel.disabled = !!isCustom;
+    updateOrderNote();
   }
   if (useCustom) {
     useCustom.addEventListener('change', updateArrayCustom);
@@ -35,6 +161,7 @@ function initStorageGuardUI() {
     const c = document.getElementById('pool_' + safe + '_critical');
     if (w) w.disabled = !!isCustom;
     if (c) c.disabled = !!isCustom;
+    updateOrderNote();
   }
 
   document.querySelectorAll('.pool-use-custom').forEach(function (sel) {
@@ -60,6 +187,7 @@ function initStorageGuardUI() {
           if (safe) updatePoolCustom(safe);
         });
       }
+      updateOrderNote();
     }
     sel.addEventListener('change', apply);
     apply();
@@ -105,11 +233,17 @@ function initStorageGuardUI() {
   syncPoolAll();
   updatePoolsHidden();
 
+  // Threshold order notice on any change
+  document.querySelectorAll('.sg-thresh, .pool-use-custom, #array_use_custom').forEach(function (el) {
+    el.addEventListener('change', updateOrderNote);
+    el.addEventListener('input', updateOrderNote);
+  });
+  updateOrderNote();
+
   const form = document.getElementById('storageguard-form');
   if (form) {
     form.addEventListener('submit', function () {
       updatePoolsHidden();
-      // Re-enable fields so hidden section values still POST
       form.querySelectorAll('select:disabled, input:disabled').forEach(el => {
         if (el.closest('.sg-details') || el.classList.contains('pool-size-select') ||
             el.id === 'array_warning' || el.id === 'array_critical') {

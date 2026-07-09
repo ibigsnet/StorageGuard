@@ -1,4 +1,16 @@
-/* Storage Guard — Free bar highlight styles */
+/* Storage Guard — Free bar highlight styles + settings notices */
+
+/* Settings: unusual Warning/Critical free-space order */
+.sg-order-note {
+  margin: 0.75em 0 1em;
+  padding: 10px 12px;
+  border-left: 4px solid #ff9800;
+  background: rgba(255, 152, 0, 0.12);
+  border-radius: 2px;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
 
 /* ---- Solid mode: replace free-bar fill ---- */
 .usage-disk > span.sg-bar.sg-solid.sg-warning,
