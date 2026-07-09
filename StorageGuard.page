@@ -65,52 +65,61 @@ function get_pool_devices_summary($sizes) {
     return implode(', ', $sizes);
 }
 
-// Collect array data disk capacities (unique, largest first). Ignore parity.
+// Unraid naming: pool slots are cache, cache2, mypool, mypool2, ...
+// Official helper is prefix($key) = preg_replace('/\d+$/','',$key)
+// pools_filter = unique prefix() of type=Cache devices (never Boot/flash).
+function sg_pool_prefix($key) {
+    return preg_replace('/\d+$/', '', $key);
+}
+
+// Sort human size strings largest-first (26T > 8T > 500G)
+function sg_sort_sizes_desc($sizes) {
+    $sizes = array_values(array_unique($sizes));
+    usort($sizes, function($a, $b) {
+        $va = (float)preg_replace('/[^0-9.]/', '', $a);
+        $ua = (strpos($a, 'T') !== false) ? 1000 : ((strpos($a, 'G') !== false) ? 1 : 0.001);
+        $vb = (float)preg_replace('/[^0-9.]/', '', $b);
+        $ub = (strpos($b, 'T') !== false) ? 1000 : ((strpos($b, 'G') !== false) ? 1 : 0.001);
+        return ($vb * $ub) <=> ($va * $ua);
+    });
+    return $sizes;
+}
+
+// Collect array data disk capacities (unique, largest first). Ignore parity / boot / cache.
 $array_sizes = [];
 $array_raw_sizes = [];
 if ($has_disks) {
     foreach ($disks as $key => $d) {
         if (empty($d['device'])) continue;
+        $type = isset($d['type']) ? $d['type'] : '';
         $name = isset($d['name']) ? $d['name'] : $key;
-        if (preg_match('/^disk\d+$/', $name)) {
-            $sz = isset($d['size']) ? (int)$d['size'] : 0;
-            if ($sz > 0) {
-                $array_raw_sizes[] = $sz;
-                $array_sizes[] = sg_format_size($sz);
-            }
+        // Prefer Unraid type=Data; also accept diskN keys
+        $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
+        if (!$is_data) continue;
+        $sz = isset($d['size']) ? (int)$d['size'] : 0;
+        if ($sz > 0) {
+            $array_raw_sizes[] = $sz;
+            $array_sizes[] = sg_format_size($sz);
         }
     }
 }
-$array_sizes = array_unique($array_sizes);
-// Sort descending by numeric value (rough parse)
-usort($array_sizes, function($a, $b) {
-    $va = (float)preg_replace('/[^0-9.]/', '', $a);
-    $ua = strpos($a, 'T') !== false ? 1000 : (strpos($a,'G')!==false ? 1 : 0.001);
-    $vb = (float)preg_replace('/[^0-9.]/', '', $b);
-    $ub = strpos($b, 'T') !== false ? 1000 : (strpos($b,'G')!==false ? 1 : 0.001);
-    return ($vb * $ub) <=> ($va * $ua);
-});
+$array_sizes = sg_sort_sizes_desc($array_sizes);
 
-// Compute default thresholds: Warning = largest, Critical = second largest
-
-
-// Collect pools + their disk sizes
-// Pools are non-disk, non-parity, non-flash entries. Use section key (or name) as pool identifier.
+// Collect pools: only type=Cache, grouped by pool name (prefix of slot key).
+// cache + cache2 → one pool "cache". Boot (flash/flash2) is never a pool.
 $pools = [];
 $pools_raw = [];
 if ($has_disks) {
     foreach ($disks as $key => $d) {
         if (empty($d['device'])) continue;
-        // Skip array data disks and parity
-        if (preg_match('/^disk\d+$/', $key) || strpos($key, 'parity') === 0 || $key === 'flash') {
-            continue;
-        }
-        // Pool name: prefer section key (e.g. "cache", "intelligence"), fall back to name field
-// This ensures we list actual pools, not individual disk devices.
-        $poolName = $key;
-        if (isset($d['name']) && !empty(trim($d['name']))) {
-            $poolName = trim($d['name']);
-        }
+        $type = isset($d['type']) ? $d['type'] : '';
+        // Strict: only Cache-type pool members (not Boot, Parity, Data)
+        if ($type !== 'Cache') continue;
+        // Skip empty / not present slots
+        $status = isset($d['status']) ? $d['status'] : '';
+        if (strpos($status, '_NP') !== false) continue;
+        $poolName = sg_pool_prefix($key);
+        if ($poolName === '' || $poolName === 'flash') continue;
         $sz = isset($d['size']) ? (int)$d['size'] : 0;
         if ($sz > 0) {
             if (!isset($pools[$poolName])) $pools[$poolName] = [];
@@ -120,18 +129,11 @@ if ($has_disks) {
         }
     }
 }
-// Unique + sort per pool
+// Unique + sort member sizes per pool; sort pool names alphabetically
 foreach ($pools as $pname => $sizes) {
-    $pools[$pname] = array_unique($sizes);
-    usort($pools[$pname], function($a, $b) {
-        $va = (float)preg_replace('/[^0-9.]/', '', $a);
-        $ua = strpos($a, 'T') !== false ? 1000 : (strpos($a,'G')!==false ? 1 : 0.001);
-        $vb = (float)preg_replace('/[^0-9.]/', '', $b);
-        $ub = strpos($b, 'T') !== false ? 1000 : (strpos($b,'G')!==false ? 1 : 0.001);
-        return ($vb * $ub) <=> ($va * $ua);
-    });
+    $pools[$pname] = sg_sort_sizes_desc($sizes);
 }
-
+ksort($pools, SORT_NATURAL | SORT_FLAG_CASE);
 $pool_names = array_keys($pools);
 
 // Dev/preview fallback so the UI is usable even without a real Unraid disks.ini

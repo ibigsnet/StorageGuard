@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-6">
+<!ENTITY version "2026.07.06-7">
 <!ENTITY launch "Utilities/Storage Guard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -23,9 +23,9 @@
 
 <CHANGES>
 ###&version;
-- CRITICAL: remove script used Type="remove" which Unraid ignores — it ran on INSTALL and deleted all plugin files after download. Fixed to Method="remove".
-- Settings page uses Menu="Utilities" (appears under User Utilities).
-- Storage Guard: redundancy awareness for Unraid arrays and pools.
+- Pool detection: use type=Cache + Unraid prefix() grouping so cache/cache2 is one pool "cache", not separate disks. Skip Boot (flash/flash2).
+- CRITICAL (earlier): Method="remove" not Type="remove" (Type ran on install and wiped files).
+- Settings under User Utilities (Menu="Utilities").
 
 ###2026.07.06-5
 - Run block CDATA formatting.
@@ -38,6 +38,8 @@
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: preparing directories..."
+# Clear emhttp payload so updates always re-download (plugin manager skips existing files)
+rm -rf /usr/local/emhttp/plugins/StorageGuard
 mkdir -p /usr/local/emhttp/plugins/StorageGuard
 mkdir -p /boot/config/plugins/StorageGuard
 echo "StorageGuard: directories ready."
