@@ -1,183 +1,185 @@
-// Storage Guard - Injection for coloring on Main page and Dashboard
-// Leverages Unraid's existing UI elements for array and pool free space coloring
-// Uses the full configuration from the settings (disk capacity based thresholds, per-pool, etc.)
+// Storage Guard — color array/pool free space on Main (and Dashboard when present)
+// Free space + level are computed server-side in get-config.php (_status).
+// DOM is re-colored on a timer because Unraid nchan replaces tbody HTML.
 
-(function() {
+(function () {
   'use strict';
 
-  const path = window.location.pathname;
-  if (!path.includes('/Main') && !path.includes('/Dashboard')) {
-    return;
+  var path = window.location.pathname || '';
+  if (path.indexOf('/Main') === -1 && path.indexOf('/Dashboard') === -1) return;
+
+  var lastStatus = null;
+  var CLASSES = ['sg-warning', 'sg-critical', 'array-warning', 'array-critical', 'pool-warning', 'pool-critical'];
+
+  function log() {
+    if (window.StorageGuardDebug) console.log.apply(console, ['[StorageGuard]'].concat([].slice.call(arguments)));
   }
 
-  console.log('Storage Guard color injector loaded');
-
-  fetch('/plugins/StorageGuard/get-config.php')
-    .then(r => r.json())
-    .then(cfg => {
-      applyColoring(cfg);
-      // Check and send alerts (server side, rate limited)
-      fetch('/plugins/StorageGuard/check-alerts.php').catch(()=>{});
-    })
-    .catch(err => {
-      console.warn('Storage Guard: could not load config, using defaults', err);
-      applyColoring({
-        array_coloring: 'yes',
-        array_warning: '8T',
-        array_critical: '2T',
-        pool_coloring: 'yes',
-        pools_to_color: 'all'
-      });
-    });
-
-  function parseSizeToTB(sizeStr) {
-    if (!sizeStr || typeof sizeStr !== 'string') return 0;
-    const num = parseFloat(sizeStr);
-    if (isNaN(num)) return 0;
-    const upper = sizeStr.toUpperCase();
-    if (upper.includes('T')) return num;
-    if (upper.includes('G')) return num / 1024;
-    if (upper.includes('M')) return num / 1024 / 1024;
-    if (upper.includes('K')) return num / 1024 / 1024 / 1024;
-    return num;
-  }
-
-  function getFreeTB(text) {
-    if (!text) return null;
-    const match = text.match(/([\d.]+)\s*(T|G|M|K)?B?\s*free/i);
-    if (!match) return null;
-    return parseSizeToTB(match[0]);
-  }
-
-  function findElementForArray() {
-    // Try common Unraid Main tab structures for the array summary
-    let el = document.getElementById('array');
-    if (el) return el;
-
-    // Look for header containing "Array" and nearby free space
-    const headers = document.querySelectorAll('h2, h3, .title, [class*="array"]');
-    for (let h of headers) {
-      if (h.textContent.toLowerCase().includes('array')) {
-        // Find the container that has the free text
-        let container = h.closest('tr') || h.closest('div') || h.parentElement;
-        if (container && container.textContent.toLowerCase().includes('free')) {
-          return container;
-        }
-        // Broaden search
-        const siblings = h.parentElement ? Array.from(h.parentElement.children) : [];
-        for (let s of siblings) {
-          if (s.textContent.toLowerCase().includes('free')) return s;
-        }
-      }
-    }
-    return null;
-  }
-
-  function findElementForPool(poolName) {
-    const lowerName = poolName.toLowerCase();
-    const headers = document.querySelectorAll('h2, h3, .title, [class*="pool"], [id*="pool"]');
-    for (let h of headers) {
-      const txt = h.textContent.toLowerCase();
-      if (txt.includes(lowerName) || txt.includes(poolName.toLowerCase().replace(/[^a-z0-9]/g, ''))) {
-        let container = h.closest('tr') || h.closest('div') || h.parentElement;
-        if (container && container.textContent.toLowerCase().includes('free')) {
-          return container;
-        }
-        const siblings = h.parentElement ? Array.from(h.parentElement.children) : [];
-        for (let s of siblings) {
-          if (s.textContent.toLowerCase().includes('free')) return s;
-        }
-        return h; // fallback to header
-      }
-    }
-    return null;
-  }
-
-  function applyColor(el, level) {
+  function clearClasses(el) {
     if (!el) return;
-    el.classList.remove('array-warning', 'array-critical', 'pool-warning', 'pool-critical', 'warning', 'critical');
-    const isArray = el.id === 'array' || el.textContent.toLowerCase().includes('array');
-    if (level === 'critical') {
-      el.classList.add(isArray ? 'array-critical' : 'pool-critical');
-    } else if (level === 'warning') {
-      el.classList.add(isArray ? 'array-warning' : 'pool-warning');
-    }
+    CLASSES.forEach(function (c) { el.classList.remove(c); });
   }
 
-  function applyColoring(cfg) {
-    if (!cfg) return;
+  function paint(el, level, kind) {
+    if (!el) return;
+    clearClasses(el);
+    if (level !== 'warning' && level !== 'critical') return;
+    el.classList.add(level === 'critical' ? 'sg-critical' : 'sg-warning');
+    el.classList.add(kind === 'array'
+      ? (level === 'critical' ? 'array-critical' : 'array-warning')
+      : (level === 'critical' ? 'pool-critical' : 'pool-warning'));
+  }
 
-    const doArray = (cfg.array_coloring || 'yes') === 'yes';
-    const doPools = (cfg.pool_coloring || 'yes') === 'yes';
+  /** Free column is typically the last <td> on the totals row */
+  function freeCells(tr) {
+    if (!tr) return [];
+    var tds = tr.querySelectorAll('td');
+    if (!tds.length) return [tr];
+    var last = tds[tds.length - 1];
+    var cells = [last, tr];
+    // Also paint usage-disk free span if present
+    var spans = last.querySelectorAll('.usage-disk span, span');
+    for (var i = 0; i < spans.length; i++) cells.push(spans[i]);
+    return cells;
+  }
 
-    const arrayWarnTB = parseSizeToTB(cfg.array_warning || cfg.array_warning_custom || '8T');
-    const arrayCritTB = parseSizeToTB(cfg.array_critical || cfg.array_critical_custom || '2T');
+  function findArrayTotalsRow() {
+    var tbody = document.getElementById('array_devices');
+    if (!tbody) return null;
+    var rows = tbody.querySelectorAll('tr.tr_last');
+    var i, tr, t;
+    for (i = 0; i < rows.length; i++) {
+      tr = rows[i];
+      t = (tr.textContent || '').toLowerCase();
+      // "Array of N devices" totals row (localized may vary — also match free-looking sizes)
+      if (t.indexOf('array') !== -1 || /\d+(\.\d+)?\s*[tgm]b/i.test(tr.textContent || '')) {
+        // Prefer row that mentions Array
+        if (t.indexOf('array') !== -1) return tr;
+      }
+    }
+    // Fallback: last tr_last with numeric size in last cell
+    for (i = rows.length - 1; i >= 0; i--) {
+      if (/\d/.test(rows[i].textContent || '')) return rows[i];
+    }
+    return rows.length ? rows[rows.length - 1] : null;
+  }
+
+  function findPoolTotalsRow(poolName) {
+    var name = (poolName || '').toLowerCase();
+    var bodies = document.querySelectorAll('[id^="pool_device"]');
+    var b, i, j, rows, tr, t, link;
+    for (b = 0; b < bodies.length; b++) {
+      // Match pool by Device link or text
+      link = bodies[b].querySelector('a[href*="Device?name="]');
+      var href = link ? (link.getAttribute('href') || '') : '';
+      var bodyText = (bodies[b].textContent || '').toLowerCase();
+      var match =
+        href.toLowerCase().indexOf('name=' + name) !== -1 ||
+        bodyText.indexOf(name) !== -1;
+      if (!match) continue;
+
+      rows = bodies[b].querySelectorAll('tr.tr_last');
+      for (j = 0; j < rows.length; j++) {
+        t = (rows[j].textContent || '').toLowerCase();
+        if (t.indexOf('pool') !== -1) return rows[j];
+      }
+      if (rows.length) return rows[rows.length - 1];
+    }
+
+    // Dashboard pool list
+    var dash = document.querySelectorAll('[id^="pool_list"]');
+    for (i = 0; i < dash.length; i++) {
+      if ((dash[i].getAttribute('title') || '').toLowerCase().indexOf(name) !== -1 ||
+          (dash[i].textContent || '').toLowerCase().indexOf(name) !== -1) {
+        return dash[i];
+      }
+    }
+    return null;
+  }
+
+  function applyStatus(status) {
+    if (!status) return;
+    lastStatus = status;
 
     // Array
-    if (doArray) {
-      const arrayEl = findElementForArray();
-      if (arrayEl) {
-        // Try to get the free value from the element or nearby
-        let freeTB = getFreeTB(arrayEl.textContent);
-        if (freeTB === null) {
-          // Search siblings or parent
-          const parent = arrayEl.parentElement || document;
-          freeTB = getFreeTB(parent.textContent);
-        }
-        if (freeTB !== null) {
-          if (freeTB <= arrayCritTB) {
-            applyColor(arrayEl, 'critical');
-          } else if (freeTB <= arrayWarnTB) {
-            applyColor(arrayEl, 'warning');
-          }
-        }
-      }
+    if (status.array && status.array.enabled && status.array.level && status.array.level !== 'ok') {
+      var atr = findArrayTotalsRow();
+      freeCells(atr).forEach(function (el) { paint(el, status.array.level, 'array'); });
+      log('array', status.array);
+    } else if (status.array) {
+      var atr2 = findArrayTotalsRow();
+      freeCells(atr2).forEach(clearClasses);
     }
 
     // Pools
-    if (doPools) {
-      let poolList = [];
-      if (cfg.pools_to_color === 'all' || !cfg.pools_to_color) {
-        // Will try to color all visible pools that have thresholds
-        // For simplicity, scan for common pool headers
+    var pools = status.pools || {};
+    Object.keys(pools).forEach(function (pname) {
+      var st = pools[pname];
+      var row = findPoolTotalsRow(pname);
+      if (!row) return;
+      if (st.enabled && st.level && st.level !== 'ok') {
+        freeCells(row).forEach(function (el) { paint(el, st.level, 'pool'); });
+        log('pool', pname, st);
       } else {
-        poolList = cfg.pools_to_color.split(/[\s,]+/).filter(Boolean);
+        freeCells(row).forEach(clearClasses);
       }
+    });
 
-      // Collect configured pools from cfg keys
-      const configuredPools = [];
-      for (let key in cfg) {
-        if (key.startsWith('pool_') && key.endsWith('_warning')) {
-          const pname = key.replace(/^pool_/, '').replace(/_warning$/, '');
-          configuredPools.push(pname);
-        }
-      }
-
-      const toColor = (poolList.length > 0) ? poolList : configuredPools;
-
-      toColor.forEach(pname => {
-        const el = findElementForPool(pname);
-        if (el) {
-          const safe = pname.replace(/[^a-zA-Z0-9_]/g, '_');
-          const warnTB = parseSizeToTB(cfg[`pool_${safe}_warning`] || '2T');
-          const critTB = parseSizeToTB(cfg[`pool_${safe}_critical`] || '1T');
-
-          let freeTB = getFreeTB(el.textContent);
-          if (freeTB === null && el.parentElement) {
-            freeTB = getFreeTB(el.parentElement.textContent);
-          }
-          if (freeTB !== null) {
-            if (freeTB <= critTB) {
-              applyColor(el, 'critical');
-            } else if (freeTB <= warnTB) {
-              applyColor(el, 'warning');
-            }
-          }
-        }
-      });
+    // Dashboard array list
+    if (status.array && status.array.enabled && status.array.level !== 'ok') {
+      var al = document.getElementById('array_list');
+      if (al) paint(al, status.array.level, 'array');
     }
   }
 
-  // Make available for debugging
-  window.StorageGuardColor = applyColoring;
+  function fetchAndApply() {
+    fetch('/plugins/StorageGuard/get-config.php', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data._status) {
+          applyStatus(data._status);
+        } else {
+          log('no _status in config response', data);
+        }
+        // Alerts (rate-limited server-side)
+        fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
+      })
+      .catch(function (err) {
+        console.warn('Storage Guard: config fetch failed', err);
+      });
+  }
+
+  // Initial + periodic re-apply (nchan rebuilds table rows)
+  fetchAndApply();
+  setInterval(function () {
+    if (lastStatus) applyStatus(lastStatus);
+  }, 1500);
+  setInterval(fetchAndApply, 15000);
+
+  // Re-apply when Main device tables mutate
+  function observe(id) {
+    var el = document.getElementById(id);
+    if (!el || typeof MutationObserver === 'undefined') return;
+    new MutationObserver(function () {
+      if (lastStatus) applyStatus(lastStatus);
+    }).observe(el, { childList: true, subtree: true });
+  }
+  observe('array_devices');
+  // pool_device0..n appear after paint — observe table containers
+  document.querySelectorAll('[id^="pool_device"]').forEach(function (el) {
+    if (typeof MutationObserver === 'undefined') return;
+    new MutationObserver(function () {
+      if (lastStatus) applyStatus(lastStatus);
+    }).observe(el, { childList: true, subtree: true });
+  });
+
+  window.StorageGuardColor = {
+    refresh: fetchAndApply,
+    apply: applyStatus,
+    debug: function (on) { window.StorageGuardDebug = !!on; }
+  };
+  console.log('Storage Guard color injector ready');
 })();

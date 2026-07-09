@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-12">
+<!ENTITY version "2026.07.06-13">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,8 +24,8 @@
 
 <CHANGES>
 ###&version;
-- Plugins icon launch: Settings/StorageGuard (was wrong Utilities/Storage Guard blank page).
-- Alerts matrix, custom hide, pools-only notice (from -10).
+- Fix Main-tab coloring: server-side free space + levels; target Array/Pool totals rows; re-apply after nchan refresh.
+- Respect custom capacity (55T/50T etc.) for array warn/crit.
 
 ###2026.07.06-5
 - Run block CDATA formatting.

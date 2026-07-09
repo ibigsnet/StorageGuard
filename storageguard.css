@@ -1,10 +1,50 @@
-/* Storage Guard - coloring for array and pools on Main tab */
-.array-warning, .pool-warning {
-  background-color: #ffeb3b !important;
-  color: #000 !important;
+/* Storage Guard — free-space warning/critical on Main tab totals */
+
+/* Whole totals row */
+tr.sg-warning > td,
+.sg-warning {
+  background-color: rgba(255, 193, 7, 0.45) !important;
+}
+tr.sg-critical > td,
+.sg-critical {
+  background-color: rgba(244, 67, 54, 0.55) !important;
+  color: #fff !important;
 }
 
-.array-critical, .pool-critical {
-  background-color: #ff4444 !important;
+/* Free column / usage bar text stand out */
+tr.sg-warning > td:last-child,
+td.sg-warning,
+span.sg-warning {
+  background-color: #ffc107 !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+}
+tr.sg-critical > td:last-child,
+td.sg-critical,
+span.sg-critical {
+  background-color: #f44336 !important;
   color: #fff !important;
+  font-weight: 600 !important;
+}
+
+/* Legacy class names still used by injector */
+.array-warning,
+.pool-warning {
+  background-color: rgba(255, 193, 7, 0.45) !important;
+}
+.array-critical,
+.pool-critical {
+  background-color: rgba(244, 67, 54, 0.55) !important;
+}
+
+/* Dashboard list blocks */
+#array_list.sg-warning,
+#array_list.array-warning,
+[id^="pool_list"].sg-warning {
+  outline: 3px solid #ffc107;
+}
+#array_list.sg-critical,
+#array_list.array-critical,
+[id^="pool_list"].sg-critical {
+  outline: 3px solid #f44336;
 }
