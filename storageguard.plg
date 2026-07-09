@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.07.06-13">
+<!ENTITY version "2026.07.06-14">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,8 +24,8 @@
 
 <CHANGES>
 ###&version;
-- Fix Main-tab coloring: server-side free space + levels; target Array/Pool totals rows; re-apply after nchan refresh.
-- Respect custom capacity (55T/50T etc.) for array warn/crit.
+- CRITICAL: inject color JS/CSS into HeadInlineJS.php (Unraid 7 never loads HeadInclude.php — coloring never ran).
+- Clean legacy HeadInclude stubs; versioned script URLs.
 
 ###2026.07.06-5
 - Run block CDATA formatting.
@@ -72,36 +72,65 @@ echo "StorageGuard: directories ready."
 <URL>&raw;/check-alerts.php?v=&version;</URL>
 </FILE>
 
-<!-- Inject coloring into global HeadInclude -->
+<!-- Inject coloring: Unraid 7 loads HeadInlineJS.php, NOT HeadInclude.php -->
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-echo "StorageGuard: injecting Main-tab color CSS/JS..."
-sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/StorageGuard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/StorageGuard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+echo "StorageGuard: injecting Main-tab color CSS/JS into page layout..."
+VER="2026.07.06-14"
 
-if ! grep -q "storageguard-color.js" /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null; then
-  echo '<script src="/plugins/StorageGuard/storageguard-color.js"></script>' >> /usr/local/emhttp/webGui/include/HeadInclude.php
-  echo '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css">' >> /usr/local/emhttp/webGui/include/HeadInclude.php
+# Strip any prior Storage Guard tags from known include sites
+for f in \
+  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
+  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
+  /usr/local/emhttp/webGui/include/HeadInclude.php \
+  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
+do
+  [ -f "$f" ] || continue
+  sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
+done
+
+# Primary hook used by DefaultPageLayout.php on Unraid 7+
+HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
+if [ -f "$HI" ]; then
+  printf '\n<!-- Storage Guard -->\n<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER" "$VER" >> "$HI"
+  echo "StorageGuard: injected into $HI"
+else
+  echo "StorageGuard: WARNING — HeadInlineJS.php not found; coloring may not load"
 fi
-echo "StorageGuard: install complete. Open Settings → User Utilities → Storage Guard"
+
+# Legacy empty HeadInclude stubs: leave clean (do not put scripts there)
+for f in \
+  /usr/local/emhttp/webGui/include/HeadInclude.php \
+  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
+do
+  if [ -f "$f" ] && [ "$(wc -c < "$f")" -lt 500 ]; then
+    # Only truncate if file is just our old stub / empty-ish
+    if ! grep -q '<?php\|<script\|function ' "$f" 2>/dev/null || grep -q storageguard "$f" 2>/dev/null; then
+      : > "$f"
+    fi
+  fi
+done
+
+echo "StorageGuard: install complete. Hard-refresh Main to see coloring."
 ls -la /usr/local/emhttp/plugins/StorageGuard/ || true
 ]]></INLINE>
 </FILE>
 
-<!-- ONLY on plugin remove — Method= not Type= (Type is only for base64) -->
+<!-- ONLY on plugin remove — Method= not Type= -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 echo "StorageGuard: removing plugin..."
-sed -i '/storageguard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/storageguard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/StorageGuard-color.js/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
-sed -i '/StorageGuard.css/d' /usr/local/emhttp/webGui/include/HeadInclude.php 2>/dev/null || true
+for f in \
+  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
+  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
+  /usr/local/emhttp/webGui/include/HeadInclude.php \
+  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
+do
+  [ -f "$f" ] || continue
+  sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
+done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -rf /usr/local/emhttp/plugins/storageguard
-# User config left on flash intentionally:
-# rm -rf /boot/config/plugins/StorageGuard
 echo "StorageGuard: removed."
 ]]></INLINE>
 </FILE>
