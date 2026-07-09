@@ -150,76 +150,81 @@ if (!$has_disks || (empty($array_sizes) && empty($pools))) {
   $dev_mode = false;
 }
 
-// Array defaults from real disks: Warning = largest data disk, Critical = 2nd largest (or same if only one size)
+// Array defaults: Warning = largest data disk; Critical = None (user opts in)
 $array_defaults = ['warning' => '', 'critical' => ''];
 if (!empty($array_raw_sizes)) {
     $sorted = $array_raw_sizes;
     rsort($sorted, SORT_NUMERIC);
-    $largest = sg_format_size($sorted[0]);
-    $second = isset($sorted[1]) ? sg_format_size($sorted[1]) : $largest;
-    $array_defaults = ['warning' => $largest, 'critical' => $second];
+    $array_defaults = ['warning' => sg_format_size($sorted[0]), 'critical' => ''];
 } elseif (!$has_disks && !empty($array_sizes)) {
-    // dev mode example
-    $array_defaults = ['warning' => $array_sizes[0], 'critical' => ($array_sizes[1] ?? $array_sizes[0])];
+    $array_defaults = ['warning' => $array_sizes[0], 'critical' => ''];
 }
 
-// Compute pool defaults: Warning = largest, Critical = second largest per pool
+// Pool defaults: Warning = largest member; Critical = None
 $pool_defaults = [];
 foreach ($pools_raw as $pname => $raws) {
     if (!empty($raws)) {
-        rsort($raws);
-        $largest = sg_format_size($raws[0]);
-        $second = isset($raws[1]) ? sg_format_size($raws[1]) : $largest;
-        $pool_defaults[$pname] = ['warning' => $largest, 'critical' => $second];
+        rsort($raws, SORT_NUMERIC);
+        $pool_defaults[$pname] = ['warning' => sg_format_size($raws[0]), 'critical' => ''];
     } else {
-        $pool_defaults[$pname] = ['warning' => '2T', 'critical' => '1T'];
+        $pool_defaults[$pname] = ['warning' => '', 'critical' => ''];
     }
 }
 if (!$has_disks && !empty($pools)) {
-    // dev overrides
     $pool_defaults = [
-        'intelligence' => ['warning' => '1.2T', 'critical' => '1.2T'],
-        'overshield' => ['warning' => '8T', 'critical' => '4T'],
-        'hyperspace' => ['warning' => '2T', 'critical' => '2T'],
+        'intelligence' => ['warning' => '1.2T', 'critical' => ''],
+        'overshield' => ['warning' => '8T', 'critical' => ''],
+        'hyperspace' => ['warning' => '2T', 'critical' => ''],
     ];
 }
 
-// Helper to build <option>s for a size list (current value preselected)
-function sg_size_options($sizes, $current) {
+// Build <option>s; include leading "None" (empty value = no threshold for that level)
+function sg_size_options($sizes, $current, $include_none = true) {
     $html = '';
-    $found = false;
+    if ($include_none) {
+        $sel = ($current === '' || $current === null) ? ' selected' : '';
+        $html .= '<option value=""' . $sel . '>None</option>';
+    }
+    $found = ($current === '' || $current === null);
     foreach ($sizes as $s) {
         $sel = ($s === $current) ? ' selected' : '';
         if ($sel) $found = true;
         $html .= '<option value="' . htmlspecialchars($s) . '"' . $sel . '>' . htmlspecialchars($s) . '</option>';
     }
-    if (!$found && $current) {
-        // keep custom-ish previous value visible
-        $html = '<option value="' . htmlspecialchars($current) . '" selected>' . htmlspecialchars($current) . '</option>' . $html;
+    if (!$found && $current !== '' && $current !== null) {
+        $html .= '<option value="' . htmlspecialchars($current) . '" selected>' . htmlspecialchars($current) . '</option>';
     }
-    if (empty($sizes)) {
+    if (empty($sizes) && !$include_none) {
         $html = '<option value="">No disks detected</option>';
     }
     return $html;
 }
 
-// Current values — prefer saved cfg, else largest / 2nd-largest from real disks.
-// Ignore stale stub defaults (e.g. 8T/2T from old default.cfg) when they are not a real disk size.
+// Defaults: Warning = largest data disk; Critical = None (user opts in)
+// array_defaults['warning'] set earlier; force critical default empty
+$array_defaults['critical'] = '';
+
 $array_use_custom = $cfg['array_use_custom'] ?? 'no';
 $array_warning_custom = $cfg['array_warning_custom'] ?? '';
 $array_critical_custom = $cfg['array_critical_custom'] ?? '';
-$array_warning = $cfg['array_warning'] ?? '';
-$array_critical = $cfg['array_critical'] ?? '';
-if ($array_use_custom !== 'yes' && !empty($array_sizes)) {
-    if ($array_warning === '' || !in_array($array_warning, $array_sizes, true)) {
-        $array_warning = $array_defaults['warning'];
-    }
-    if ($array_critical === '' || !in_array($array_critical, $array_sizes, true)) {
-        $array_critical = $array_defaults['critical'];
+
+// Warning: default largest if unset/invalid; empty string only if user chose None
+if (array_key_exists('array_warning', $cfg)) {
+    $array_warning = $cfg['array_warning'];
+    if ($array_use_custom !== 'yes' && $array_warning !== '' && !empty($array_sizes) && !in_array($array_warning, $array_sizes, true)) {
+        $array_warning = $array_defaults['warning'] ?? '';
     }
 } else {
-    if ($array_warning === '') $array_warning = $array_defaults['warning'];
-    if ($array_critical === '') $array_critical = $array_defaults['critical'];
+    $array_warning = $array_defaults['warning'] ?? '';
+}
+// Critical: default None; keep saved value including empty
+if (array_key_exists('array_critical', $cfg)) {
+    $array_critical = $cfg['array_critical'];
+    if ($array_use_custom !== 'yes' && $array_critical !== '' && !empty($array_sizes) && !in_array($array_critical, $array_sizes, true)) {
+        $array_critical = '';
+    }
+} else {
+    $array_critical = '';
 }
 
 $array_coloring = $cfg['array_coloring'] ?? 'yes';
@@ -268,215 +273,185 @@ foreach ($pool_names as $p) {
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">
 
 <?php if (!empty($dev_mode)): ?>
-<p style="color:#e66; font-size:0.9em"><strong>Preview mode</strong> — example disk sizes (no disks.ini on this system).</p>
+**Preview mode** — example disk sizes (no disks.ini).
 <?php endif; ?>
 
-<p style="margin-bottom:1em">
-Set <strong>free-space thresholds</strong> for the Main tab. When free space falls <em>at or below</em> a threshold, Storage Guard marks that Free bar (array and/or pools).<br>
-<span style="color:#888;font-size:0.92em">Tip: Critical is usually the <em>smaller</em> free amount. If you reverse them, we still treat the smaller TB as critical.</span>
-</p>
+Set free-space thresholds for Main. Free ≤ threshold → warning (yellow) or critical (red).
+**None** = that level is unused. Smaller free TB is always treated as critical if both are set.
 
-<!-- ========== DISPLAY STYLE (global) ========== -->
-<div class="title">Main-tab highlight style</div>
+> **Display style** applies to array and pools: outline keeps the green free fill; solid recolors the fill.
 
-_(How to mark Warning / Critical?)_:
+_(Highlight style)_:
 : <select name="color_style" id="color_style">
-  <?=mk_option($color_style, "outline", _("Outline (recommended) — keep green free bar, pulse yellow/red outline"))?>
-  <?=mk_option($color_style, "solid", _("Solid — replace free bar fill with yellow/red"))?>
+  <?=mk_option($color_style, "outline", _("Outline — pulse outline, keep green free fill"))?>
+  <?=mk_option($color_style, "solid", _("Solid — recolor free bar fill"))?>
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline</strong> (default): leaves Unraid’s green free-space fill as-is and draws a slow-pulsing yellow or red outline around the Free bar so you still see how full the free segment is.<br>
-<strong>Solid</strong>: overrides the free bar fill color to yellow/red (previous behavior).<br>
-Applies to both array and pool Free bars.
+Outline (default): green free bar stays; yellow/red outline pulses. Solid: free bar fill becomes yellow/red.
 </blockquote>
 
-<hr>
+---
 
-<!-- ========== ARRAY ========== -->
-<div class="title">Array</div>
+### Array
 
 <?php if (!$has_array_disks): ?>
-<p style="color:#888; font-size:0.95em; margin:0.4em 0 1em">
-<strong>No array data disks</strong> — array options apply when you add data disks. Pool settings below still work.
-</p>
+> No array data disks — thresholds still save for later; coloring only applies when data disks exist.
 <?php endif; ?>
 
-<div id="array-settings-block" style="<?= $has_array_disks ? '' : 'opacity:0.65;' ?>">
-
 _(Enable Array Coloration?)_:
-: <select name="array_coloring" id="array_coloring">
+: <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-details">
   <?=mk_option($array_coloring, "yes", _("Yes"))?>
   <?=mk_option($array_coloring, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-Color the Array Free bar on Main when free space is at or below your thresholds.
+Yes = color the Array Free bar on Main. No = hide array threshold fields below (values kept for alerts).
 </blockquote>
 
-_(Use custom capacity?)_:
+<div id="array-details" class="sg-details" markdown="1">
+
+_(Use disk sizes or custom?)_:
 : <select name="array_use_custom" id="array_use_custom">
-  <?=mk_option($array_use_custom, "no", _("No — use disk sizes"))?>
-  <?=mk_option($array_use_custom, "yes", _("Yes — enter values"))?>
+  <?=mk_option($array_use_custom, "no", _("Disk sizes"))?>
+  <?=mk_option($array_use_custom, "yes", _("Custom values"))?>
   </select>
 
 <blockquote class="inline_help">
-No = pick Warning/Critical from your real data-disk sizes (defaults: largest / second-largest).<br>
-Yes = type any size (e.g. 50T, 40T, 1.5T).
+Disk sizes: pick from real data disks (Warning defaults to largest; Critical defaults to None).
+Custom: type any size (50T, 1.5T, …).
 </blockquote>
 
-<div id="array-disk-selects">
-_(Array Warning (free space))_:
+<div id="array-disk-selects" markdown="1">
+
+_(Array Warning)_:
 : <select name="array_warning" id="array_warning">
   <?=sg_size_options($array_sizes, $array_warning)?>
   </select>
 
 <blockquote class="inline_help">
-Yellow when array free ≤ this. Goal: still enough free to move data off a failed disk.
+Yellow when free ≤ this. **None** = no warning level.
 </blockquote>
 
-_(Array Critical (free space))_:
+_(Array Critical)_:
 : <select name="array_critical" id="array_critical">
   <?=sg_size_options($array_sizes, $array_critical)?>
   </select>
 
 <blockquote class="inline_help">
-Red when array free ≤ this (usually a lower free amount than Warning).
+Red when free ≤ this. **None** = no critical level (only warning, if set).
 </blockquote>
+
 </div>
 
-<div id="array-custom-fields" style="display:none">
+<div id="array-custom-fields" markdown="1" style="display:none">
+
 _(Array Warning (custom))_:
-: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 50T">
+: <input type="text" name="array_warning_custom" id="array_warning_custom" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 50T or leave blank for None">
 
 _(Array Critical (custom))_:
-: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 40T">
+: <input type="text" name="array_critical_custom" id="array_critical_custom" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 40T or leave blank for None">
 
 <blockquote class="inline_help">
-Either order works: we treat the <strong>smaller TB</strong> as critical and the <strong>larger TB</strong> as warning.
+Leave blank for None. If both set, smaller TB = critical, larger = warning.
 </blockquote>
-</div>
 
 </div>
+</div>
 
-<hr>
+---
 
-<!-- ========== POOLS ========== -->
-<div class="title">Pools</div>
+### Pools
 
 _(Enable Pool Coloration?)_:
-: <select name="pool_coloring" id="pool_coloring">
+: <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
   <?=mk_option($pool_coloring, "yes", _("Yes"))?>
   <?=mk_option($pool_coloring, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-Color pool Free bars on Main (Data Partition row for multi-device / boot-on-cache pools).
+Yes = color pool Free bars on Main. No = hide pool options below (threshold values kept for alerts).
 </blockquote>
+
+<div id="pool-details" class="sg-details" markdown="1">
 
 _(Pools to color)_:
-: <label><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label>
-<?php foreach ($pool_names as $p):
+: <label style="margin-right:12px"><input type="checkbox" id="pool_all" name="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
-?>
-  <label style="margin-left:10px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label>
-<?php endforeach; ?>
-<?php if (empty($pool_names)): ?>
-  <span class="hint">(No pools detected)</span>
-<?php endif; ?>
+?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" name="pool_color_<?=htmlspecialchars($safe)?>" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(none detected)</span><?php endif; ?>
 
 <blockquote class="inline_help">
-Which pools get Free-bar coloring. Thresholds are per pool below.
+Which pools get Free-bar coloring on Main.
 </blockquote>
 
-<?php if (!empty($pool_names)): ?>
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $w_key = "pool_{$safe}_warning";
   $c_key = "pool_{$safe}_critical";
-  $def = $pool_defaults[$p] ?? ['warning' => '2T', 'critical' => '1T'];
-  $w_val = $cfg[$w_key] ?? $def['warning'];
-  $c_val = $cfg[$c_key] ?? $def['critical'];
+  $def = $pool_defaults[$p] ?? ['warning' => '', 'critical' => ''];
+  $w_val = array_key_exists($w_key, $cfg) ? $cfg[$w_key] : $def['warning'];
+  $c_val = array_key_exists($c_key, $cfg) ? $cfg[$c_key] : '';
+  if ($w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true) && !isset($cfg[$w_key])) $w_val = $def['warning'];
   $current_profile = get_btrfs_profile($p);
-  $devices_summary = get_pool_devices_summary($pools[$p]);
+  $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
 ?>
-<div class="pool-section" id="pool-section-<?=htmlspecialchars($safe)?>" style="margin:12px 0; padding:8px 0 8px 12px; border-left:3px solid #666;">
-<strong><?=htmlspecialchars($p)?></strong>
-<span style="color:#888; font-size:0.9em"> — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?></span>
- · <a href="/Main/Device?name=<?=urlencode($p)?>" target="_blank">Pool settings</a>
 
-_(<?=htmlspecialchars($p)?> Warning (free))_:
+**<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · [Pool page](/Main/Device?name=<?=urlencode($p)?>)
+
+_(<?=htmlspecialchars($p)?> Warning)_:
 : <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select">
-  <?=sg_size_options($pools[$p], $w_val)?>
+  <?=sg_size_options($pools[$p] ?? [], $w_val)?>
   </select>
 
-_(<?=htmlspecialchars($p)?> Critical (free))_:
+_(<?=htmlspecialchars($p)?> Critical)_:
 : <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select">
-  <?=sg_size_options($pools[$p], $c_val)?>
+  <?=sg_size_options($pools[$p] ?? [], $c_val)?>
   </select>
 
 <blockquote class="inline_help">
-Yellow / red when this pool's free space is at or below the threshold (same order-independent rules as array).<br>
-Profile <strong><?=htmlspecialchars($current_profile)?></strong> — rebalance after a failure needs free space roughly the size of the lost device.<br>
-<a href="/Main/Device?name=<?=urlencode($p)?>" target="_blank">Main → <?=htmlspecialchars($p)?> → Balance Status</a>
+**None** = that level off. Profile <?=htmlspecialchars($current_profile)?> — rebalance needs free space about the size of a lost device.
 </blockquote>
-</div>
+
 <?php endforeach; ?>
-<?php endif; ?>
 
-<hr>
+</div>
 
-<!-- ========== ALERTS ========== -->
-<div class="title">Alerts</div>
+---
 
-<p style="font-size:0.95em; margin:0.3em 0 0.8em">
-Unraid notifications when free space crosses a threshold. Check Warning and/or Critical per target. Nothing checked = no alerts. (Separate from Main coloring.)
-</p>
+### Alerts
+
+Unraid notifications when free crosses a threshold. Independent of Main coloring. Nothing checked = no alerts.
+
+_(Array alert Warning)_:
+: <select name="alerts_array_warning">
+  <?=mk_option($alerts_array_warning, "yes", _("Yes"))?>
+  <?=mk_option($alerts_array_warning, "no", _("No"))?>
+  </select>
+
+_(Array alert Critical)_:
+: <select name="alerts_array_critical">
+  <?=mk_option($alerts_array_critical, "yes", _("Yes"))?>
+  <?=mk_option($alerts_array_critical, "no", _("No"))?>
+  </select>
+
+<?php foreach ($pool_alert_cfg as $p => $ac): ?>
+_(<?=htmlspecialchars($p)?> alert Warning)_:
+: <select name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning">
+  <?=mk_option($ac['warning'], "yes", _("Yes"))?>
+  <?=mk_option($ac['warning'], "no", _("No"))?>
+  </select>
+
+_(<?=htmlspecialchars($p)?> alert Critical)_:
+: <select name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical">
+  <?=mk_option($ac['critical'], "yes", _("Yes"))?>
+  <?=mk_option($ac['critical'], "no", _("No"))?>
+  </select>
+<?php endforeach; ?>
 
 <blockquote class="inline_help">
-Example: Array = Warning only; cache = Warning + Critical. Order of threshold sizes does not matter for severity (smaller free TB = critical).
+Uses the same free thresholds as above. You can color without alerting, or alert without coloring.
 </blockquote>
-
-<div style="margin:0.5em 0 1em; overflow-x:auto">
-<table class="tablesorter" style="width:auto; min-width:280px">
-<thead>
-<tr>
-  <th style="text-align:left; padding:4px 16px 4px 0">Target</th>
-  <th style="text-align:center; padding:4px 12px">Warning</th>
-  <th style="text-align:center; padding:4px 12px">Critical</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-  <td style="padding:6px 16px 6px 0">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em">(n/a)</span>' ?></td>
-  <td style="text-align:center; padding:6px 12px">
-    <input type="hidden" name="alerts_array_warning" value="no">
-    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
-  </td>
-  <td style="text-align:center; padding:6px 12px">
-    <input type="hidden" name="alerts_array_critical" value="no">
-    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
-  </td>
-</tr>
-<?php foreach ($pool_alert_cfg as $p => $ac): ?>
-<tr>
-  <td style="padding:6px 16px 6px 0"><?=htmlspecialchars($p)?></td>
-  <td style="text-align:center; padding:6px 12px">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-  <td style="text-align:center; padding:6px 12px">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
-</div>
-
-<hr>
 
 <input type="submit" name="#default" value="_(Default)_">
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">
