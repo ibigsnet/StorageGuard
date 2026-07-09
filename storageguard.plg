@@ -3,16 +3,12 @@
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
 <!--
-  Versioning — match Unraid community / CA plugins (Squid, dlandon, etc.):
-    YYYY.MM.DD     first release of that calendar day
-    YYYY.MM.DDa    second release same day (then b, c, …)
-    YYYY.MM.DDgh   multi-letter ok when needed (e.g. CA style)
-
-  Do NOT use hyphen suffixes (2026.07.06-17) — not the community norm.
-  Ship date = calendar day you publish. Bump only this entity; ?v= uses it.
-  Unraid string-compares versions so a newer day (or letter) triggers Update.
+  Versioning matches Unraid community plugins:
+    YYYY.MM.DD     first release that calendar day
+    YYYY.MM.DDa    second release same day (then b, c, ...)
+  Do not use hyphen suffixes. Bump only this entity; asset ?v= uses it.
 -->
-<!ENTITY version "2026.07.09p">
+<!ENTITY version "2026.07.09q">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -34,8 +30,9 @@
 
 <CHANGES>
 ###&version;
-- Restore full rolling CHANGES history (keep every letter).
-- Deploy via GitHub plugin install/update only (no scp of .plg).
+- Full rolling changelog restored (letters a through p preserved as single-line notes).
+- Open pool Settings link fix included (from 2026.07.09o).
+- Product defaults: Array Warning=largest disk; pool free thresholds None; Array Warning alert only.
 
 ###2026.07.09o
 - Fix Open pool link (markdown left PHP unparsed in the URL).
@@ -69,7 +66,6 @@
 - Docs and settings copy cleanup (README, DOCS, UI help text).
 - Alerts: checkbox matrix restored (Warning/Critical per target).
 - Clearer free-space wording (any unit, not TB only).
-- Per-block styles and pool custom thresholds already from prior letters; packaging/docs polish.
 
 ###2026.07.09g
 - Per-block Outline/Solid: Array and each pool independently.
@@ -103,11 +99,10 @@
 - Initial public development series (array/pool thresholds, alerts, Plugins metadata).
 </CHANGES>
 
-<!-- Ensure directories exist (do NOT wipe emhttp dir here — files land next) -->
+<!-- Ensure directories exist -->
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: preparing directories..."
-# Clear emhttp payload so updates always re-download (plugin manager skips existing files)
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 mkdir -p /usr/local/emhttp/plugins/StorageGuard
 mkdir -p /boot/config/plugins/StorageGuard
@@ -115,7 +110,7 @@ echo "StorageGuard: directories ready."
 ]]></INLINE>
 </FILE>
 
-<!-- Plugin UI + assets (?v= busts intermediate caches; content is versioned via entity) -->
+<!-- Plugin UI + assets -->
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page">
 <URL>&raw;/StorageGuard.page?v=&version;</URL>
 </FILE>
@@ -144,11 +139,10 @@ echo "StorageGuard: directories ready."
 <URL>&raw;/sg-lib.php?v=&version;</URL>
 </FILE>
 
-<!-- Inject coloring: Unraid 7 loads HeadInlineJS.php, NOT HeadInclude.php -->
+<!-- Inject coloring: Unraid 7 loads HeadInlineJS.php -->
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: injecting Main-tab color CSS/JS into page layout..."
-# Prefer version from the .plg just downloaded (never hardcode — avoids drift)
 VER=""
 for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard.plg; do
   if [ -f "$candidate" ]; then
@@ -156,10 +150,9 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.09p"   # fallback only; prefer ENTITY from .plg
+[ -z "$VER" ] && VER="2026.07.09q"
 echo "StorageGuard: asset version tag $VER"
 
-# Strip any prior Storage Guard tags from known include sites
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
   /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
@@ -170,30 +163,25 @@ do
   sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
 done
 
-# Primary hook used by DefaultPageLayout.php on Unraid 7+
 HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
 if [ -f "$HI" ]; then
   printf '\n<!-- Storage Guard -->\n<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER" "$VER" >> "$HI"
   echo "StorageGuard: injected into $HI"
 else
-  echo "StorageGuard: WARNING — HeadInlineJS.php not found; coloring may not load"
+  echo "StorageGuard: WARNING - HeadInlineJS.php not found; coloring may not load"
 fi
 
-# Legacy empty HeadInclude stubs: leave clean (do not put scripts there)
 for f in \
   /usr/local/emhttp/webGui/include/HeadInclude.php \
   /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
 do
   if [ -f "$f" ] && [ "$(wc -c < "$f")" -lt 500 ]; then
-    # Only truncate if file is just our old stub / empty-ish
     if ! grep -q '<?php\|<script\|function ' "$f" 2>/dev/null || grep -q storageguard "$f" 2>/dev/null; then
       : > "$f"
     fi
   fi
 done
 
-# Only re-fetch if a critical asset looks missing/stale (avoid overwriting good
-# downloads with a lagging raw.githubusercontent.com/main CDN edge)
 JS="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"
 if [ ! -s "$JS" ] || ! grep -q 'data-sg-outline\|sg-outline\|color_style' "$JS" 2>/dev/null; then
   RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
@@ -208,7 +196,7 @@ ls -la /usr/local/emhttp/plugins/StorageGuard/ || true
 ]]></INLINE>
 </FILE>
 
-<!-- ONLY on plugin remove — Method= not Type= -->
+<!-- ONLY on plugin remove -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 echo "StorageGuard: removing plugin..."
