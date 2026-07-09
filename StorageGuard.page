@@ -281,33 +281,66 @@ Tip: Critical should usually be the **smaller** free amount. If you reverse them
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
+### Appearance
+
+Global look for any free bar you enable coloring on (array and/or pools).
+
+_(Pulse color?)_:
+: <select name="outline_pulse" id="outline_pulse">
+  <?=mk_option($outline_pulse, "no", _("No"))?>
+  <?=mk_option($outline_pulse, "yes", _("Yes"))?>
+  </select>
+
+<blockquote class="inline_help">
+When <strong>Yes</strong>, yellow/red gently pulse so warning and critical stand out.<br>
+• <strong>Outline</strong> style → pulses the border<br>
+• <strong>Solid</strong> style → pulses the free fill<br>
+Does <strong>not</strong> pulse green / OK. Off by default (static color).
+</blockquote>
+
+_(Green when OK?)_:
+: <select name="outline_show_ok" id="outline_show_ok">
+  <?=mk_option($outline_show_ok, "no", _("No"))?>
+  <?=mk_option($outline_show_ok, "yes", _("Yes"))?>
+  </select>
+
+<blockquote class="inline_help">
+When free space is still <strong>above</strong> all thresholds, draw a static green border so “still OK” is visible.<br>
+<strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default.
+</blockquote>
+
+---
+
 ### Array
 
 <?php if (!$has_array_disks): ?>
 > No array data disks detected. Array coloring applies when data disks exist.
 <?php endif; ?>
 
-_(Color array free bar?)_:
+_(Enable coloring?)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-details">
   <?=mk_option($array_coloring, "yes", _("Yes"))?>
   <?=mk_option($array_coloring, "no", _("No"))?>
   </select>
 
 <blockquote class="inline_help">
-Paint the Array free bar on Main when free space is at or below your thresholds.
+<strong>Yes</strong> = color the array <strong>Total free</strong> bar on Main (the “Array of N devices” free column) when free space hits your thresholds below.<br>
+<strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
 </blockquote>
 
 <div id="array-details" class="sg-details" markdown="1">
 
 _(Highlight style)_:
 : <select name="array_color_style" id="array_color_style">
-  <?=mk_option($array_color_style, "outline", _("Outline — yellow/red border only"))?>
-  <?=mk_option($array_color_style, "solid", _("Solid — recolor free fill"))?>
+  <?=mk_option($array_color_style, "outline", _("Outline"))?>
+  <?=mk_option($array_color_style, "solid", _("Solid"))?>
   </select>
 
 <blockquote class="inline_help">
-<strong>Outline</strong> (default): border only; Unraid free fill unchanged.<br>
-<strong>Solid</strong>: free fill becomes yellow/red.
+How status is shown on the free bar when coloring is on:<br>
+• <strong>Outline</strong> (default) — yellow/red <em>border only</em>; Unraid’s free fill stays as-is<br>
+• <strong>Solid</strong> — free <em>fill</em> itself becomes yellow/red<br>
+Pulse (above) works with either style.
 </blockquote>
 
 _(Thresholds from)_:
@@ -318,65 +351,42 @@ _(Thresholds from)_:
 
 <blockquote class="inline_help">
 <strong>Disk sizes</strong> — pick from your data disks. Default: Warning = largest disk, Critical = None.<br>
-<strong>Custom</strong> — type any free amount (e.g. <code>8T</code>, <code>500G</code>).
+<strong>Custom</strong> — type remaining free space. Decimals and mixed units work, e.g. <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>.
 </blockquote>
 
 <div id="array-disk-selects" markdown="1">
 
-_(Array Warning)_:
+_(Warning)_:
 : <select name="array_warning" id="array_warning" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" data-sg-default-warn="<?=htmlspecialchars($array_defaults['warning'] ?? '')?>">
   <?=sg_size_options($array_sizes, $array_warning)?>
   </select>
 
-_(Array Critical)_:
+_(Critical)_:
 : <select name="array_critical" id="array_critical" class="sg-thresh" data-sg-pair="array" data-sg-level="crit">
   <?=sg_size_options($array_sizes, $array_critical)?>
   </select>
 
 <blockquote class="inline_help">
-Yellow / red when free space is at or below this amount. Prefer Warning free amount &gt; Critical. <strong>None</strong> = off.
+Yellow (Warning) / red (Critical) when remaining free is at or below this amount.<br>
+Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical <code>2T</code>). <strong>None</strong> = that level off.
 </blockquote>
 
 </div>
 
 <div id="array-custom-fields" markdown="1" style="display:none">
 
-_(Array Warning (custom))_:
-: <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 8T, 500G — blank = None">
+_(Warning (custom))_:
+: <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
 
-_(Array Critical (custom))_:
-: <input type="text" name="array_critical_custom" id="array_critical_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="crit" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T, 500G — blank = None">
+_(Critical (custom))_:
+: <input type="text" name="array_critical_custom" id="array_critical_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="crit" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T, 500G, 1.2T — blank = None">
 
 <blockquote class="inline_help">
-Remaining free space. Blank = None. Usual: Warning free amount &gt; Critical.
+Remaining free space. Examples that work: <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>. Blank = None. Prefer Warning free amount &gt; Critical.
 </blockquote>
 
 </div>
 </div>
-
----
-
-### Appearance
-
-_(Pulse warning/critical?)_:
-: <select name="outline_pulse" id="outline_pulse">
-  <?=mk_option($outline_pulse, "no", _("No (static)"))?>
-  <?=mk_option($outline_pulse, "yes", _("Yes (pulse)"))?>
-  </select>
-
-<blockquote class="inline_help">
-Optional flasher for warning/critical on Main. Outline: pulses the border. Solid: pulses the free fill. Off by default.
-</blockquote>
-
-_(Green when free space is OK?)_:
-: <select name="outline_show_ok" id="outline_show_ok">
-  <?=mk_option($outline_show_ok, "no", _("No"))?>
-  <?=mk_option($outline_show_ok, "yes", _("Yes (Outline only)"))?>
-  </select>
-
-<blockquote class="inline_help">
-Outline only: static green border when free space is still above thresholds. Off by default.
-</blockquote>
 
 ---
 
