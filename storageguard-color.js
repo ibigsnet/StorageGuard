@@ -92,9 +92,10 @@
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       bar && bar.classList.contains('sg-solid');
     if (ok) {
-
-      bar.style.setProperty('background-color', color, 'important');
-      bar.style.setProperty('background', color, 'important');
+      if (bar.style.backgroundColor !== color) {
+        bar.style.setProperty('background-color', color, 'important');
+        bar.style.setProperty('background', color, 'important');
+      }
       return;
     }
 
@@ -102,6 +103,7 @@
     disk.removeAttribute('data-sg-outline');
     disk.classList.add(levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
+    else disk.classList.remove('sg-pulse');
     disk.setAttribute('data-sg-solid', level);
     if (sig) disk.setAttribute('data-sg-sig', sig);
     if (bar) {
@@ -113,60 +115,27 @@
     }
   }
 
-
-  function ensureOutline(disk, level, pulse, sig) {
-    if (!disk) return;
-    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
-    var levelClass = level === 'ok' ? 'sg-ok' : (level === 'critical' ? 'sg-critical' : 'sg-warning');
-    var cell = freeUsageCell(disk);
-    var cellOk =
+  function outlineCellMarked(cell, level, pulseActive, sig) {
+    return !!(
       cell &&
       cell.getAttribute('data-sg-outline') === level &&
       cell.getAttribute('data-sg-sig') === sig &&
-      (wantPulse === cell.classList.contains('sg-pulse'));
-    var diskOk =
-      disk.classList.contains('sg-outline') &&
-      disk.getAttribute('data-sg-outline') === level &&
-      disk.getAttribute('data-sg-sig') === sig &&
-      disk.classList.contains(levelClass) &&
-      (wantPulse === disk.classList.contains('sg-pulse')) &&
-      !disk.hasAttribute('data-sg-solid');
-    if (cellOk && diskOk) return;
+      pulseActive === cell.classList.contains('sg-pulse')
+    );
+  }
 
-
-    disk.classList.remove('sg-solid', 'sg-bar');
-    disk.removeAttribute('data-sg-solid');
-    if (levelClass !== 'sg-ok') disk.classList.remove('sg-ok');
-    if (levelClass !== 'sg-warning') disk.classList.remove('sg-warning');
-    if (levelClass !== 'sg-critical') disk.classList.remove('sg-critical');
-    disk.classList.add('sg-outline', levelClass);
-    if (wantPulse) disk.classList.add('sg-pulse');
-    else disk.classList.remove('sg-pulse');
-    disk.setAttribute('data-sg-outline', level);
-    if (sig) disk.setAttribute('data-sg-sig', sig);
-
-    if (cell) {
-      cell.setAttribute('data-sg-outline', level);
-      if (sig) cell.setAttribute('data-sg-sig', sig);
-      if (wantPulse) cell.classList.add('sg-pulse');
-      else cell.classList.remove('sg-pulse');
-    }
-
-    var bar = disk.querySelector('span:first-child');
-    if (bar && (bar.hasAttribute('data-sg-bar') || bar.classList.contains('sg-solid'))) {
-      bar.style.removeProperty('background-color');
-      bar.style.removeProperty('background');
-      bar.removeAttribute('data-sg-bar');
-      bar.removeAttribute('data-sg-style');
-      bar.classList.remove('sg-bar', 'sg-solid', 'sg-warning', 'sg-critical', 'sg-ok');
-    }
+  function markOutlineCell(cell, level, pulseActive, sig) {
+    if (!cell) return;
+    if (outlineCellMarked(cell, level, pulseActive, sig)) return;
+    cell.setAttribute('data-sg-outline', level);
+    cell.setAttribute('data-sg-sig', sig);
+    if (pulseActive) cell.classList.add('sg-pulse');
+    else cell.classList.remove('sg-pulse');
   }
 
   function makeSig(level, style, pulse, showOk) {
-
     return [level || 'none', style || 'outline', pulse ? '1' : '0', showOk ? '1' : '0'].join('|');
   }
-
 
   function paintFreeBar(tr, level, style, opts) {
     if (!tr) return false;
@@ -174,9 +143,7 @@
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
     style = style === 'solid' ? 'solid' : 'outline';
-
-    var pulseActive = pulse && (level === 'warning' || level === 'critical');
-
+    var pulseActive = !!(pulse && (level === 'warning' || level === 'critical'));
 
     if (level === 'ok') {
       if (style !== 'outline' || !showOk) {
@@ -191,56 +158,33 @@
     var sig = makeSig(level, style, pulseActive, showOk);
     var disk = freeUsageDisk(tr);
     var cell = freeUsageCell(disk);
-    var prevSig = tr.getAttribute('data-sg-sig');
-    var sameLook = prevSig === sig;
-    var cellHasLook =
-      cell &&
-      cell.getAttribute('data-sg-outline') === level &&
-      cell.getAttribute('data-sg-sig') === sig;
-
 
     if (style === 'outline') {
-      if (sameLook && cellHasLook && disk &&
-          disk.getAttribute('data-sg-outline') === level &&
-          disk.classList.contains('sg-outline')) {
+      if (outlineCellMarked(cell, level, pulseActive, sig)) {
+        if (tr.getAttribute('data-sg-sig') !== sig) tr.setAttribute('data-sg-sig', sig);
         return true;
       }
-
-      if (sameLook || cellHasLook || (disk && disk.getAttribute('data-sg-sig') === sig)) {
-        tr.setAttribute('data-sg-sig', sig);
-        if (disk) ensureOutline(disk, level, pulse, sig);
-        return true;
-      }
-
+      if (disk && disk.hasAttribute('data-sg-solid')) clearPaint(tr);
       tr.setAttribute('data-sg-sig', sig);
-      if (disk) {
-        ensureOutline(disk, level, pulse, sig);
-        log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
+      cell = freeUsageCell(disk) || cell;
+      if (cell) {
+        markOutlineCell(cell, level, pulseActive, sig);
         return true;
       }
-
       var tdsO = tr.querySelectorAll('td');
       if (tdsO.length) {
         var tdO = tdsO[tdsO.length - 1];
         if (/\d/.test(tdO.textContent || '')) {
-          var colorO = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
-          tdO.style.setProperty('outline', '2px solid ' + colorO, 'important');
-          tdO.style.setProperty('outline-offset', '2px', 'important');
-          tdO.setAttribute('data-sg-td', level);
-          tdO.setAttribute('data-sg-sig', sig);
-          if (pulseActive) tdO.classList.add('sg-pulse');
-          else tdO.classList.remove('sg-pulse');
+          markOutlineCell(tdO, level, pulseActive, sig);
           return true;
         }
       }
       return false;
     }
 
-
     var existing =
       (disk && disk.getAttribute('data-sg-sig') === sig && disk) ||
-      (tr.getAttribute('data-sg-sig') === sig && tr) ||
-      tr.querySelector('[data-sg-sig="' + sig + '"]');
+      (tr.getAttribute('data-sg-sig') === sig && tr);
     if (existing) {
       if (disk) ensureSolidBar(disk, level, pulse, sig);
       return true;
@@ -248,25 +192,9 @@
 
     clearPaint(tr);
     tr.setAttribute('data-sg-sig', sig);
-
     if (disk && level !== 'ok') {
       ensureSolidBar(disk, level, pulse, sig);
-      log('solid free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
       return true;
-    }
-
-    var tds = tr.querySelectorAll('td');
-    if (tds.length) {
-      var td = tds[tds.length - 1];
-      if (/\d/.test(td.textContent || '') && level !== 'ok') {
-        var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
-        td.style.setProperty('color', color, 'important');
-        td.style.setProperty('font-weight', '700', 'important');
-        td.setAttribute('data-sg-td', level);
-        td.setAttribute('data-sg-sig', sig);
-        if (pulseActive) td.classList.add('sg-pulse');
-        return true;
-      }
     }
     return false;
   }
@@ -527,10 +455,10 @@
 
   function scheduleApply() {
     if (applyTimer) return;
-    applyTimer = setTimeout(function () {
+    applyTimer = requestAnimationFrame(function () {
       applyTimer = null;
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 400);
+    });
   }
 
   function fetchAndApply() {
@@ -557,15 +485,13 @@
 
   function boot() {
     fetchAndApply();
-
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 5000);
-    setInterval(fetchAndApply, 15000);
+    }, 8000);
+    setInterval(fetchAndApply, 20000);
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
-
         scheduleApply();
       });
       var main = document.getElementById('content') || document.body;
@@ -578,8 +504,7 @@
   } else {
     boot();
   }
-  setTimeout(fetchAndApply, 2000);
-  setTimeout(fetchAndApply, 5000);
+  setTimeout(fetchAndApply, 1500);
 
   window.StorageGuardColor = {
     refresh: fetchAndApply,
