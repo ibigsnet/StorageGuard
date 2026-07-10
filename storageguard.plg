@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10ab">
+<!ENTITY version "2026.07.10ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,10 +37,13 @@
 
 <CHANGES>
 ###&version;
+- Fix OK/green free-bar outline flashing on Main when Pulse is off: outline re-apply no longer clearPaints (clear+repaint was the flash); outline class updates are idempotent.
+
+###2026.07.10ab
 - Public release notes and packaging cleanup.
 
 ###2026.07.10aa
-- Fix free-bar outline flashing on Main when status is OK and Pulse is off. Outline highlight stays static; green/OK never pulses.
+- Free-bar outline stability work for OK highlight and Pulse off.
 
 ###2026.07.10
 - Free-bar paint reliability for Pulse and OK outline highlighting.
@@ -240,7 +243,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10ab"
+[ -z "$VER" ] && VER="2026.07.10ac"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

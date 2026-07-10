@@ -16,7 +16,7 @@
 //   - data-sg-sig: skip full clear/repaint when level/style/pulse/showOk unchanged
 //   - Solid: data-sg-solid on parent so fill color survives span rewrites
 //   - Outline: markers on free-column TD; CSS targets the .usage-disk child
-//   - Outline soft re-apply does not toggle classes (avoids restarting CSS animation)
+//   - Never clearPaint before re-applying the same outline look (that flashes)
 //   - Pulse (.sg-pulse) only for warning/critical, never OK
 (function () {
   'use strict';
@@ -136,7 +136,8 @@
   /**
    * Outline highlight on free column. Markers go on the free TD (and disk node).
    * CSS uses td[data-sg-outline] so paint survives free-bar node replacement on Main.
-   * OK never uses .sg-pulse. If already correct, return without class changes.
+   * Idempotent: set attrs/classes without remove-all (remove-then-add flashes on Main).
+   * OK never uses .sg-pulse.
    */
   function ensureOutline(disk, level, pulse, sig) {
     if (!disk) return;
@@ -156,28 +157,26 @@
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       !disk.hasAttribute('data-sg-solid');
     if (cellOk && diskOk) return;
-    if (cellOk && !diskOk) {
-      // Free-bar node replaced; re-attach classes without clearing first
-      disk.classList.add('sg-outline', levelClass);
-      if (wantPulse) disk.classList.add('sg-pulse');
-      disk.setAttribute('data-sg-outline', level);
-      if (sig) disk.setAttribute('data-sg-sig', sig);
-      return;
-    }
 
-    disk.classList.remove('sg-ok', 'sg-warning', 'sg-critical', 'sg-pulse', 'sg-solid', 'sg-bar');
+    // Drop solid leftovers only (do not strip outline classes first — that flashes)
+    disk.classList.remove('sg-solid', 'sg-bar');
     disk.removeAttribute('data-sg-solid');
+    if (levelClass !== 'sg-ok') disk.classList.remove('sg-ok');
+    if (levelClass !== 'sg-warning') disk.classList.remove('sg-warning');
+    if (levelClass !== 'sg-critical') disk.classList.remove('sg-critical');
     disk.classList.add('sg-outline', levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
+    else disk.classList.remove('sg-pulse');
     disk.setAttribute('data-sg-outline', level);
-    disk.setAttribute('data-sg-sig', sig);
+    if (sig) disk.setAttribute('data-sg-sig', sig);
+
     if (cell) {
       cell.setAttribute('data-sg-outline', level);
       if (sig) cell.setAttribute('data-sg-sig', sig);
       if (wantPulse) cell.classList.add('sg-pulse');
       else cell.classList.remove('sg-pulse');
     }
-    // Ensure free fill is not left with solid tints from a prior style switch
+
     var bar = disk.querySelector('span:first-child');
     if (bar && (bar.hasAttribute('data-sg-bar') || bar.classList.contains('sg-solid'))) {
       bar.style.removeProperty('background-color');
@@ -223,55 +222,80 @@
     var sig = makeSig(level, style, pulseActive, showOk);
     var disk = freeUsageDisk(tr);
     var cell = freeUsageCell(disk);
-    // Prefer stable host (free TD / .usage-disk / tr) — Unraid often replaces fill span or disk node
+    var prevSig = tr.getAttribute('data-sg-sig');
+    var sameLook = prevSig === sig;
+    var cellHasLook =
+      cell &&
+      cell.getAttribute('data-sg-outline') === level &&
+      cell.getAttribute('data-sg-sig') === sig;
+
+    // ---- Outline: never clearPaint for the same look (clear → re-add = green/yellow flash) ----
+    if (style === 'outline') {
+      if (sameLook && cellHasLook && disk &&
+          disk.getAttribute('data-sg-outline') === level &&
+          disk.classList.contains('sg-outline')) {
+        return true;
+      }
+      // Same status but free cell/disk was replaced by Main live update — re-tag only
+      if (sameLook || cellHasLook || (disk && disk.getAttribute('data-sg-sig') === sig)) {
+        tr.setAttribute('data-sg-sig', sig);
+        if (disk) ensureOutline(disk, level, pulse, sig);
+        return true;
+      }
+      // First paint or status/style change: do not clearPaint (ensureOutline is idempotent)
+      tr.setAttribute('data-sg-sig', sig);
+      if (disk) {
+        ensureOutline(disk, level, pulse, sig);
+        log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
+        return true;
+      }
+      // Plain-text Free column fallback (no .usage-disk)
+      var tdsO = tr.querySelectorAll('td');
+      if (tdsO.length) {
+        var tdO = tdsO[tdsO.length - 1];
+        if (/\d/.test(tdO.textContent || '')) {
+          var colorO = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
+          tdO.style.setProperty('outline', '2px solid ' + colorO, 'important');
+          tdO.style.setProperty('outline-offset', '2px', 'important');
+          tdO.setAttribute('data-sg-td', level);
+          tdO.setAttribute('data-sg-sig', sig);
+          if (pulseActive) tdO.classList.add('sg-pulse');
+          else tdO.classList.remove('sg-pulse');
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // ---- Solid ----
     var existing =
       (disk && disk.getAttribute('data-sg-sig') === sig && disk) ||
-      (cell && cell.getAttribute('data-sg-sig') === sig && cell) ||
       (tr.getAttribute('data-sg-sig') === sig && tr) ||
       tr.querySelector('[data-sg-sig="' + sig + '"]');
     if (existing) {
-      // Solid may need fill re-tint if Unraid rewrote the span; outline leaves markers alone.
-      if (style === 'solid' && disk) ensureSolidBar(disk, level, pulse, sig);
+      if (disk) ensureSolidBar(disk, level, pulse, sig);
       return true;
     }
 
     clearPaint(tr);
     tr.setAttribute('data-sg-sig', sig);
 
-    var color = level === 'critical' ? BAR_CRIT : (level === 'warning' ? BAR_WARN : BAR_OK);
-
-    if (disk) {
-      if (style === 'outline') {
-        ensureOutline(disk, level, pulse, sig);
-        log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
-        return true;
-      }
-      // solid — mark parent + tint fill (parent attr survives Unraid span rewrites)
-      if (level !== 'ok') {
-        ensureSolidBar(disk, level, pulse, sig);
-        log('solid free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
-        return true;
-      }
+    if (disk && level !== 'ok') {
+      ensureSolidBar(disk, level, pulse, sig);
+      log('solid free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
+      return true;
     }
 
-    // Plain-text Free column fallback (no .usage-disk)
     var tds = tr.querySelectorAll('td');
     if (tds.length) {
       var td = tds[tds.length - 1];
-      if (/\d/.test(td.textContent || '')) {
-        if (style === 'outline') {
-          td.style.setProperty('outline', '2px solid ' + color, 'important');
-          td.style.setProperty('outline-offset', '2px', 'important');
-          td.setAttribute('data-sg-td', level);
-          td.setAttribute('data-sg-sig', sig);
-          if (pulseActive) td.classList.add('sg-pulse');
-        } else if (level !== 'ok') {
-          td.style.setProperty('color', color, 'important');
-          td.style.setProperty('font-weight', '700', 'important');
-          td.setAttribute('data-sg-td', level);
-          td.setAttribute('data-sg-sig', sig);
-          if (pulseActive) td.classList.add('sg-pulse');
-        }
+      if (/\d/.test(td.textContent || '') && level !== 'ok') {
+        var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
+        td.style.setProperty('color', color, 'important');
+        td.style.setProperty('font-weight', '700', 'important');
+        td.setAttribute('data-sg-td', level);
+        td.setAttribute('data-sg-sig', sig);
+        if (pulseActive) td.classList.add('sg-pulse');
         return true;
       }
     }
@@ -537,7 +561,7 @@
     applyTimer = setTimeout(function () {
       applyTimer = null;
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 250);
+    }, 400);
   }
 
   function fetchAndApply() {
@@ -552,7 +576,6 @@
           pulse: (data.outline_pulse === 'yes'),
           showOk: (data.outline_show_ok === 'yes')
         };
-        // Also expose under _status for debugging
         data._status._opts = opts;
         log('status', data._status, opts);
         applyStatus(data._status, opts);
@@ -565,14 +588,15 @@
 
   function boot() {
     fetchAndApply();
-    // Re-apply for nchan/table refreshes without hammering animations
+    // Periodic soft re-apply (idempotent outline; solid re-tint if needed)
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 3000);
-    setInterval(fetchAndApply, 12000);
+    }, 5000);
+    setInterval(fetchAndApply, 15000);
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
+        // Outline re-apply is clearPaint-free and idempotent — safe on live free-bar DOM churn
         scheduleApply();
       });
       var main = document.getElementById('content') || document.body;

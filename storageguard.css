@@ -63,6 +63,7 @@ td[data-sg-td="ok"] {
 td[data-sg-outline] .usage-disk {
   outline-offset: 2px;
   border-radius: 2px;
+  transition: none !important;
 }
 
 /* Healthy free space (optional) — static green border, never pulse */
@@ -70,8 +71,9 @@ td[data-sg-outline] .usage-disk {
 .usage-disk[data-sg-outline="ok"],
 td[data-sg-outline="ok"] .usage-disk {
   outline: 2px solid #4caf50 !important;
-  box-shadow: none;
+  box-shadow: none !important;
   animation: none !important;
+  transition: none !important;
 }
 
 /* Warning / critical — static border by default (no .sg-pulse) */
