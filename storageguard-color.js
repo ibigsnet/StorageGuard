@@ -461,6 +461,35 @@
     });
   }
 
+  function isMainTableId(id) {
+    return id === 'array_devices' || id === 'boot_device' || (id && id.indexOf('pool_device') === 0);
+  }
+
+  function hookJQueryHtml() {
+    var $ = window.jQuery || window.$;
+    if (!$ || !$.fn || $.fn._sgHtmlHooked) return;
+    var orig = $.fn.html;
+    $.fn.html = function (value) {
+      if (arguments.length === 0) return orig.apply(this, arguments);
+      var ret = orig.apply(this, arguments);
+      if (!lastStatus) return ret;
+      var need = false;
+      this.each(function () {
+        var id = this.id || '';
+        if (isMainTableId(id)) need = true;
+        else if (this.querySelector && (
+          this.querySelector('#array_devices') ||
+          this.querySelector('#boot_device') ||
+          this.querySelector('[id^="pool_device"]')
+        )) need = true;
+      });
+      if (need) applyStatus(lastStatus, lastOpts);
+      return ret;
+    };
+    $.fn._sgHtmlHooked = true;
+    log('jquery html hook installed');
+  }
+
   function fetchAndApply() {
     fetch('/plugins/StorageGuard/get-config.php', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) {
@@ -484,19 +513,14 @@
   }
 
   function boot() {
+    hookJQueryHtml();
     fetchAndApply();
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 8000);
-    setInterval(fetchAndApply, 20000);
-
-    if (typeof MutationObserver !== 'undefined') {
-      var obs = new MutationObserver(function () {
-        scheduleApply();
-      });
-      var main = document.getElementById('content') || document.body;
-      obs.observe(main, { childList: true, subtree: true });
-    }
+    }, 10000);
+    setInterval(fetchAndApply, 30000);
+    setTimeout(hookJQueryHtml, 0);
+    setTimeout(hookJQueryHtml, 1000);
   }
 
   if (document.readyState === 'loading') {
@@ -514,5 +538,4 @@
       fetchAndApply();
     }
   };
-  console.log('Storage Guard: Main free-bar coloring ready');
 })();
