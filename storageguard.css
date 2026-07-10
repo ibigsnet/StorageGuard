@@ -57,70 +57,59 @@ td[data-sg-td="ok"] {
 }
 
 /* ---- Outline: border only; free fill left to Unraid ---- */
+/* Prefer free-column TD markers (stable). Unraid often replaces .usage-disk;
+   painting from td[data-sg-outline] avoids green/yellow flash on live Main updates. */
 .usage-disk.sg-outline,
-.usage-disk[data-sg-outline] {
+.usage-disk[data-sg-outline],
+td[data-sg-outline] .usage-disk {
   outline-offset: 2px;
   border-radius: 2px;
 }
 
-/* Healthy free space (optional) — static green border, NEVER pulses
-   (even if a stale .sg-pulse class is left on the node). */
+/* Healthy free space (optional) — static green border, never pulse */
 .usage-disk.sg-outline.sg-ok,
 .usage-disk[data-sg-outline="ok"],
-.usage-disk.sg-outline.sg-ok.sg-pulse,
-.usage-disk[data-sg-outline="ok"].sg-pulse,
-.usage-disk.sg-ok {
+td[data-sg-outline="ok"] .usage-disk {
   outline: 2px solid #4caf50 !important;
-  box-shadow: none !important;
+  box-shadow: none;
   animation: none !important;
-  filter: none !important;
-  opacity: 1 !important;
-}
-.usage-disk.sg-ok > span:first-child,
-.usage-disk[data-sg-outline="ok"] > span:first-child {
-  animation: none !important;
-  filter: none !important;
-  opacity: 1 !important;
 }
 
 /* Warning / critical — static border by default (no .sg-pulse) */
 .usage-disk.sg-outline.sg-warning,
-.usage-disk[data-sg-outline="warning"] {
+.usage-disk[data-sg-outline="warning"],
+td[data-sg-outline="warning"] .usage-disk {
   outline: 2px solid #ffc107 !important;
 }
 
 .usage-disk.sg-outline.sg-critical,
-.usage-disk[data-sg-outline="critical"] {
+.usage-disk[data-sg-outline="critical"],
+td[data-sg-outline="critical"] .usage-disk {
   outline: 2px solid #e53935 !important;
 }
 
-/* No .sg-pulse class → never run pulse keyframes (Pulse=No hard stop) */
-.usage-disk:not(.sg-pulse),
-.usage-disk:not(.sg-pulse) > span:first-child,
-td[data-sg-td]:not(.sg-pulse) {
-  animation: none !important;
-}
-
-/* ---- Pulse (global flasher): warning/critical ONLY, Outline + Solid ---- */
-/* Outline: pulse the border — never matches .sg-ok */
-.usage-disk.sg-outline.sg-warning.sg-pulse:not(.sg-ok),
-.usage-disk[data-sg-outline="warning"].sg-pulse:not(.sg-ok) {
+/* ---- Pulse (global flasher): warning/critical only, Outline + Solid ---- */
+/* Outline: pulse the border (never OK/green — no ok pulse rules) */
+.usage-disk.sg-outline.sg-warning.sg-pulse,
+.usage-disk[data-sg-outline="warning"].sg-pulse,
+td[data-sg-outline="warning"].sg-pulse .usage-disk {
   animation: sg-pulse-outline-warn 2.4s ease-in-out infinite;
 }
 
-.usage-disk.sg-outline.sg-critical.sg-pulse:not(.sg-ok),
-.usage-disk[data-sg-outline="critical"].sg-pulse:not(.sg-ok) {
+.usage-disk.sg-outline.sg-critical.sg-pulse,
+.usage-disk[data-sg-outline="critical"].sg-pulse,
+td[data-sg-outline="critical"].sg-pulse .usage-disk {
   animation: sg-pulse-outline-crit 2.4s ease-in-out infinite;
 }
 
-/* Solid: pulse the free fill — warning/critical only (no green/OK solid paint) */
+/* Solid: pulse the free fill */
 .usage-disk[data-sg-solid="warning"].sg-pulse > span:first-child,
-.usage-disk.sg-pulse:not(.sg-ok) > span.sg-bar.sg-solid.sg-warning {
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-warning {
   animation: sg-pulse-solid-warn 2.4s ease-in-out infinite;
 }
 
 .usage-disk[data-sg-solid="critical"].sg-pulse > span:first-child,
-.usage-disk.sg-pulse:not(.sg-ok) > span.sg-bar.sg-solid.sg-critical {
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-critical {
   animation: sg-pulse-solid-crit 2.4s ease-in-out infinite;
 }
 

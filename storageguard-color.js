@@ -15,11 +15,11 @@
 // Flash / thrash guards:
 //   - data-sg-sig skips clearPaint when level/style/pulse/showOk unchanged
 //   - Solid: data-sg-solid on parent + CSS so Unraid span rewrites keep color
-//   - Outline: classes on parent .usage-disk (survives fill-span rewrites)
+//   - Outline: markers on free-column TD (stable) + CSS on .usage-disk child
+//     so Unraid replacing .usage-disk does not re-class/flash (green OK flash)
+//   - Soft path for outline is pure no-op (do not re-toggle classes)
 //   - Pulse: only .sg-pulse for warning/critical; never re-clear same sig
 //     (clearPaint would restart CSS animation → look like thrash)
-//   - Pulse=No: hard-strip every .sg-pulse each apply (stale class → false "pulse")
-//   - OK/green: never gets .sg-pulse; CSS also forces animation:none on .sg-ok
 (function () {
   'use strict';
 
@@ -29,8 +29,6 @@
   var BAR_CRIT = '#e53935';
   var BAR_OK = '#4caf50';
   var applyTimer = null;
-  /** Last painted free-bar row per target key (array / pool name) — clear if target moves. */
-  var paintedRows = {};
 
   function resolveStyle(obj, fallback) {
     if (obj && obj.style === 'outline') return 'outline';
@@ -60,6 +58,13 @@
     var disks = tr.querySelectorAll('td .usage-disk');
     if (disks.length) return disks[disks.length - 1];
     return null;
+  }
+
+  /** Free-column TD — more stable than .usage-disk (Unraid often replaces the disk node). */
+  function freeUsageCell(disk) {
+    if (!disk) return null;
+    if (disk.closest) return disk.closest('td');
+    return disk.parentElement && disk.parentElement.nodeName === 'TD' ? disk.parentElement : null;
   }
 
   function clearPaint(scope) {
@@ -95,28 +100,11 @@
     });
   }
 
-  /** Pulse is only for warning/critical — never OK/green. */
-  function wantPulseFor(level, pulse) {
-    return !!(pulse && (level === 'warning' || level === 'critical'));
-  }
-
-  function stripPulse(el) {
-    if (!el || !el.classList) return;
-    if (el.classList.contains('sg-pulse')) el.classList.remove('sg-pulse');
-  }
-
-  /** When Pulse=No (or level OK), strip every leftover flasher class site-wide. */
-  function stripAllPulse() {
-    document.querySelectorAll('.sg-pulse').forEach(function (el) {
-      el.classList.remove('sg-pulse');
-    });
-  }
-
   /** Soft re-tint solid fill if Unraid replaced the bar span (no clearPaint flash). */
   function ensureSolidBar(disk, level, pulse, sig) {
     if (!disk || (level !== 'warning' && level !== 'critical')) return;
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
-    var wantPulse = wantPulseFor(level, pulse);
+    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
     var levelClass = level === 'critical' ? 'sg-critical' : 'sg-warning';
     var bar = disk.querySelector('span:first-child');
     var ok =
@@ -126,13 +114,9 @@
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       bar && bar.classList.contains('sg-solid');
     if (ok) {
-      // Pulse=No must never leave a flasher class (stale → green/yellow “pulsing”)
-      if (!wantPulse) stripPulse(disk);
-      // Only re-tint if Unraid wiped our color (avoids thrash/flicker on every tick)
-      if (bar.style.backgroundColor !== color && bar.style.background !== color) {
-        bar.style.setProperty('background-color', color, 'important');
-        bar.style.setProperty('background', color, 'important');
-      }
+      // Still re-apply fill color in case Unraid rewrote the span contents
+      bar.style.setProperty('background-color', color, 'important');
+      bar.style.setProperty('background', color, 'important');
       return;
     }
 
@@ -140,7 +124,6 @@
     disk.removeAttribute('data-sg-outline');
     disk.classList.add(levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
-    else stripPulse(disk);
     disk.setAttribute('data-sg-solid', level);
     if (sig) disk.setAttribute('data-sg-sig', sig);
     if (bar) {
@@ -153,24 +136,36 @@
   }
 
   /**
-   * Outline classes on parent .usage-disk. Free fill span is intentionally untouched.
-   * When already correct, no-op (re-toggling .sg-pulse would restart the CSS animation).
-   * OK/green never receives .sg-pulse.
+   * Outline: mark free-column TD (stable) + .usage-disk. Free fill span untouched.
+   * CSS paints from td[data-sg-outline] so Unraid replacing .usage-disk does not flash.
+   * OK/green never gets .sg-pulse (pulse is warning/critical only).
+   * When already correct, pure no-op (re-toggling classes restarts animation / flashes).
    */
   function ensureOutline(disk, level, pulse, sig) {
     if (!disk) return;
-    var wantPulse = wantPulseFor(level, pulse);
+    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
     var levelClass = level === 'ok' ? 'sg-ok' : (level === 'critical' ? 'sg-critical' : 'sg-warning');
-    var ok =
+    var cell = freeUsageCell(disk);
+    var cellOk =
+      cell &&
+      cell.getAttribute('data-sg-outline') === level &&
+      cell.getAttribute('data-sg-sig') === sig &&
+      (wantPulse === cell.classList.contains('sg-pulse'));
+    var diskOk =
       disk.classList.contains('sg-outline') &&
       disk.getAttribute('data-sg-outline') === level &&
       disk.getAttribute('data-sg-sig') === sig &&
       disk.classList.contains(levelClass) &&
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       !disk.hasAttribute('data-sg-solid');
-    if (ok) {
-      // Hard stop: Pulse=No or OK must not keep .sg-pulse (stale class → false pulse)
-      if (!wantPulse) stripPulse(disk);
+    // Cell markers alone are enough for CSS paint — avoid class thrash on disk
+    if (cellOk && diskOk) return;
+    if (cellOk && !diskOk) {
+      // Disk node was replaced; re-tag only (no remove-all) so outline does not blink
+      disk.classList.add('sg-outline', levelClass);
+      if (wantPulse) disk.classList.add('sg-pulse');
+      disk.setAttribute('data-sg-outline', level);
+      if (sig) disk.setAttribute('data-sg-sig', sig);
       return;
     }
 
@@ -178,9 +173,14 @@
     disk.removeAttribute('data-sg-solid');
     disk.classList.add('sg-outline', levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
-    else stripPulse(disk);
     disk.setAttribute('data-sg-outline', level);
     disk.setAttribute('data-sg-sig', sig);
+    if (cell) {
+      cell.setAttribute('data-sg-outline', level);
+      if (sig) cell.setAttribute('data-sg-sig', sig);
+      if (wantPulse) cell.classList.add('sg-pulse');
+      else cell.classList.remove('sg-pulse');
+    }
     // Ensure free fill is not left with solid tints from a prior style switch
     var bar = disk.querySelector('span:first-child');
     if (bar && (bar.hasAttribute('data-sg-bar') || bar.classList.contains('sg-solid'))) {
@@ -190,16 +190,6 @@
       bar.removeAttribute('data-sg-style');
       bar.classList.remove('sg-bar', 'sg-solid', 'sg-warning', 'sg-critical', 'sg-ok');
     }
-  }
-
-  /** Remember which TR we painted for a target; clear previous if Main re-targets. */
-  function bindPaintedRow(key, tr) {
-    if (!key || !tr) return;
-    var prev = paintedRows[key];
-    if (prev && prev !== tr && prev.isConnected) {
-      clearPaint(prev);
-    }
-    paintedRows[key] = tr;
   }
 
   function makeSig(level, style, pulse, showOk) {
@@ -214,45 +204,40 @@
    *   pulse   — global flasher for warn/crit (Outline border or Solid fill)
    *   showOk  — Outline-only green border when healthy
    */
-  function paintFreeBar(tr, level, style, opts, targetKey) {
+  function paintFreeBar(tr, level, style, opts) {
     if (!tr) return false;
     opts = opts || {};
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
     style = style === 'solid' ? 'solid' : 'outline';
-    // Pulse is the flasher for warning/critical on both styles (never for OK/green)
-    var pulseActive = wantPulseFor(level, pulse);
+    // Pulse is the flasher for warning/critical on both styles (never for OK)
+    var pulseActive = pulse && (level === 'warning' || level === 'critical');
 
     // OK: only Outline + green-when-OK paints; Solid OK = clear (normal Unraid fill)
     if (level === 'ok') {
       if (style !== 'outline' || !showOk) {
         clearPaint(tr);
-        if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
         return false;
       }
     } else if (level !== 'warning' && level !== 'critical') {
       clearPaint(tr);
-      if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
       return false;
     }
 
     var sig = makeSig(level, style, pulseActive, showOk);
     var disk = freeUsageDisk(tr);
-    // Prefer stable host (.usage-disk / tr) for signature — Unraid often replaces the fill span
+    var cell = freeUsageCell(disk);
+    // Prefer stable host (free TD / .usage-disk / tr) — Unraid often replaces fill span or disk node
     var existing =
       (disk && disk.getAttribute('data-sg-sig') === sig && disk) ||
+      (cell && cell.getAttribute('data-sg-sig') === sig && cell) ||
       (tr.getAttribute('data-sg-sig') === sig && tr) ||
       tr.querySelector('[data-sg-sig="' + sig + '"]');
     if (existing) {
-      // Same look: soft-repair only (no clearPaint → no flash / no pulse restart)
+      // Solid: soft re-tint fill if span was rewritten.
+      // Outline: pure no-op when markers match — re-classing .usage-disk flashes green/yellow
+      // (same idea as 2026.07.09y solid parent attrs; free TD holds outline markers).
       if (style === 'solid' && disk) ensureSolidBar(disk, level, pulse, sig);
-      else if (style === 'outline' && disk) ensureOutline(disk, level, pulse, sig);
-      // Pulse=No: never leave flasher on soft path (incl. text-fallback td)
-      if (!pulseActive) {
-        stripPulse(disk);
-        tr.querySelectorAll('.sg-pulse').forEach(stripPulse);
-      }
-      if (targetKey) bindPaintedRow(targetKey, tr);
       return true;
     }
 
@@ -264,14 +249,12 @@
     if (disk) {
       if (style === 'outline') {
         ensureOutline(disk, level, pulse, sig);
-        if (targetKey) bindPaintedRow(targetKey, tr);
         log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
       // solid — mark parent + tint fill (parent attr survives Unraid span rewrites)
       if (level !== 'ok') {
         ensureSolidBar(disk, level, pulse, sig);
-        if (targetKey) bindPaintedRow(targetKey, tr);
         log('solid free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
@@ -288,16 +271,13 @@
           td.setAttribute('data-sg-td', level);
           td.setAttribute('data-sg-sig', sig);
           if (pulseActive) td.classList.add('sg-pulse');
-          else stripPulse(td);
         } else if (level !== 'ok') {
           td.style.setProperty('color', color, 'important');
           td.style.setProperty('font-weight', '700', 'important');
           td.setAttribute('data-sg-td', level);
           td.setAttribute('data-sg-sig', sig);
           if (pulseActive) td.classList.add('sg-pulse');
-          else stripPulse(td);
         }
-        if (targetKey) bindPaintedRow(targetKey, tr);
         return true;
       }
     }
@@ -464,16 +444,15 @@
     return null;
   }
 
-  function paintTarget(tr, st, opts, targetKey) {
+  function paintTarget(tr, st, opts) {
     if (!tr || !st) return;
     if (!st.enabled) {
       clearPaint(tr);
-      if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
       return;
     }
     var style = resolveStyle(st, 'outline');
     var level = st.level || 'ok';
-    paintFreeBar(tr, level, style, opts, targetKey || null);
+    paintFreeBar(tr, level, style, opts);
   }
 
   function applyStatus(status, opts) {
@@ -487,11 +466,8 @@
       return;
     }
 
-    // Pulse=No (or mis-set): strip every flasher first so green/OK cannot animate
-    if (!opts.pulse) stripAllPulse();
-
     var arow = findArrayFreeRow();
-    if (arow) paintTarget(arow, status.array, opts, 'array');
+    if (arow) paintTarget(arow, status.array, opts);
 
     var pools = status.pools || {};
     var roots = allPoolRoots();
@@ -530,7 +506,7 @@
       // Never paint every member disk — only one free-bar target per pool
       if (isPoolMemberDeviceRow(prow) || /^[\s]*device\s+\d+/.test(rowText(prow))) continue;
       matched[key] = true;
-      paintTarget(prow, st, opts, 'pool:' + key);
+      paintTarget(prow, st, opts);
     }
 
     // Fallback: one row only (pool-of or single data partition) — do not paint all "cache*" members
@@ -556,15 +532,10 @@
           candidates.push(tr);
         }
       });
-      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'outline'), opts, 'pool:' + pk)) {
+      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'outline'), opts)) {
         matched[pk] = true;
       }
     });
-
-    // Final guard: Pulse=No must not leave any flasher (incl. after soft-repair)
-    if (!opts.pulse) stripAllPulse();
-    // OK/green rows must never keep .sg-pulse even if Pulse=Yes
-    document.querySelectorAll('.usage-disk.sg-ok.sg-pulse, .usage-disk[data-sg-outline="ok"].sg-pulse').forEach(stripPulse);
   }
 
   function scheduleApply() {

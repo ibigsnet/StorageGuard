@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10">
+<!ENTITY version "2026.07.10aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,7 +37,10 @@
 
 <CHANGES>
 ###&version;
-- Fix green/OK free bar “pulsing” on pools (e.g. PLUSH) when Pulse is No: never attach .sg-pulse to OK, strip stale flashers each paint, CSS hard-blocks animation on green, less solid re-tint thrash.
+- Revert compounding 2026.07.10 pulse guards. Fix green OK flash properly: outline markers on free-column TD (stable) + pure soft-path no-op (same pattern as solid parent attrs). Pulse=No stays static; OK/green never pulses.
+
+###2026.07.10
+- (superseded) attempted pulse guards that did not stop green flash thrash.
 
 ###2026.07.09zj
 - Clean reinstall path; Settings polish complete (Appearance first, Enable coloring, Pulse color, decimal examples).
@@ -234,7 +237,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10"
+[ -z "$VER" ] && VER="2026.07.10aa"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
