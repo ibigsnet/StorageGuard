@@ -18,6 +18,8 @@
 //   - Outline: classes on parent .usage-disk (survives fill-span rewrites)
 //   - Pulse: only .sg-pulse for warning/critical; never re-clear same sig
 //     (clearPaint would restart CSS animation → look like thrash)
+//   - Pulse=No: hard-strip every .sg-pulse each apply (stale class → false "pulse")
+//   - OK/green: never gets .sg-pulse; CSS also forces animation:none on .sg-ok
 (function () {
   'use strict';
 
@@ -27,6 +29,8 @@
   var BAR_CRIT = '#e53935';
   var BAR_OK = '#4caf50';
   var applyTimer = null;
+  /** Last painted free-bar row per target key (array / pool name) — clear if target moves. */
+  var paintedRows = {};
 
   function resolveStyle(obj, fallback) {
     if (obj && obj.style === 'outline') return 'outline';
@@ -91,11 +95,28 @@
     });
   }
 
+  /** Pulse is only for warning/critical — never OK/green. */
+  function wantPulseFor(level, pulse) {
+    return !!(pulse && (level === 'warning' || level === 'critical'));
+  }
+
+  function stripPulse(el) {
+    if (!el || !el.classList) return;
+    if (el.classList.contains('sg-pulse')) el.classList.remove('sg-pulse');
+  }
+
+  /** When Pulse=No (or level OK), strip every leftover flasher class site-wide. */
+  function stripAllPulse() {
+    document.querySelectorAll('.sg-pulse').forEach(function (el) {
+      el.classList.remove('sg-pulse');
+    });
+  }
+
   /** Soft re-tint solid fill if Unraid replaced the bar span (no clearPaint flash). */
   function ensureSolidBar(disk, level, pulse, sig) {
     if (!disk || (level !== 'warning' && level !== 'critical')) return;
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
-    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
+    var wantPulse = wantPulseFor(level, pulse);
     var levelClass = level === 'critical' ? 'sg-critical' : 'sg-warning';
     var bar = disk.querySelector('span:first-child');
     var ok =
@@ -105,9 +126,13 @@
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       bar && bar.classList.contains('sg-solid');
     if (ok) {
-      // Still re-apply fill color in case Unraid rewrote the span contents
-      bar.style.setProperty('background-color', color, 'important');
-      bar.style.setProperty('background', color, 'important');
+      // Pulse=No must never leave a flasher class (stale → green/yellow “pulsing”)
+      if (!wantPulse) stripPulse(disk);
+      // Only re-tint if Unraid wiped our color (avoids thrash/flicker on every tick)
+      if (bar.style.backgroundColor !== color && bar.style.background !== color) {
+        bar.style.setProperty('background-color', color, 'important');
+        bar.style.setProperty('background', color, 'important');
+      }
       return;
     }
 
@@ -115,6 +140,7 @@
     disk.removeAttribute('data-sg-outline');
     disk.classList.add(levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
+    else stripPulse(disk);
     disk.setAttribute('data-sg-solid', level);
     if (sig) disk.setAttribute('data-sg-sig', sig);
     if (bar) {
@@ -129,10 +155,11 @@
   /**
    * Outline classes on parent .usage-disk. Free fill span is intentionally untouched.
    * When already correct, no-op (re-toggling .sg-pulse would restart the CSS animation).
+   * OK/green never receives .sg-pulse.
    */
   function ensureOutline(disk, level, pulse, sig) {
     if (!disk) return;
-    var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
+    var wantPulse = wantPulseFor(level, pulse);
     var levelClass = level === 'ok' ? 'sg-ok' : (level === 'critical' ? 'sg-critical' : 'sg-warning');
     var ok =
       disk.classList.contains('sg-outline') &&
@@ -141,12 +168,17 @@
       disk.classList.contains(levelClass) &&
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       !disk.hasAttribute('data-sg-solid');
-    if (ok) return;
+    if (ok) {
+      // Hard stop: Pulse=No or OK must not keep .sg-pulse (stale class → false pulse)
+      if (!wantPulse) stripPulse(disk);
+      return;
+    }
 
     disk.classList.remove('sg-ok', 'sg-warning', 'sg-critical', 'sg-pulse', 'sg-solid', 'sg-bar');
     disk.removeAttribute('data-sg-solid');
     disk.classList.add('sg-outline', levelClass);
     if (wantPulse) disk.classList.add('sg-pulse');
+    else stripPulse(disk);
     disk.setAttribute('data-sg-outline', level);
     disk.setAttribute('data-sg-sig', sig);
     // Ensure free fill is not left with solid tints from a prior style switch
@@ -158,6 +190,16 @@
       bar.removeAttribute('data-sg-style');
       bar.classList.remove('sg-bar', 'sg-solid', 'sg-warning', 'sg-critical', 'sg-ok');
     }
+  }
+
+  /** Remember which TR we painted for a target; clear previous if Main re-targets. */
+  function bindPaintedRow(key, tr) {
+    if (!key || !tr) return;
+    var prev = paintedRows[key];
+    if (prev && prev !== tr && prev.isConnected) {
+      clearPaint(prev);
+    }
+    paintedRows[key] = tr;
   }
 
   function makeSig(level, style, pulse, showOk) {
@@ -172,23 +214,25 @@
    *   pulse   — global flasher for warn/crit (Outline border or Solid fill)
    *   showOk  — Outline-only green border when healthy
    */
-  function paintFreeBar(tr, level, style, opts) {
+  function paintFreeBar(tr, level, style, opts, targetKey) {
     if (!tr) return false;
     opts = opts || {};
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
     style = style === 'solid' ? 'solid' : 'outline';
-    // Pulse is the flasher for warning/critical on both styles (never for OK)
-    var pulseActive = pulse && (level === 'warning' || level === 'critical');
+    // Pulse is the flasher for warning/critical on both styles (never for OK/green)
+    var pulseActive = wantPulseFor(level, pulse);
 
     // OK: only Outline + green-when-OK paints; Solid OK = clear (normal Unraid fill)
     if (level === 'ok') {
       if (style !== 'outline' || !showOk) {
         clearPaint(tr);
+        if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
         return false;
       }
     } else if (level !== 'warning' && level !== 'critical') {
       clearPaint(tr);
+      if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
       return false;
     }
 
@@ -203,6 +247,12 @@
       // Same look: soft-repair only (no clearPaint → no flash / no pulse restart)
       if (style === 'solid' && disk) ensureSolidBar(disk, level, pulse, sig);
       else if (style === 'outline' && disk) ensureOutline(disk, level, pulse, sig);
+      // Pulse=No: never leave flasher on soft path (incl. text-fallback td)
+      if (!pulseActive) {
+        stripPulse(disk);
+        tr.querySelectorAll('.sg-pulse').forEach(stripPulse);
+      }
+      if (targetKey) bindPaintedRow(targetKey, tr);
       return true;
     }
 
@@ -214,12 +264,14 @@
     if (disk) {
       if (style === 'outline') {
         ensureOutline(disk, level, pulse, sig);
+        if (targetKey) bindPaintedRow(targetKey, tr);
         log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
       // solid — mark parent + tint fill (parent attr survives Unraid span rewrites)
       if (level !== 'ok') {
         ensureSolidBar(disk, level, pulse, sig);
+        if (targetKey) bindPaintedRow(targetKey, tr);
         log('solid free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
@@ -236,13 +288,16 @@
           td.setAttribute('data-sg-td', level);
           td.setAttribute('data-sg-sig', sig);
           if (pulseActive) td.classList.add('sg-pulse');
+          else stripPulse(td);
         } else if (level !== 'ok') {
           td.style.setProperty('color', color, 'important');
           td.style.setProperty('font-weight', '700', 'important');
           td.setAttribute('data-sg-td', level);
           td.setAttribute('data-sg-sig', sig);
           if (pulseActive) td.classList.add('sg-pulse');
+          else stripPulse(td);
         }
+        if (targetKey) bindPaintedRow(targetKey, tr);
         return true;
       }
     }
@@ -409,15 +464,16 @@
     return null;
   }
 
-  function paintTarget(tr, st, opts) {
+  function paintTarget(tr, st, opts, targetKey) {
     if (!tr || !st) return;
     if (!st.enabled) {
       clearPaint(tr);
+      if (targetKey && paintedRows[targetKey] === tr) delete paintedRows[targetKey];
       return;
     }
     var style = resolveStyle(st, 'outline');
     var level = st.level || 'ok';
-    paintFreeBar(tr, level, style, opts);
+    paintFreeBar(tr, level, style, opts, targetKey || null);
   }
 
   function applyStatus(status, opts) {
@@ -431,8 +487,11 @@
       return;
     }
 
+    // Pulse=No (or mis-set): strip every flasher first so green/OK cannot animate
+    if (!opts.pulse) stripAllPulse();
+
     var arow = findArrayFreeRow();
-    if (arow) paintTarget(arow, status.array, opts);
+    if (arow) paintTarget(arow, status.array, opts, 'array');
 
     var pools = status.pools || {};
     var roots = allPoolRoots();
@@ -471,7 +530,7 @@
       // Never paint every member disk — only one free-bar target per pool
       if (isPoolMemberDeviceRow(prow) || /^[\s]*device\s+\d+/.test(rowText(prow))) continue;
       matched[key] = true;
-      paintTarget(prow, st, opts);
+      paintTarget(prow, st, opts, 'pool:' + key);
     }
 
     // Fallback: one row only (pool-of or single data partition) — do not paint all "cache*" members
@@ -497,10 +556,15 @@
           candidates.push(tr);
         }
       });
-      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'outline'), opts)) {
+      if (candidates.length && paintFreeBar(candidates[0], st.level || 'ok', resolveStyle(st, 'outline'), opts, 'pool:' + pk)) {
         matched[pk] = true;
       }
     });
+
+    // Final guard: Pulse=No must not leave any flasher (incl. after soft-repair)
+    if (!opts.pulse) stripAllPulse();
+    // OK/green rows must never keep .sg-pulse even if Pulse=Yes
+    document.querySelectorAll('.usage-disk.sg-ok.sg-pulse, .usage-disk[data-sg-outline="ok"].sg-pulse').forEach(stripPulse);
   }
 
   function scheduleApply() {
