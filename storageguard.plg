@@ -39,6 +39,9 @@
 ###&version;
 - Stronger Outline pulse: clear outer border throb plus light inner wash (Pulse=Yes). Static when Pulse=No.
 
+###2026.07.10ah
+- (packaging) pulse CSS refresh.
+
 ###2026.07.10ag
 - Restore Pulse=Yes animations (CSS was blocking keyframes). Main flash fix retained.
 
@@ -258,7 +261,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10ah"
+[ -z "$VER" ] && VER="2026.07.10ai"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
