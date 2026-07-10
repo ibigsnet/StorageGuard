@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Public release notes and packaging cleanup.
+
+###2026.07.10aa
 - Fix free-bar outline flashing on Main when status is OK and Pulse is off. Outline highlight stays static; green/OK never pulses.
 
 ###2026.07.10
@@ -237,7 +240,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10aa"
+[ -z "$VER" ] && VER="2026.07.10ab"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
