@@ -118,26 +118,23 @@ td[data-sg-outline="critical"].sg-pulse .usage-disk {
   }
 }
 
-/* Off half uses revert so Unraid greenbar/orangebar class shows through (not empty track) */
+/* Off half = Unraid greenbar (same vars as default-base.css). `revert` would
+   drop ALL author rules and show empty track — not the free fill. */
 @keyframes sg-pulse-solid-warn {
   0%, 49.9% {
-    background-color: #ffc107;
-    background-image: none;
     background: #ffc107;
   }
   50%, 100% {
-    background: revert;
+    background: linear-gradient(90deg, var(--green-900) 0, var(--green-500));
   }
 }
 
 @keyframes sg-pulse-solid-crit {
   0%, 49.9% {
-    background-color: #e53935;
-    background-image: none;
     background: #e53935;
   }
   50%, 100% {
-    background: revert;
+    background: linear-gradient(90deg, var(--green-900) 0, var(--green-500));
   }
 }
 
