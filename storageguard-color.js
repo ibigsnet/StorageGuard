@@ -91,15 +91,24 @@
       !disk.classList.contains('sg-outline') &&
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       bar && bar.classList.contains('sg-solid');
+
+    // Pulse: leave native free fill (greenbar) alone; CSS flashes warn color over it.
+    // No pulse: lock solid warn/crit over the native bar.
+    function applySolidFill(el) {
+      if (!el) return;
+      if (wantPulse) {
+        el.style.removeProperty('background-color');
+        el.style.removeProperty('background');
+        el.style.removeProperty('opacity');
+      } else {
+        el.style.setProperty('background-color', color, 'important');
+        el.style.setProperty('background', color, 'important');
+        el.style.removeProperty('opacity');
+      }
+    }
+
     if (ok) {
-      // Keep solid color locked; pulse is CSS opacity (cannot animate !important backgrounds)
-      if (bar.style.backgroundColor !== color) {
-        bar.style.setProperty('background-color', color, 'important');
-        bar.style.setProperty('background', color, 'important');
-      }
-      if (!wantPulse) {
-        bar.style.removeProperty('opacity');
-      }
+      applySolidFill(bar);
       return;
     }
 
@@ -111,10 +120,7 @@
     disk.setAttribute('data-sg-solid', level);
     if (sig) disk.setAttribute('data-sg-sig', sig);
     if (bar) {
-      bar.style.setProperty('background-color', color, 'important');
-      bar.style.setProperty('background', color, 'important');
-      // Do not set inline opacity — CSS keyframes own pulse; clear any prior lock
-      bar.style.removeProperty('opacity');
+      applySolidFill(bar);
       bar.setAttribute('data-sg-bar', level);
       bar.setAttribute('data-sg-style', 'solid');
       bar.classList.add('sg-bar', 'sg-solid', levelClass);

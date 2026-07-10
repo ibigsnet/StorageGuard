@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10ao">
+<!ENTITY version "2026.07.10ap">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Solid + Pulse: flash warn color over native free fill (green between flashes); Pulse=No stays solid. Undo empty opacity flash.
+
+###2026.07.10ao
 - Solid + Pulse: hard flash via opacity so yellow/red fill actually blinks (keyframes cannot override !important backgrounds).
 
 ###2026.07.10an
@@ -276,7 +279,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10ao"
+[ -z "$VER" ] && VER="2026.07.10ap"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
