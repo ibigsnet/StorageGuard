@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10ai">
+<!ENTITY version "2026.07.10aj">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,13 +37,13 @@
 
 <CHANGES>
 ###&version;
-- Stronger Outline pulse: clear outer border throb plus light inner wash (Pulse=Yes). Static when Pulse=No.
+- Classic Outline pulse (border color + outer glow only). Pulse=No strips all pulse classes and forces static CSS. Refresh config more often on Main.
 
-###2026.07.10ah
-- (packaging) pulse CSS refresh.
+###2026.07.10ai
+- Outline pulse polish (outer glow + light inner wash).
 
 ###2026.07.10ag
-- Restore Pulse=Yes animations (CSS was blocking keyframes). Main flash fix retained.
+- Restore Pulse=Yes animations; Main flash fix retained.
 
 ###2026.07.10af
 - Re-paint free bars immediately after Main device-table jQuery .html() updates.
@@ -261,7 +261,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10ai"
+[ -z "$VER" ] && VER="2026.07.10aj"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

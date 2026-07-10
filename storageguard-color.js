@@ -370,6 +370,12 @@
     paintFreeBar(tr, level, style, opts);
   }
 
+  function stripAllPulse() {
+    document.querySelectorAll('.sg-pulse').forEach(function (el) {
+      el.classList.remove('sg-pulse');
+    });
+  }
+
   function applyStatus(status, opts) {
     if (!status) return;
     lastStatus = status;
@@ -380,6 +386,8 @@
       log('not on Main');
       return;
     }
+
+    if (!opts.pulse) stripAllPulse();
 
     var arow = findArrayFreeRow();
     if (arow) paintTarget(arow, status.array, opts);
@@ -424,7 +432,6 @@
       paintTarget(prow, st, opts);
     }
 
-
     Object.keys(pools).forEach(function (pk) {
       if (matched[pk]) return;
       var st = pools[pk];
@@ -451,6 +458,8 @@
         matched[pk] = true;
       }
     });
+
+    if (!opts.pulse) stripAllPulse();
   }
 
   function scheduleApply() {
@@ -517,8 +526,8 @@
     fetchAndApply();
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 10000);
-    setInterval(fetchAndApply, 30000);
+    }, 5000);
+    setInterval(fetchAndApply, 10000);
     setTimeout(hookJQueryHtml, 0);
     setTimeout(hookJQueryHtml, 1000);
   }
