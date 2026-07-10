@@ -1,23 +1,3 @@
-// Storage Guard — paint Free bars on Main.
-// Array: "Array of N devices" free bar.
-// Pool: prefer "Pool of N devices" free bar (pool total free = our threshold);
-//       never paint every member disk row (that looked like "flashing" on multi-device cache).
-//
-// Style matrix (per target: array / each pool):
-//   Outline (default) — border only around .usage-disk; Unraid free fill unchanged.
-//   Solid             — recolor free fill yellow/red; no border.
-//
-// Global opts:
-//   Pulse (outline_pulse) — flasher for warning/critical on BOTH styles
-//     Outline: pulses the border; Solid: pulses the free fill.
-//   Green-when-OK (outline_show_ok) — Outline only (static green border when healthy).
-//
-// Paint stability (Main live-updates free bars often):
-//   - data-sg-sig: skip full clear/repaint when level/style/pulse/showOk unchanged
-//   - Solid: data-sg-solid on parent so fill color survives span rewrites
-//   - Outline: markers on free-column TD; CSS targets the .usage-disk child
-//   - Never clearPaint before re-applying the same outline look (that flashes)
-//   - Pulse (.sg-pulse) only for warning/critical, never OK
 (function () {
   'use strict';
 
@@ -31,7 +11,7 @@
   function resolveStyle(obj, fallback) {
     if (obj && obj.style === 'outline') return 'outline';
     if (obj && obj.style === 'solid') return 'solid';
-    // Product default is outline when status omits style
+
     return fallback === 'solid' ? 'solid' : 'outline';
   }
 
@@ -50,7 +30,7 @@
     );
   }
 
-  /** Free column = last .usage-disk in the row (Used comes before Free). */
+
   function freeUsageDisk(tr) {
     if (!tr) return null;
     var disks = tr.querySelectorAll('td .usage-disk');
@@ -58,7 +38,7 @@
     return null;
   }
 
-  /** Free-column TD — more stable than .usage-disk (Unraid often replaces the disk node). */
+
   function freeUsageCell(disk) {
     if (!disk) return null;
     if (disk.closest) return disk.closest('td');
@@ -98,7 +78,7 @@
     });
   }
 
-  /** Soft re-tint solid fill if Unraid replaced the bar span (no clearPaint flash). */
+
   function ensureSolidBar(disk, level, pulse, sig) {
     if (!disk || (level !== 'warning' && level !== 'critical')) return;
     var color = level === 'critical' ? BAR_CRIT : BAR_WARN;
@@ -112,7 +92,7 @@
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       bar && bar.classList.contains('sg-solid');
     if (ok) {
-      // Still re-apply fill color in case Unraid rewrote the span contents
+
       bar.style.setProperty('background-color', color, 'important');
       bar.style.setProperty('background', color, 'important');
       return;
@@ -133,12 +113,7 @@
     }
   }
 
-  /**
-   * Outline highlight on free column. Markers go on the free TD (and disk node).
-   * CSS uses td[data-sg-outline] so paint survives free-bar node replacement on Main.
-   * Idempotent: set attrs/classes without remove-all (remove-then-add flashes on Main).
-   * OK never uses .sg-pulse.
-   */
+
   function ensureOutline(disk, level, pulse, sig) {
     if (!disk) return;
     var wantPulse = !!(pulse && (level === 'warning' || level === 'critical'));
@@ -158,7 +133,7 @@
       !disk.hasAttribute('data-sg-solid');
     if (cellOk && diskOk) return;
 
-    // Drop solid leftovers only (do not strip outline classes first — that flashes)
+
     disk.classList.remove('sg-solid', 'sg-bar');
     disk.removeAttribute('data-sg-solid');
     if (levelClass !== 'sg-ok') disk.classList.remove('sg-ok');
@@ -188,27 +163,21 @@
   }
 
   function makeSig(level, style, pulse, showOk) {
-    // Product default style is outline (not solid)
+
     return [level || 'none', style || 'outline', pulse ? '1' : '0', showOk ? '1' : '0'].join('|');
   }
 
-  /**
-   * Paint free bar for level: ok | warning | critical
-   * style: outline (default) | solid
-   * opts: { pulse, showOk }
-   *   pulse   — global flasher for warn/crit (Outline border or Solid fill)
-   *   showOk  — Outline-only green border when healthy
-   */
+
   function paintFreeBar(tr, level, style, opts) {
     if (!tr) return false;
     opts = opts || {};
     var pulse = !!opts.pulse;
     var showOk = !!opts.showOk;
     style = style === 'solid' ? 'solid' : 'outline';
-    // Pulse is the flasher for warning/critical on both styles (never for OK)
+
     var pulseActive = pulse && (level === 'warning' || level === 'critical');
 
-    // OK: only Outline + green-when-OK paints; Solid OK = clear (normal Unraid fill)
+
     if (level === 'ok') {
       if (style !== 'outline' || !showOk) {
         clearPaint(tr);
@@ -229,27 +198,27 @@
       cell.getAttribute('data-sg-outline') === level &&
       cell.getAttribute('data-sg-sig') === sig;
 
-    // ---- Outline: never clearPaint for the same look (clear → re-add = green/yellow flash) ----
+
     if (style === 'outline') {
       if (sameLook && cellHasLook && disk &&
           disk.getAttribute('data-sg-outline') === level &&
           disk.classList.contains('sg-outline')) {
         return true;
       }
-      // Same status but free cell/disk was replaced by Main live update — re-tag only
+
       if (sameLook || cellHasLook || (disk && disk.getAttribute('data-sg-sig') === sig)) {
         tr.setAttribute('data-sg-sig', sig);
         if (disk) ensureOutline(disk, level, pulse, sig);
         return true;
       }
-      // First paint or status/style change: do not clearPaint (ensureOutline is idempotent)
+
       tr.setAttribute('data-sg-sig', sig);
       if (disk) {
         ensureOutline(disk, level, pulse, sig);
         log('outline free bar', level, pulseActive ? 'pulse' : 'static', (tr.textContent || '').slice(0, 50));
         return true;
       }
-      // Plain-text Free column fallback (no .usage-disk)
+
       var tdsO = tr.querySelectorAll('td');
       if (tdsO.length) {
         var tdO = tdsO[tdsO.length - 1];
@@ -267,7 +236,7 @@
       return false;
     }
 
-    // ---- Solid ----
+
     var existing =
       (disk && disk.getAttribute('data-sg-sig') === sig && disk) ||
       (tr.getAttribute('data-sg-sig') === sig && tr) ||
@@ -354,16 +323,16 @@
 
   function isPoolMemberDeviceRow(tr) {
     var t = rowText(tr);
-    // Individual pool slots: "Device 1", device links, not the pool total line
+
     if (/device\s+\d+/.test(t)) return true;
     if (isPoolOfDevicesRow(tr) || isArrayOfDevicesRow(tr) || isBootSummaryRow(tr)) return false;
-    // Named slots like cache2 / nvme under a multi-device pool (have a Device?name= link + not "pool of")
+
     var link = tr.querySelector('a[href*="Device?name="]');
     if (link && freeUsageDisk(tr) && !isDataPartitionRow(tr)) {
-      // single-device free bars on member rows still have usage disks; exclude pure members
-      // Prefer only excluding when text looks like a secondary device row
+
+
       if (/\b(cache\d+|device)\b/.test(t) && t.indexOf('pool of') === -1) {
-        // keep data partition for single-disk pools; multi-device members often say Device N
+
       }
     }
     return false;
@@ -374,12 +343,12 @@
     var rows = root.querySelectorAll('tr');
     var i, tr;
 
-    // Prefer pool total free ("Pool of N devices") — matches get-config pool free_tb
+
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isPoolOfDevicesRow(tr) && freeUsageDisk(tr)) return tr;
     }
-    // Single-disk pool / layout without pool-of row: data partition free
+
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isPoolMemberDeviceRow(tr)) continue;
@@ -406,7 +375,7 @@
     var seen = {};
     function add(el) {
       if (!el || seen[el.id || el]) return;
-      // Never treat the array table/tbody as a pool root (would wipe array free-bar paint)
+
       if (el.id === 'array_devices' || el.id === 'array_list') return;
       if (el.querySelector && el.querySelector('#array_devices')) return;
       seen[el.id || el] = true;
@@ -414,14 +383,14 @@
     }
     document.querySelectorAll('[id^="pool_device"]').forEach(add);
     add(document.getElementById('boot_device'));
-    // Fallback tables — skip any that are the array section
+
     document.querySelectorAll('.TableContainer table.disk_status').forEach(function (el) {
       if (el.id === 'array_devices' || (el.querySelector && el.querySelector('#array_devices'))) return;
-      // Parent section often labeled Array Devices
+
       var wrap = el.closest ? el.closest('.TableContainer, .tabs, #tab1, #array') : null;
       var label = wrap ? (wrap.textContent || '').slice(0, 80).toLowerCase() : '';
       if (/^[\s]*array devices/.test(label) || (el.previousElementSibling && /array devices/i.test(el.previousElementSibling.textContent || ''))) {
-        // still allow if it also has pool devices — rare; prefer id filters above
+
       }
       add(el);
     });
@@ -493,7 +462,7 @@
 
     for (var r = 0; r < roots.length; r++) {
       var root = roots[r];
-      // Clear boot summary + individual member rows only — keep pool-total free bar for painting
+
       root.querySelectorAll('tr').forEach(function (tr) {
         if (isArrayOfDevicesRow(tr)) return;
         if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) {
@@ -519,15 +488,15 @@
       });
 
       if (!prow) continue;
-      // Safety: never paint pool status onto the array totals row
+
       if (isArrayOfDevicesRow(prow)) continue;
-      // Never paint every member disk — only one free-bar target per pool
+
       if (isPoolMemberDeviceRow(prow) || /^[\s]*device\s+\d+/.test(rowText(prow))) continue;
       matched[key] = true;
       paintTarget(prow, st, opts);
     }
 
-    // Fallback: one row only (pool-of or single data partition) — do not paint all "cache*" members
+
     Object.keys(pools).forEach(function (pk) {
       if (matched[pk]) return;
       var st = pools[pk];
@@ -543,7 +512,7 @@
         if (!freeUsageDisk(tr)) return;
         var t = rowText(tr);
         if (isPoolOfDevicesRow(tr) && t.indexOf(pk.toLowerCase()) !== -1) {
-          candidates.unshift(tr); // prefer pool total
+          candidates.unshift(tr);
           return;
         }
         if (isDataPartitionRow(tr) && t.indexOf(pk.toLowerCase()) !== -1) {
@@ -588,7 +557,7 @@
 
   function boot() {
     fetchAndApply();
-    // Periodic soft re-apply (idempotent outline; solid re-tint if needed)
+
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
     }, 5000);
@@ -596,7 +565,7 @@
 
     if (typeof MutationObserver !== 'undefined') {
       var obs = new MutationObserver(function () {
-        // Outline re-apply is clearPaint-free and idempotent — safe on live free-bar DOM churn
+
         scheduleApply();
       });
       var main = document.getElementById('content') || document.body;

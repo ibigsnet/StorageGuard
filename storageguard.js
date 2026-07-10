@@ -1,19 +1,17 @@
-// Storage Guard settings page — show/hide sections, custom thresholds, pool multi-select,
-// and a notice when Critical free space is set higher than Warning (unusual order).
 function initStorageGuardUI() {
   function setVisible(el, on) {
     if (!el) return;
     el.style.display = on ? '' : 'none';
   }
 
-  // First open / unseeded: ensure Array Warning select is largest disk (not None)
-  // when the page was rendered with a non-empty default selection.
+
+
   (function ensureArrayWarningDefault() {
     var sel = document.getElementById('array_warning');
     if (!sel || sel.disabled) return;
     var useCustom = document.getElementById('array_use_custom');
     if (useCustom && useCustom.value === 'yes') return;
-    // data-sg-default-warn set by PHP when product default is largest disk
+
     var def = sel.getAttribute('data-sg-default-warn') || '';
     if (!def) return;
     if (sel.value === '' || sel.value === null) {
@@ -26,7 +24,7 @@ function initStorageGuardUI() {
     }
   })();
 
-  /** Parse free-space strings (8T, 500G, 1.5T) to decimal TB; null if empty/invalid. */
+
   function parseToTB(str) {
     if (str === null || str === undefined) return null;
     str = String(str).trim();
@@ -44,20 +42,20 @@ function initStorageGuardUI() {
   }
 
   function activeThreshValue(pair, level) {
-    // Prefer visible custom inputs when that target is in custom mode
+
     var nodes = document.querySelectorAll('.sg-thresh[data-sg-pair="' + pair + '"][data-sg-level="' + level + '"]');
     var i, el, val = null;
     for (i = 0; i < nodes.length; i++) {
       el = nodes[i];
-      // skip hidden ancestors (display:none sections)
+
       if (el.offsetParent === null && el.type !== 'hidden') {
-        // still allow if only the sibling block is hidden — check closest custom/disk block
+
         var block = el.closest('[id$="-custom-fields"], [id$="-disk-selects"], #array-custom-fields, #array-disk-selects');
         if (block && block.style.display === 'none') continue;
       }
       if (el.disabled) continue;
       val = el.value;
-      // For selects/inputs that are in a hidden custom/disk block, skip
+
       var parent = el.parentElement;
       while (parent) {
         if (parent.style && parent.style.display === 'none') { val = null; break; }
@@ -72,7 +70,7 @@ function initStorageGuardUI() {
     return val;
   }
 
-  /** Better: resolve warn/crit for a pair using custom toggle when present. */
+
   function pairValues(pair) {
     var warnEl, critEl;
     if (pair === 'array') {
@@ -86,7 +84,7 @@ function initStorageGuardUI() {
         crit: critEl ? critEl.value : ''
       };
     }
-    // pool-<safe>
+
     var safe = pair.replace(/^pool-/, '');
     var use = document.getElementById('pool_' + safe + '_use_custom');
     var isC = use && use.value === 'yes';
@@ -116,7 +114,7 @@ function initStorageGuardUI() {
       var w = parseToTB(v.warn);
       var c = parseToTB(v.crit);
       if (w === null || c === null) return;
-      // Unusual: Critical free amount larger than Warning free amount
+
       if (c > w) {
         inverted.push({
           label: v.label,
@@ -150,7 +148,7 @@ function initStorageGuardUI() {
       '</p>';
   }
 
-  // Array: custom vs disk sizes
+
   const useCustom = document.getElementById('array_use_custom');
   const diskSelects = document.getElementById('array-disk-selects');
   const customFields = document.getElementById('array-custom-fields');
@@ -170,7 +168,7 @@ function initStorageGuardUI() {
     updateArrayCustom();
   }
 
-  // Per-pool: custom vs disk sizes
+
   function updatePoolCustom(safe) {
     const sel = document.getElementById('pool_' + safe + '_use_custom');
     if (!sel) return;
@@ -191,7 +189,7 @@ function initStorageGuardUI() {
     updatePoolCustom(safe);
   });
 
-  // Coloring Yes/No → hide details for that block
+
   function wireSectionToggle(selectId) {
     const sel = document.getElementById(selectId);
     if (!sel) return;
@@ -215,7 +213,7 @@ function initStorageGuardUI() {
   wireSectionToggle('array_coloring');
   wireSectionToggle('pool_coloring');
 
-  // Pool "All" checkbox sync
+
   const poolAll = document.getElementById('pool_all');
   const poolCbs = document.querySelectorAll('.pool-cb');
 
@@ -253,14 +251,14 @@ function initStorageGuardUI() {
   syncPoolAll();
   updatePoolsHidden();
 
-  // Threshold order notice on any change
+
   document.querySelectorAll('.sg-thresh, .pool-use-custom, #array_use_custom').forEach(function (el) {
     el.addEventListener('change', updateOrderNote);
     el.addEventListener('input', updateOrderNote);
   });
   updateOrderNote();
 
-  // Advanced: pool settings (WIP) hidden by default — array is primary
+
   (function wirePoolsWipToggle() {
     var btn = document.getElementById('sg-toggle-pools-wip');
     var panel = document.getElementById('sg-pools-wip');
@@ -276,7 +274,7 @@ function initStorageGuardUI() {
         ? 'Hide advanced pools (WIP)'
         : 'Show advanced pools (WIP)…';
       if (hint) hint.style.display = open ? 'none' : '';
-      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {  }
       if (open) {
         var pc = document.getElementById('pool_coloring');
         if (pc && pc.value === 'yes') {
@@ -289,25 +287,20 @@ function initStorageGuardUI() {
       }
     }
     var saved = false;
-    try { saved = localStorage.getItem(key) === '1'; } catch (e) { /* ignore */ }
+    try { saved = localStorage.getItem(key) === '1'; } catch (e) {  }
     setOpen(saved);
     btn.addEventListener('click', function () {
       setOpen(panel.style.display === 'none');
     });
   })();
 
-  /**
-   * Unraid posts Default into a progress iframe — the page does not reload.
-   * Also, update.php only restores keys present in default.cfg; pool_* keys
-   * are dynamic and would keep the form's current values without sg-update.php.
-   * Reset the form UI to product defaults so what you see matches the cfg write.
-   */
+
   function resetFormToProductDefaults() {
     function setSelect(id, value) {
       var el = document.getElementById(id);
       if (!el) return;
       el.value = value;
-      // If value not found, leave as-is for selects; try matching option
+
       if (el.tagName === 'SELECT' && el.value !== value) {
         for (var i = 0; i < el.options.length; i++) {
           if (el.options[i].value === value) {
@@ -339,13 +332,13 @@ function initStorageGuardUI() {
     setSelect('array_warning', defWarn);
     setSelect('array_critical', '');
 
-    // Array alerts: Warning on (if available), Critical off
+
     var arrWarnCb = form.querySelector('input[type="checkbox"][name="alerts_array_warning"]');
     if (arrWarnCb && !arrWarnCb.disabled) setCheckbox('alerts_array_warning', true);
     else setCheckbox('alerts_array_warning', false);
     setCheckbox('alerts_array_critical', false);
 
-    // Pools: coloring off by default; thresholds None, style outline, alerts off
+
     setSelect('pool_coloring', 'no');
     if (poolAll) {
       poolAll.checked = true;
@@ -367,7 +360,7 @@ function initStorageGuardUI() {
       setCheckbox('alerts_pool_' + safe + '_critical', false);
     });
 
-    // Re-apply show/hide (do not re-bind wireSectionToggle — would stack listeners)
+
     ['array_coloring', 'pool_coloring'].forEach(function (selectId) {
       var sel = document.getElementById(selectId);
       if (!sel) return;

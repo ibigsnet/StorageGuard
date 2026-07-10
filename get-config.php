@@ -1,7 +1,4 @@
 <?php
-/**
- * Storage Guard config + live free-space status for Main-tab coloring.
- */
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
@@ -11,7 +8,6 @@ if (file_exists($cfgFile)) {
   $cfg = @parse_ini_file($cfgFile, false, INI_SCANNER_RAW) ?: [];
 }
 
-/** Parse size strings (1.5T, 500G, 7.5T, …) to decimal TB for comparison with free space. */
 function sg_parse_to_tb($str) {
   if ($str === null || $str === '') return 0.0;
   if (!preg_match('/([0-9]*\.?[0-9]+)\s*([TGMKtgmk]?)/', (string)$str, $m)) return 0.0;
@@ -24,7 +20,6 @@ function sg_parse_to_tb($str) {
   return $num;
 }
 
-/** Free space on mount, as decimal TB (aligned with Unraid Main free display). */
 function sg_free_tb_mount($mount) {
   if (!is_dir($mount)) return null;
   $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mount) . " 2>/dev/null | tail -1");
@@ -33,10 +28,6 @@ function sg_free_tb_mount($mount) {
   return $bytes / 1000.0 / 1000.0 / 1000.0 / 1000.0;
 }
 
-/**
- * Level from free space vs warning/critical thresholds (any order).
- * Lower free-space threshold = more severe (critical); higher = warning.
- */
 function sg_level($free_tb, $warn_tb, $crit_tb) {
   if ($free_tb === null) return 'ok';
   $w = ($warn_tb > 0) ? (float)$warn_tb : null;
@@ -51,14 +42,12 @@ function sg_level($free_tb, $warn_tb, $crit_tb) {
   return 'ok';
 }
 
-/** outline (default) | solid — per target; falls back to legacy color_style */
 function sg_style($cfg, $key) {
   $legacy = $cfg['color_style'] ?? 'outline';
   $s = $cfg[$key] ?? $legacy;
   return ($s === 'solid') ? 'solid' : 'outline';
 }
 
-/** Largest array data disk size in TB (decimal), or 0 if none. */
 function sg_largest_data_disk_tb() {
   $disks_ini = '/var/local/emhttp/disks.ini';
   if (!file_exists($disks_ini)) return 0.0;
@@ -70,11 +59,10 @@ function sg_largest_data_disk_tb() {
     $name = $d['name'] ?? $key;
     $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
     if (!$is_data) continue;
-    $sz = isset($d['size']) ? (int)$d['size'] : 0; // KB
+    $sz = isset($d['size']) ? (int)$d['size'] : 0;
     if ($sz > $max_kb) $max_kb = $sz;
   }
   if ($max_kb <= 0) return 0.0;
-  // size in KB → bytes → decimal TB
   return ($max_kb * 1024.0) / 1e12;
 }
 
@@ -83,7 +71,6 @@ if ($array_free === null || $array_free <= 0) {
   $array_free = sg_free_tb_mount('/mnt/user');
 }
 
-// Until Settings is Applied with sg_defaults=1, treat empty/missing array_warning as largest disk
 $sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
 $use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
 if ($use_custom) {
@@ -91,7 +78,7 @@ if ($use_custom) {
   $arr_crit = sg_parse_to_tb($cfg['array_critical_custom'] ?? '');
 } else {
   if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
-    $arr_warn = sg_parse_to_tb($cfg['array_warning']); // empty = None
+    $arr_warn = sg_parse_to_tb($cfg['array_warning']);
   } else {
     $arr_warn = sg_largest_data_disk_tb();
   }

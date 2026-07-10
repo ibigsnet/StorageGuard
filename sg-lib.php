@@ -1,8 +1,4 @@
 <?php
-/**
- * Storage Guard shared helpers (thresholds, inventory, notify copy).
- * Included by check-alerts.php (and future callers).
- */
 
 function sg_format_size_kb($kb) {
     if (!$kb || $kb <= 0) return '0';
@@ -26,7 +22,6 @@ function sg_kb_to_tb($kb) {
     return ($kb * 1024.0) / 1e12;
 }
 
-/** @return array<int,array{name:string,label:string,tb:float,kb:int}> */
 function sg_array_data_disks() {
     $disks_ini = '/var/local/emhttp/disks.ini';
     if (!file_exists($disks_ini)) return [];
@@ -50,10 +45,6 @@ function sg_array_data_disks() {
     return $out;
 }
 
-/**
- * Disks whose capacity matches a threshold label/TB (dropdown or ~equal TB).
- * @return array<int,array{name:string,label:string,tb:float,kb:int}>
- */
 function sg_disks_matching_threshold($label, $tb) {
     $label = trim((string)$label);
     $tb = (float)$tb;
@@ -65,10 +56,9 @@ function sg_disks_matching_threshold($label, $tb) {
         }
         if ($tb > 0 && $disk['tb'] > 0) {
             $diff = abs($disk['tb'] - $tb) / max($tb, $disk['tb']);
-            if ($diff <= 0.03) $matches[] = $disk; // within 3%
+            if ($diff <= 0.03) $matches[] = $disk;
         }
     }
-    // de-dupe by name
     $seen = [];
     $uniq = [];
     foreach ($matches as $d) {
@@ -101,9 +91,6 @@ function sg_human_free($tb) {
     return $g . 'G';
 }
 
-/**
- * Array failure / evacuate phrase for a threshold.
- */
 function sg_array_failure_context($label, $tb, $custom) {
     if ($custom) {
         $L = $label !== '' ? $label : sg_human_free($tb);
@@ -122,10 +109,6 @@ function sg_array_failure_context($label, $tb, $custom) {
     return "a data disk of about {$L}";
 }
 
-/**
- * Build array notification body.
- * $severity: warning|critical
- */
 function sg_array_notify_body($severity, $free_tb, $th) {
     $is_crit = ($severity === 'critical');
     $label = $is_crit ? ($th['crit_label'] ?? '') : ($th['warn_label'] ?? '');
@@ -149,7 +132,6 @@ function sg_array_notify_body($severity, $free_tb, $th) {
     return $line1 . ' ' . $line2 . ' ' . $line3;
 }
 
-/** BTRFS data profile string for a pool mount, or empty. */
 function sg_pool_btrfs_profile($pool) {
     $mount = '/mnt/' . $pool;
     if (!is_dir($mount)) return '';
@@ -160,10 +142,6 @@ function sg_pool_btrfs_profile($pool) {
     return '';
 }
 
-/**
- * Profile class for messaging:
- * mirror | parity | striped_mirror | none | unknown
- */
 function sg_pool_profile_class($profile) {
     $p = strtolower(trim((string)$profile));
     if ($p === '' || $p === 'unknown') return 'unknown';
@@ -175,9 +153,6 @@ function sg_pool_profile_class($profile) {
     return 'unknown';
 }
 
-/**
- * Pool notification body by profile class.
- */
 function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class) {
     $is_crit = ($severity === 'critical');
     $label = $is_crit ? ($th['crit_label'] ?? '') : ($th['warn_label'] ?? '');

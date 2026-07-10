@@ -1,6 +1,4 @@
 <?php
-// Storage Guard — send Unraid notifications when free space hits a threshold.
-// Per-target flags: alerts_array_*, alerts_pool_<name>_* (nothing set = silent).
 
 header('Content-Type: application/json');
 
@@ -12,7 +10,6 @@ if (file_exists($cfg_file)) {
     $cfg = @parse_ini_file($cfg_file) ?: [];
 }
 
-// Legacy global master still respected if present and off
 if (isset($cfg['alerts_enabled']) && $cfg['alerts_enabled'] !== 'yes'
     && !isset($cfg['alerts_array_warning']) && !isset($cfg['alerts_array_critical'])) {
     $has_new = false;
@@ -76,7 +73,6 @@ function sg_level($free_tb, $warn_tb, $crit_tb) {
 }
 
 function sg_send_notify($subject, $desc, $priority = 'warning') {
-    // -i normal|warning|alert  (normal = green/cleared style, same family as parity complete)
     $cmd = "/usr/local/emhttp/webGui/scripts/notify -e 'Storage Guard' -s " . escapeshellarg($subject)
         . " -d " . escapeshellarg($desc) . " -i " . escapeshellarg($priority) . " -l '/Main'";
     @shell_exec($cmd);
@@ -95,7 +91,6 @@ function sg_should_send($key, $min_interval = 3600) {
     return true;
 }
 
-/** Last alert level for a target: ok|warning|critical (empty = never seen). */
 function sg_get_last_level($key) {
     global $state_dir;
     $file = $state_dir . '/' . sg_state_key($key) . '.level';
@@ -110,17 +105,12 @@ function sg_set_last_level($key, $level) {
     @file_put_contents($file, $level);
 }
 
-/**
- * Send warning/critical (with re-alert throttle), or one recovery notify when
- * free space rises back above thresholds (Unraid -i normal, like parity done).
- */
 function sg_process_level($key, $level, $warn_subject, $crit_subject, $ok_subject, $warn_body, $crit_body, $ok_body) {
     global $sent, $state_dir;
     $last = sg_get_last_level($key);
 
     if ($level === 'critical') {
         if ($last !== 'critical') {
-            // level changed — send immediately
             sg_send_notify($crit_subject, $crit_body, 'alert');
             @touch($state_dir . '/' . sg_state_key($key));
             $sent[] = $key . '_critical';
@@ -145,7 +135,6 @@ function sg_process_level($key, $level, $warn_subject, $crit_subject, $ok_subjec
         return;
     }
 
-    // ok — recovery only if we previously warned/alerted
     if ($last === 'warning' || $last === 'critical') {
         sg_send_notify($ok_subject, $ok_body, 'normal');
         $sent[] = $key . '_recovered';
@@ -183,7 +172,6 @@ function sg_array_thresholds($cfg) {
             'custom' => true,
         ];
     }
-    // Until sg_defaults=1, empty/missing array_warning → largest disk
     $sg_ok = (($cfg['sg_defaults'] ?? '') === '1');
     if ($sg_ok && array_key_exists('array_warning', $cfg)) {
         $warn_label = $cfg['array_warning'];
@@ -226,7 +214,6 @@ $array_free = sg_get_array_free_tb();
 
 $has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
     || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
-// Product default until user Applies Settings (sg_defaults=1): array warning on, critical off
 $sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
 if ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) {
     $arr_warn_on = sg_flag($cfg, 'alerts_array_warning');
@@ -236,7 +223,7 @@ if ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) {
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_warn_on = $legacy_on && $array_selected && (($cfg['warning_alerts_enabled'] ?? 'yes') === 'yes');
 } else {
-    $arr_warn_on = true; // default: array warning only
+    $arr_warn_on = true;
 }
 if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $arr_crit_on = sg_flag($cfg, 'alerts_array_critical');
@@ -273,7 +260,6 @@ if ($arr_warn_on || $arr_crit_on) {
     }
 }
 
-// --- Pools ---
 $seen_pools = [];
 foreach ($cfg as $k => $v) {
     if (!preg_match('/^pool_([a-zA-Z0-9_]+)_(warning|warning_custom)$/', $k, $m)) continue;
@@ -284,7 +270,6 @@ foreach ($cfg as $k => $v) {
 
     $warn_key = "alerts_pool_{$safe}_warning";
     $crit_key = "alerts_pool_{$safe}_critical";
-    // Pool alerts off by default; only honor saved keys after sg_defaults=1
     if ($sg_defaults_ok && isset($cfg[$warn_key])) {
         $p_warn_on = sg_flag($cfg, $warn_key);
     } else {
