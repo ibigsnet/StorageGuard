@@ -20,6 +20,8 @@
   line-height: 1.4;
 }
 
+/* Solid fill: lock color with !important so Unraid free-fill classes lose.
+   Pulse uses opacity flash (below) — keyframes cannot override !important backgrounds. */
 .usage-disk[data-sg-solid="warning"] > span:first-child,
 .usage-disk > span.sg-bar.sg-solid.sg-warning,
 .usage-disk > span[data-sg-bar="warning"][data-sg-style="solid"] {
@@ -83,14 +85,12 @@ td[data-sg-outline="critical"].sg-pulse .usage-disk {
   opacity: 1 !important;
 }
 
+/* Solid Pulse=Yes: hard on/off via opacity (color stays yellow/red; no lime blend) */
 .usage-disk[data-sg-solid="warning"].sg-pulse > span:first-child,
-.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-warning {
-  animation: sg-pulse-solid-warn 1.2s step-end infinite;
-}
-
 .usage-disk[data-sg-solid="critical"].sg-pulse > span:first-child,
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-warning,
 .usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-critical {
-  animation: sg-pulse-solid-crit 1.2s step-end infinite;
+  animation: sg-pulse-solid-flash 1.2s step-end infinite;
 }
 
 @keyframes sg-pulse-outline-warn {
@@ -115,39 +115,16 @@ td[data-sg-outline="critical"].sg-pulse .usage-disk {
   }
 }
 
-@keyframes sg-pulse-solid-warn {
-  0%, 49.9% {
-    background-color: #ffc107 !important;
-    background: #ffc107 !important;
-    filter: none;
-    opacity: 1;
-  }
-  50%, 100% {
-    background-color: transparent !important;
-    background: transparent !important;
-    filter: none;
-    opacity: 1;
-  }
-}
-
-@keyframes sg-pulse-solid-crit {
-  0%, 49.9% {
-    background-color: #e53935 !important;
-    background: #e53935 !important;
-    filter: none;
-    opacity: 1;
-  }
-  50%, 100% {
-    background-color: transparent !important;
-    background: transparent !important;
-    filter: none;
-    opacity: 1;
-  }
+@keyframes sg-pulse-solid-flash {
+  0%, 49.9% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   td[data-sg-outline].sg-pulse .usage-disk,
+  .usage-disk[data-sg-solid].sg-pulse > span:first-child,
   .usage-disk.sg-pulse > span:first-child {
     animation: none !important;
+    opacity: 1 !important;
   }
 }
