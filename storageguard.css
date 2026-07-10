@@ -57,8 +57,7 @@ td[data-sg-td="ok"] {
 }
 
 /* ---- Outline: border only; free fill left to Unraid ---- */
-/* Prefer free-column TD markers (stable). Unraid often replaces .usage-disk;
-   painting from td[data-sg-outline] avoids green/yellow flash on live Main updates. */
+/* Free-column TD markers (td[data-sg-outline]) keep outline when free-bar nodes update. */
 .usage-disk.sg-outline,
 .usage-disk[data-sg-outline],
 td[data-sg-outline] .usage-disk {
@@ -88,8 +87,7 @@ td[data-sg-outline="critical"] .usage-disk {
   outline: 2px solid #e53935 !important;
 }
 
-/* ---- Pulse (global flasher): warning/critical only, Outline + Solid ---- */
-/* Outline: pulse the border (never OK/green — no ok pulse rules) */
+/* ---- Pulse: warning/critical only (Outline border or Solid fill) ---- */
 .usage-disk.sg-outline.sg-warning.sg-pulse,
 .usage-disk[data-sg-outline="warning"].sg-pulse,
 td[data-sg-outline="warning"].sg-pulse .usage-disk {

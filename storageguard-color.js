@@ -12,14 +12,12 @@
 //     Outline: pulses the border; Solid: pulses the free fill.
 //   Green-when-OK (outline_show_ok) — Outline only (static green border when healthy).
 //
-// Flash / thrash guards:
-//   - data-sg-sig skips clearPaint when level/style/pulse/showOk unchanged
-//   - Solid: data-sg-solid on parent + CSS so Unraid span rewrites keep color
-//   - Outline: markers on free-column TD (stable) + CSS on .usage-disk child
-//     so Unraid replacing .usage-disk does not re-class/flash (green OK flash)
-//   - Soft path for outline is pure no-op (do not re-toggle classes)
-//   - Pulse: only .sg-pulse for warning/critical; never re-clear same sig
-//     (clearPaint would restart CSS animation → look like thrash)
+// Paint stability (Main live-updates free bars often):
+//   - data-sg-sig: skip full clear/repaint when level/style/pulse/showOk unchanged
+//   - Solid: data-sg-solid on parent so fill color survives span rewrites
+//   - Outline: markers on free-column TD; CSS targets the .usage-disk child
+//   - Outline soft re-apply does not toggle classes (avoids restarting CSS animation)
+//   - Pulse (.sg-pulse) only for warning/critical, never OK
 (function () {
   'use strict';
 
@@ -136,10 +134,9 @@
   }
 
   /**
-   * Outline: mark free-column TD (stable) + .usage-disk. Free fill span untouched.
-   * CSS paints from td[data-sg-outline] so Unraid replacing .usage-disk does not flash.
-   * OK/green never gets .sg-pulse (pulse is warning/critical only).
-   * When already correct, pure no-op (re-toggling classes restarts animation / flashes).
+   * Outline highlight on free column. Markers go on the free TD (and disk node).
+   * CSS uses td[data-sg-outline] so paint survives free-bar node replacement on Main.
+   * OK never uses .sg-pulse. If already correct, return without class changes.
    */
   function ensureOutline(disk, level, pulse, sig) {
     if (!disk) return;
@@ -158,10 +155,9 @@
       disk.classList.contains(levelClass) &&
       (wantPulse === disk.classList.contains('sg-pulse')) &&
       !disk.hasAttribute('data-sg-solid');
-    // Cell markers alone are enough for CSS paint — avoid class thrash on disk
     if (cellOk && diskOk) return;
     if (cellOk && !diskOk) {
-      // Disk node was replaced; re-tag only (no remove-all) so outline does not blink
+      // Free-bar node replaced; re-attach classes without clearing first
       disk.classList.add('sg-outline', levelClass);
       if (wantPulse) disk.classList.add('sg-pulse');
       disk.setAttribute('data-sg-outline', level);
@@ -234,9 +230,7 @@
       (tr.getAttribute('data-sg-sig') === sig && tr) ||
       tr.querySelector('[data-sg-sig="' + sig + '"]');
     if (existing) {
-      // Solid: soft re-tint fill if span was rewritten.
-      // Outline: pure no-op when markers match — re-classing .usage-disk flashes green/yellow
-      // (same idea as 2026.07.09y solid parent attrs; free TD holds outline markers).
+      // Solid may need fill re-tint if Unraid rewrote the span; outline leaves markers alone.
       if (style === 'solid' && disk) ensureSolidBar(disk, level, pulse, sig);
       return true;
     }
