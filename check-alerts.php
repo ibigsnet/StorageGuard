@@ -189,7 +189,7 @@ function sg_array_thresholds($cfg) {
     ];
 }
 
-function sg_pool_thresholds($cfg, $safe) {
+function sg_pool_thresholds($cfg, $safe, $pname = null) {
     $use_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
     if ($use_custom) {
         return [
@@ -200,13 +200,23 @@ function sg_pool_thresholds($cfg, $safe) {
             'custom' => true,
         ];
     }
-    return [
+    $th = [
         'warn' => sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? ''),
         'crit' => sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? ''),
         'warn_label' => $cfg["pool_{$safe}_warning"] ?? '',
         'crit_label' => $cfg["pool_{$safe}_critical"] ?? '',
         'custom' => false,
     ];
+    // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
+    $pool = $pname !== null ? $pname : $safe;
+    $class = sg_pool_profile_class(sg_pool_btrfs_profile($pool));
+    if (sg_pool_ignore_disk_size_thresholds($class)) {
+        $th['warn'] = 0.0;
+        $th['crit'] = 0.0;
+        $th['warn_label'] = '';
+        $th['crit_label'] = '';
+    }
+    return $th;
 }
 
 $sent = [];
@@ -284,7 +294,7 @@ foreach ($cfg as $k => $v) {
     if (!$p_warn_on && !$p_crit_on) continue;
 
     $pool_free = sg_get_pool_free_tb($pname);
-    $th = sg_pool_thresholds($cfg, $safe);
+    $th = sg_pool_thresholds($cfg, $safe, $pname);
     $level = sg_level($pool_free, $th['warn'], $th['crit']);
     if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$p_warn_on) $level = 'ok';

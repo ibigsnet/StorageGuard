@@ -285,7 +285,7 @@ Tip: Critical should usually be the **smaller** free amount. If you reverse them
 
 Global look for any free bar you enable coloring on (array and/or pools).
 
-_(Pulse color?)_:
+_(Pulse color)_:
 : <select name="outline_pulse" id="outline_pulse">
   <?=mk_option($outline_pulse, "no", _("No"))?>
   <?=mk_option($outline_pulse, "yes", _("Yes"))?>
@@ -298,7 +298,7 @@ When <strong>Yes</strong>, yellow/red gently pulse so warning and critical stand
 Does <strong>not</strong> pulse green / OK. Off by default (static color).
 </blockquote>
 
-_(Green when OK?)_:
+_(Green when OK)_:
 : <select name="outline_show_ok" id="outline_show_ok">
   <?=mk_option($outline_show_ok, "no", _("No"))?>
   <?=mk_option($outline_show_ok, "yes", _("Yes"))?>
@@ -317,7 +317,7 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 > No array data disks detected. Array coloring applies when data disks exist.
 <?php endif; ?>
 
-_(Enable coloring?)_:
+_(Enable coloring)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-details">
   <?=mk_option($array_coloring, "yes", _("Yes"))?>
   <?=mk_option($array_coloring, "no", _("No"))?>
@@ -450,9 +450,9 @@ Uses the thresholds above. Default: Array Warning only. Pool rows appear under A
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span>
 
-> Optional. Thresholds, coloring, and alerts work now. BTRFS profile-aware suggested numbers are not ready yet. Defaults: coloring **No**, thresholds **None**, pool alerts **off**.
+> Optional. Thresholds, coloring, and alerts work now. Defaults: coloring **No**, thresholds **None**, pool alerts **off**. On **RAID1 / RAID1cN / dup**, member **disk-size** thresholds are ignored (mirrors do not need array-style evacuate room); use **Custom values** for capacity policy.
 
-_(Enable coloring?)_:
+_(Enable coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
   <?=mk_option($pool_coloring, "yes", _("Yes"))?>
   <?=mk_option($pool_coloring, "no", _("No"))?>
@@ -506,9 +506,16 @@ Only checked pools get Main coloring. Style and thresholds are per pool below.
   }
   $current_profile = get_btrfs_profile($p);
   $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
+  $pc = strtolower(trim((string)$current_profile));
+  // Mirror class matches sg_pool_profile_class() in sg-lib (RAID1 / 1cN / dup)
+  $p_mirror = (strpos($pc, 'raid10') === false)
+    && (preg_match('/raid1c[34]/', $pc) || preg_match('/\braid1\b/', $pc) || strpos($pc, 'dup') !== false);
 ?>
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
+<?php if ($p_mirror): ?>
+> **Mirrored pool** (RAID1 / RAID1cN / dup): a single disk failure usually still leaves a full copy — you do not need free space to evacuate data the way the array does. **Disk size** thresholds are **not used** for paint/alerts on this profile. Set **Custom values** only if you want a capacity-policy free-space threshold (e.g. rebuild headroom after replace).
+<?php endif; ?>
 
 _(<?=htmlspecialchars($p)?> highlight style)_:
 : <select name="<?=$style_key?>" id="<?=$style_key?>">
@@ -527,7 +534,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members. Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc.
+Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on mirrored RAID1/1cN/dup — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc.
 </blockquote>
 
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">

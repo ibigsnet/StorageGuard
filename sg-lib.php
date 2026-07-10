@@ -153,6 +153,17 @@ function sg_pool_profile_class($profile) {
     return 'unknown';
 }
 
+/**
+ * Disk-size thresholds model array-style "evacuate room" (largest member free).
+ * On mirrored pools (RAID1/1cN/dup) that model does not apply: a single disk
+ * failure usually leaves a full copy, so free space is not required to move
+ * data off the failed disk. Ignore disk-size dropdown values for paint/alerts;
+ * custom free-space values still apply as capacity policy.
+ */
+function sg_pool_ignore_disk_size_thresholds($class) {
+    return $class === 'mirror';
+}
+
 function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class) {
     $is_crit = ($severity === 'critical');
     $label = $is_crit ? ($th['crit_label'] ?? '') : ($th['warn_label'] ?? '');

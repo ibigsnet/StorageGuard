@@ -2,6 +2,8 @@
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
+require_once __DIR__ . '/sg-lib.php';
+
 $cfgFile = '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
 $cfg = [];
 if (file_exists($cfgFile)) {
@@ -138,6 +140,12 @@ foreach (array_keys($pool_names) as $pname) {
   } else {
     $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pname}_warning"] ?? '');
     $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
+  }
+  // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
+  $p_class = sg_pool_profile_class(sg_pool_btrfs_profile($pname));
+  if (!$p_custom && sg_pool_ignore_disk_size_thresholds($p_class)) {
+    $warn = 0.0;
+    $crit = 0.0;
   }
   $free = sg_free_tb_mount('/mnt/' . $pname);
   $pool_status[$pname] = [

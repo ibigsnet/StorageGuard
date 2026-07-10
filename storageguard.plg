@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10am">
+<!ENTITY version "2026.07.10an">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,7 +37,13 @@
 
 <CHANGES>
 ###&version;
-- Pulse is hard on/off flash again (no fade). Solid fill toggles color fully on/off to avoid lime blend over free fill.
+- Mirrored pools (RAID1/1cN/dup): ignore member disk-size thresholds for paint/alerts; custom still applies. Settings label cleanup (no trailing ?).
+
+###2026.07.10am
+- Pulse is hard on/off flash (no fade). Outline blinks border on/off; solid fill blinks color fully on/off (no lime blend).
+
+###2026.07.10al
+- Hard on/off pulse CSS.
 
 ###2026.07.10ak
 - Fix Pulse=Yes keyframes blocked by !important static outline rules.
@@ -267,7 +273,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10al"
+[ -z "$VER" ] && VER="2026.07.10an"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

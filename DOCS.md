@@ -93,8 +93,9 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 ## Pool thresholds (WIP — advanced)
 
 > **Work in progress** (array is primary). Pool UI is **hidden by default** — open **Show advanced pool settings (WIP)**.  
-> **OK to use:** custom or disk-size free-space thresholds, Main coloring, and alerts (simple free-space checks).  
-> **Not yet:** BTRFS profile-aware *suggested* thresholds / recovery math. Alert *wording* already varies by profile class.  
+> **OK to use:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), Main coloring, and alerts.  
+> **Profile-aware today:** alert *wording* by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts (evacuate-room model does not apply). Custom values still apply.  
+> **Not yet:** BTRFS profile-aware *suggested* thresholds / recovery math.  
 > Defaults leave pools inactive until you set them.
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
@@ -277,7 +278,9 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 
 - Paint and thresholds: **raw free space** on `/mnt/{pool}` vs your Warning/Critical values (same math as array).  
 - Defaults: pool thresholds **None**; pool alerts **off**.  
-- Notifications: **profile-class wording** so RAID1 is not described like parity array evacuate.
+- Notifications: **profile-class wording** so RAID1 is not described like parity array evacuate.  
+- **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom free-space values** if you still want a capacity-policy threshold (e.g. room for rebuild/rebalance after replace).  
+- **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.
 
 ### Why profile matters (scenarios)
 
