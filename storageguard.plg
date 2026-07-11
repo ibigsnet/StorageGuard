@@ -19,7 +19,7 @@
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
-<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
+<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/731bc29">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
 ]>
@@ -37,6 +37,8 @@
 
 <CHANGES>
 ###&version;
+- Stable baseline pin: asset URLs locked to commit 731bc29 (rollback-safe).
+
 - Solid + Pulse: flash yellow/red over Unraid green free fill; force asset reinstall after CDN lag.
 
 ###2026.07.10aq
