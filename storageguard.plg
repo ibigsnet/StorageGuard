@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10ar">
+<!ENTITY version "2026.07.10as">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- BTRFS pool math library (capacity Δ free suggestions, bus-ceiling speed notes); docs/math per profile. Not auto-applied to Settings yet.
+
+###2026.07.10ar
 - Solid + Pulse: flash yellow/red over Unraid green free fill; force asset reinstall after CDN lag.
 
 ###2026.07.10aq
@@ -273,6 +276,9 @@ Free-space thresholds for your array and pools. Colors free bars on Main (and op
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
 <URL>&raw;/sg-lib.php?v=&version;</URL>
 </FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
+<URL>&raw;/sg-pool-math.php?v=&version;</URL>
+</FILE>
 
 <!-- Inject coloring: Unraid 7 loads HeadInlineJS.php -->
 <FILE Run="/bin/bash">
@@ -285,7 +291,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10ar"
+[ -z "$VER" ] && VER="2026.07.10as"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
@@ -321,7 +327,7 @@ JS="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"
 if [ ! -s "$JS" ] || ! grep -q 'data-sg-outline\|sg-outline\|color_style' "$JS" 2>/dev/null; then
   RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
   echo "StorageGuard: refreshing assets (stale or missing)..."
-  for f in storageguard-color.js storageguard.css get-config.php check-alerts.php sg-lib.php StorageGuard.page; do
+  for f in storageguard-color.js storageguard.css get-config.php check-alerts.php sg-lib.php sg-pool-math.php StorageGuard.page; do
     curl -fsSL "${RAW}/${f}?v=${VER}&t=$(date +%s)" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
   done
 fi

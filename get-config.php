@@ -3,6 +3,7 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
 require_once __DIR__ . '/sg-lib.php';
+require_once __DIR__ . '/sg-pool-math.php';
 
 $cfgFile = '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
 $cfg = [];
@@ -142,12 +143,14 @@ foreach (array_keys($pool_names) as $pname) {
     $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
   }
   // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
-  $p_class = sg_pool_profile_class(sg_pool_btrfs_profile($pname));
+  $profile = sg_pool_btrfs_profile($pname);
+  $p_class = sg_pool_profile_class($profile);
   if (!$p_custom && sg_pool_ignore_disk_size_thresholds($p_class)) {
     $warn = 0.0;
     $crit = 0.0;
   }
   $free = sg_free_tb_mount('/mnt/' . $pname);
+  $math = function_exists('sg_pool_math_package') ? sg_pool_math_package($pname, $profile) : null;
   $pool_status[$pname] = [
     'enabled' => $enabled,
     'free_tb' => $free !== null ? round($free, 3) : null,
@@ -155,6 +158,8 @@ foreach (array_keys($pool_names) as $pname) {
     'crit_tb' => round($crit, 3),
     'level'   => $enabled ? sg_level($free, $warn, $crit) : 'ok',
     'style'   => sg_style($cfg, "pool_{$safe}_color_style"),
+    'profile' => $profile,
+    'math'    => $math,
   ];
 }
 $status['pools'] = $pool_status ?: new stdClass();

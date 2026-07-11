@@ -94,8 +94,8 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 > **Work in progress** (array is primary). Pool UI is **hidden by default** — open **Show advanced pool settings (WIP)**.  
 > **OK to use:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), Main coloring, and alerts.  
-> **Profile-aware today:** alert *wording* by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts (evacuate-room model does not apply). Custom values still apply.  
-> **Not yet:** BTRFS profile-aware *suggested* thresholds / recovery math.  
+> **Profile-aware today:** alert *wording* by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts.  
+> **Math library (in progress):** capacity estimates and suggested free headroom for RAID10/5/6 live under `get-config` → `_status.pools.*.math` (not auto-applied to Settings yet). Formulas: [docs/math/](docs/math/README.md).  
 > Defaults leave pools inactive until you set them.
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common default: the first pool and every other pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
@@ -280,7 +280,9 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 - Defaults: pool thresholds **None**; pool alerts **off**.  
 - Notifications: **profile-class wording** so RAID1 is not described like parity array evacuate.  
 - **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom free-space values** if you still want a capacity-policy threshold (e.g. room for rebuild/rebalance after replace).  
-- **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.
+- **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.  
+- **Capacity math (library):** for RAID10/5/6 (and similar), estimated free headroom after losing disk \(i\) while staying on the same profile is \(\Delta(i)=U_{\text{full}}-U_{\text{without }i}\). Suggested Warning = \(\max\Delta\), Critical = \(\min\Delta\). See [docs/math/](docs/math/README.md). Not written into Settings automatically yet.  
+- **Speeds:** optional best-case **bus/link ceilings** for comparing profiles only — not measured disk sequential throughput.
 
 ### Why profile matters (scenarios)
 
@@ -299,13 +301,14 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 
 ## Planned / future
 
-1. **Profile-aware suggested thresholds** for pools (opt-in “Suggest” or soft defaults by class).  
-2. **Per-failure-device analysis** (“if disk X fails…”).  
-3. **Approximate BTRFS rebalance free-space estimator.**  
-4. **Profile conversion guidance** in Settings/docs/notifications.  
-5. **Array vs cache free space education** (cache free ≠ array evacuate room).  
-6. **ZFS pool awareness.**  
-7. Richer notify formatting if Unraid allows.
+1. **Settings “Suggest”** — apply library Warning/Critical free values from capacity \(\Delta\) (opt-in button; show what-if table).  
+2. **Better speed estimates** — model JSON by drive name, optional read-only probe, user overrides (bus ceilings already sketched).  
+3. **Per-failure-device analysis** (“if disk X fails…”).  
+4. **Approximate BTRFS rebalance free-space estimator** (beyond capacity-fit \(\Delta\)).  
+5. **Profile conversion guidance** in Settings UI (capacity + bus-ceiling speeds).  
+6. **Array vs cache free space education** (cache free ≠ array evacuate room).  
+7. **ZFS pool awareness.**  
+8. Richer notify formatting if Unraid allows.
 
 ---
 
