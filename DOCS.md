@@ -158,8 +158,8 @@ Useful Unraid UI: **main page → click the pool name → Balance Status**
 | RAID1 | ~50% | **1** device (always 2 copies) | N disks still only 2 copies per chunk |
 | RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices | Often used for metadata |
 | RAID10 | ~50% | **1** guaranteed | Not fixed pairs; odd N OK |
-| RAID5 | ~(N−1)/N | 1 device | ⚠ stability caveats |
-| RAID6 | ~(N−2)/N | 2 devices | ⚠ stability caveats |
+| RAID5 | ~(N−1)/N | 1 device | One parity |
+| RAID6 | ~(N−2)/N | 2 devices | Two parity |
 
 **Mixed sizes:** BTRFS can combine e.g. 4T and 8T drives; usable is layout-dependent ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)). First-order Suggest math is simplified — see docs/math.
 
@@ -276,7 +276,7 @@ Always includes free space, threshold, and detected **BTRFS data profile** (when
 | Class | Profiles (examples) | Message focus |
 |-------|---------------------|---------------|
 | **Mirror** | RAID1, RAID1c3, RAID1c4 | Multi-copy chunks; one-disk loss usually leaves data online; free = capacity/policy, not array-style evacuate |
-| **Parity** | RAID5, RAID6 | Free ≈ capacity fit after loss + recovery headroom (⚠ profile stability caveats) |
+| **Parity** | RAID5, RAID6 | Free ≈ capacity fit after loss + recovery headroom |
 | **Striped mirror** | RAID10 | BTRFS two copies + striping; one failure usually OK; free = post-loss fit / remove-rebalance wiggle room |
 | **No redundancy** | single, RAID0 | Capacity policy only; disk loss **risks data** |
 | **Unknown** | other / non-BTRFS | Generic free-space threshold text |
@@ -316,7 +316,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 | **Array (parity)** | Yes (emulated) | **Yes**, to evacuate without buying a disk | Evacuation room |
 | **BTRFS RAID1 (any N≥2)** | Yes (2 copies) | **No** for data access | Capacity drop; optional remove/rebalance/replace/convert |
 | **RAID1c3 / RAID1c4** | Yes (extra copies) | **No** for single loss | Same as mirror class |
-| **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; capacity + recovery room | Recovery headroom (⚠ stability) |
+| **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; capacity + recovery room | Recovery headroom |
 | **BTRFS RAID10** | Usually yes (1 disk) | **No** forced replace; free so used still fits | Same-profile Δ (Suggest) |
 | **single / RAID0** | **No** | N/A | Capacity only; data at risk |
 

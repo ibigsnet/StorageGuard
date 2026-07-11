@@ -4,12 +4,6 @@
 
 ## Math & concepts
 
-### Status warning
-
-BTRFS **RAID5/6** have a long history of **write-hole** and recovery edge cases. Kernel/docs still treat them as **not production-recommended** for many setups. Prefer **RAID1 / RAID1c3 / RAID10** for important data unless you have accepted the risk and tested recovery.
-
-Official status: [BTRFS Status](https://btrfs.readthedocs.io/en/latest/Status.html).
-
 ### What it is
 
 Chunk-level **striping with one parity** stripe. Space efficiency approaches $(N-1)/N$ on equal disks.
@@ -59,7 +53,6 @@ Planning: Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
 | Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
-| Help / alerts | Mentions capacity + recovery headroom; stability caveats in docs |
-| Not claimed | That RAID5 is production-safe |
+| Help / alerts | Capacity + recovery headroom wording |
 
 Code: profile key `raid5`, class `parity`.

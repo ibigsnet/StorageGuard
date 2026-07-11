@@ -92,8 +92,8 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 | RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
 | RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
 | RAID10 | $\sum S_i / 2$ | Usually yes | 2 copies + striping |
-| RAID5 | $\sum S_i - \max S_i$ | If within tolerance | ⚠ stability caveats |
-| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | ⚠ stability caveats |
+| RAID5 | $\sum S_i - \max S_i$ | If within tolerance | One parity |
+| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | Two parity |
 
 ### Generic Examples
 
@@ -107,7 +107,6 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 - Ignores metadata, system chunks, global reserve, checksum overhead  
 - Unallocated space can look free on a device but not fully usable until balance  
 - ENOSPC can occur with “space left” under allocation constraints  
-- RAID5/6 have known stability history  
 - Redundancy is **not** a backup  
 
 ---

@@ -204,8 +204,8 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
             break;
         case 'parity':
             $line2 = $is_crit
-                ? "On BTRFS RAID5/RAID6, data can survive a limited number of failures while degraded (profiles have stability caveats). Free space this low may block remove/rebalance or replace recovery, or leave used data larger than post-loss usable capacity."
-                : "On BTRFS RAID5/RAID6, free space is capacity + recovery headroom: after a loss, used data must still fit, and replace/remove/rebalance often needs room. Closer to the array's 'room to recover' idea than RAID1. These profiles have known stability caveats—see docs.";
+                ? "On BTRFS RAID5/RAID6, data can survive a limited number of failures while degraded. Free space this low may block remove/rebalance or replace recovery, or leave used data larger than post-loss usable capacity."
+                : "On BTRFS RAID5/RAID6, free space is capacity + recovery headroom: after a loss, used data must still fit, and replace/remove/rebalance often needs room. Closer to the array's 'room to recover' idea than RAID1.";
             break;
         case 'striped_mirror':
             $line2 = $is_crit

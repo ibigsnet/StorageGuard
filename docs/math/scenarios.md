@@ -124,7 +124,6 @@ Planning: Critical **4 T** ($\max\Delta$), Warning **8 T** ($2\times\max\Del
 - Exact free-space tree / unallocated placement  
 - Metadata overhead  
 - Perfect “ENOSPC never if free ≥ Warning”  
-- That RAID5/6 are production-safe  
 
 ---
 

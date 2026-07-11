@@ -4,10 +4,6 @@
 
 ## Math & concepts
 
-### Status warning
-
-Same as RAID5: BTRFS **RAID5/6** are **not** broadly recommended for production. See [BTRFS Status](https://btrfs.readthedocs.io/en/latest/Status.html). For “survive two disks” with more predictable behavior, many operators prefer **RAID1c3** despite lower space efficiency.
-
 ### What it is
 
 Chunk-level striping with **two parity** syndromes. Space efficiency approaches $(N-2)/N$ on equal disks.
@@ -57,7 +53,7 @@ Suggest uses **single-disk** Δ (not simultaneous double failure).
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
 | Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
-| Help / alerts | Capacity + recovery headroom; stability caveats |
-| Not claimed | Double-failure capacity model or production safety |
+| Help / alerts | Capacity + recovery headroom wording |
+| Not claimed | Simultaneous double-failure capacity model (Suggest is single-disk Δ) |
 
 Code: profile key `raid6`, class `parity`.
