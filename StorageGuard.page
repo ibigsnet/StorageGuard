@@ -568,14 +568,18 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
   $current_profile = get_btrfs_profile($p);
   $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
   $pc = strtolower(trim((string)$current_profile));
-  // Mirror class matches sg_pool_profile_class() in sg-lib (RAID1 / 1cN / dup)
-  $p_mirror = (strpos($pc, 'raid10') === false)
+  // RAID1 family only — not RAID10 (striped mirrors get capacity-Δ suggestions)
+  $p_raid1 = (strpos($pc, 'raid10') === false)
     && (preg_match('/raid1c[34]/', $pc) || preg_match('/\braid1\b/', $pc) || strpos($pc, 'dup') !== false);
+  $p_raid0 = (strpos($pc, 'raid0') !== false);
+  $p_single = (bool)preg_match('/\bsingle\b/', $pc);
 ?>
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
-<?php if ($p_mirror): ?>
-> **Mirrored pool** (RAID1 / RAID1cN / dup): a single disk failure usually still leaves a full copy — you do not need free space to evacuate data the way the array does. **Disk size** thresholds are **not used** for paint/alerts on this profile. Set **Custom values** only if you want a capacity-policy free-space threshold (e.g. rebuild headroom after replace).
+<?php if ($p_raid1): ?>
+> **RAID1 profile** (RAID1 / RAID1c3 / RAID1c4 / dup): a single disk failure usually still leaves a full copy — you do not need free space to evacuate data the way the array does. **Disk size** thresholds are **not used** for paint/alerts on this profile. Set **Custom values** only if you want a capacity-policy free-space threshold (e.g. rebuild headroom after replace). Not the same as **RAID10**, which uses striped mirrors and can get suggested free thresholds.
+<?php elseif ($p_raid0 || $p_single): ?>
+> **<?= $p_raid0 ? 'RAID0' : 'Single' ?> profile:** little or no redundancy. Free thresholds here are capacity policy only (not array-style evacuate room). **Suggest free thresholds** is not offered — use **Custom values** if you want alerts.
 <?php endif; ?>
 
 _(<?=htmlspecialchars($p)?> thresholds from)_:
@@ -585,7 +589,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on mirrored RAID1/1cN/dup — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for pool coloring under Appearance if that pool is included.
+Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on RAID1 / RAID1cN / dup — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for pool coloring under Appearance if that pool is included.
 </blockquote>
 
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
@@ -629,10 +633,14 @@ _(<?=htmlspecialchars($p)?> Critical (custom))_:
   <span class="sg-math-inline-hint">Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> — free headroom to still fit data after a single disk loss on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <?=htmlspecialchars((string)($sug['usable_tb'] ?? ''))?>T). Switches this pool to Custom values; click Apply to save.</span>
 
 <blockquote class="inline_help">
-Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. See docs/math on GitHub.
+Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. See docs/math on GitHub. Offered for profiles like RAID10 / RAID5 / RAID6 — not RAID1 or RAID0/single.
 </blockquote>
-<?php elseif ($p_mirror): ?>
-> No automatic free-threshold suggestion for mirrored profiles. Use Custom values if you want a capacity-policy alert.
+<?php elseif ($p_raid1): ?>
+> No automatic free-threshold suggestion for <strong>RAID1</strong> profiles (RAID1, RAID1c3, RAID1c4, dup). Surviving a disk usually does not require free space the way the array does. Use <strong>Custom values</strong> if you want a capacity-policy alert. <strong>RAID10</strong> is different and can get suggestions.
+<?php elseif ($p_raid0): ?>
+> No automatic free-threshold suggestion for <strong>RAID0</strong>. Free thresholds are capacity policy only (no redundancy recovery model). Use <strong>Custom values</strong> if you want alerts.
+<?php elseif ($p_single): ?>
+> No automatic free-threshold suggestion for <strong>single</strong> profiles. Free thresholds are capacity policy only. Use <strong>Custom values</strong> if you want alerts.
 <?php elseif ($sug): ?>
 > No automatic free-threshold suggestion for this profile (<?=htmlspecialchars((string)($sug['profile_key'] ?? 'unknown'))?>). Use Custom values if needed.
 <?php endif; ?>
