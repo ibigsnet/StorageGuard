@@ -1,5 +1,0 @@
-# Local-only notes (never ship to the public GitHub distro)
-.grok-notes/
-*.local.md
-NOTES.local.md
-.private/
