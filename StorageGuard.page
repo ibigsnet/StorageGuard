@@ -413,28 +413,32 @@ Uses free-space thresholds from Array and (when Advanced pools is open) Pools. D
 
 All free-bar **paint** options live here. Global pulse/green apply only where a target has coloring enabled. Pool paint options appear when Advanced pools is open (same toggle as pool alert rows).
 
-_(Pulse color)_:
-: <select name="outline_pulse" id="outline_pulse">
-  <?=mk_option($outline_pulse, "no", _("No"))?>
-  <?=mk_option($outline_pulse, "yes", _("Yes"))?>
-  </select>
+<div id="sg-show-ok-row" markdown="1">
 
-<blockquote class="inline_help">
-When <strong>Yes</strong>, yellow/red pulse on colored free bars (warn/crit only).<br>
-• <strong>Outline</strong> style → pulses the border<br>
-• <strong>Solid</strong> style → pulses the free fill<br>
-Does <strong>not</strong> pulse green / OK. Off by default (static color).
-</blockquote>
-
-_(Green when OK)_:
+_(Color outlines green when OK/Normal)_:
 : <select name="outline_show_ok" id="outline_show_ok">
   <?=mk_option($outline_show_ok, "no", _("No"))?>
   <?=mk_option($outline_show_ok, "yes", _("Yes"))?>
   </select>
 
 <blockquote class="inline_help">
-When free space is still <strong>above</strong> all thresholds, draw a static green border so “still OK” is visible.<br>
-<strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default. Only where coloring is enabled.
+When free space is still <strong>above</strong> all thresholds, draw a static <strong>green outline</strong> so “still OK / Normal” is visible on Main.<br>
+<strong>Outline style only</strong> — Solid has no healthy/OK paint. Never pulses. Off by default. Only where coloring is enabled and Highlight style is Outline. Hidden when nothing uses Outline.
+</blockquote>
+
+</div>
+
+_(Pulse free-bar colors on warn/crit)_:
+: <select name="outline_pulse" id="outline_pulse">
+  <?=mk_option($outline_pulse, "no", _("No"))?>
+  <?=mk_option($outline_pulse, "yes", _("Yes"))?>
+  </select>
+
+<blockquote class="inline_help">
+When <strong>Yes</strong>, flash yellow/red on free bars that are at <strong>Warning</strong> or <strong>Critical</strong> (not OK/Normal).<br>
+• <strong>Outline</strong> style → pulses the border only<br>
+• <strong>Solid</strong> style → pulses the free fill (Unraid greenbar shows between flashes)<br>
+Applies only where coloring is enabled. Does <strong>not</strong> pulse green / OK. Off by default (static warn/crit color).
 </blockquote>
 
 <div class="sg-appearance-targets">
@@ -468,7 +472,7 @@ _(Highlight style)_:
 <blockquote class="inline_help">
 • <strong>Outline</strong> (default) — yellow/red <em>border only</em>; Unraid’s free fill stays as-is<br>
 • <strong>Solid</strong> — free <em>fill</em> itself becomes yellow/red<br>
-Pulse / green-when-OK (above) apply when Array coloring is Yes.
+Pulse and green-outline-when-OK (above) apply when Array coloring is Yes.
 </blockquote>
 
 </div>

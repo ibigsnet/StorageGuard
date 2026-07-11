@@ -200,6 +200,7 @@ function initStorageGuardUI() {
       const on = sel.value === 'yes';
       setVisible(section, on);
       updateOrderNote();
+      updateShowOkVisibility();
     }
     sel.addEventListener('change', apply);
     apply();
@@ -212,6 +213,51 @@ function initStorageGuardUI() {
     const safe = s.getAttribute('data-pool-safe');
     if (safe) updatePoolCustom(safe);
   });
+
+  // Green outline when OK is Outline-only — hide when no enabled target uses Outline
+  function poolNameToSafe(name) {
+    return String(name || '').replace(/[^a-zA-Z0-9_]/g, '_');
+  }
+  function anyOutlinePaintEnabled() {
+    var ac = document.getElementById('array_coloring');
+    var as = document.getElementById('array_color_style');
+    if (ac && ac.value === 'yes' && as && as.value === 'outline') return true;
+
+    var pc = document.getElementById('pool_coloring');
+    if (!pc || pc.value !== 'yes') return false;
+
+    var cbs = document.querySelectorAll('.pool-cb');
+    var i, checked = 0;
+    for (i = 0; i < cbs.length; i++) {
+      if (!cbs[i].checked) continue;
+      checked++;
+      var st = document.getElementById('pool_' + poolNameToSafe(cbs[i].value) + '_color_style');
+      // Missing style select → product default is outline
+      if (!st || st.value === 'outline') return true;
+    }
+    return false;
+  }
+  function updateShowOkVisibility() {
+    var row = document.getElementById('sg-show-ok-row');
+    if (!row) return;
+    setVisible(row, anyOutlinePaintEnabled());
+  }
+  (function wireShowOkVisibility() {
+    var ids = ['array_coloring', 'array_color_style', 'pool_coloring'];
+    ids.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', updateShowOkVisibility);
+    });
+    document.querySelectorAll('select[id$="_color_style"]').forEach(function (sel) {
+      sel.addEventListener('change', updateShowOkVisibility);
+    });
+    document.querySelectorAll('.pool-cb').forEach(function (cb) {
+      cb.addEventListener('change', updateShowOkVisibility);
+    });
+    var poolAllEl = document.getElementById('pool_all');
+    if (poolAllEl) poolAllEl.addEventListener('change', updateShowOkVisibility);
+    updateShowOkVisibility();
+  })();
 
 
   const poolAll = document.getElementById('pool_all');
@@ -421,6 +467,7 @@ function initStorageGuardUI() {
     if (typeof setArrayHiddenOpen === 'function') {
       setArrayHiddenOpen(false);
     }
+    updateShowOkVisibility();
     updateOrderNote();
   }
 

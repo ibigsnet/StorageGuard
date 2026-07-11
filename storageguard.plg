@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10bj">
+<!ENTITY version "2026.07.10bk">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: rename/reorder green-outline and pulse labels; hide green option when no Outline targets.
+
+###2026.07.10bj
 - Settings: keep Appearance mini-blockouts while restoring centered form columns (left rail only; compact selects).
 
 ###2026.07.10bi
@@ -339,7 +342,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bj"
+[ -z "$VER" ] && VER="2026.07.10bk"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
