@@ -262,11 +262,13 @@ function initStorageGuardUI() {
   (function wirePoolsWipToggle() {
     var btn = document.getElementById('sg-toggle-pools-wip');
     var panel = document.getElementById('sg-pools-wip');
+    var poolAppear = document.getElementById('sg-pool-appearance');
     var hint = document.getElementById('sg-pools-wip-hint');
     if (!btn || !panel) return;
     var key = 'sg_show_pools_wip';
     function setOpen(open) {
       panel.style.display = open ? '' : 'none';
+      if (poolAppear) poolAppear.style.display = open ? '' : 'none';
       document.querySelectorAll('.sg-pool-alert-row').forEach(function (tr) {
         tr.style.display = open ? '' : 'none';
       });
@@ -292,7 +294,8 @@ function initStorageGuardUI() {
     try { saved = localStorage.getItem(key) === '1'; } catch (e) {  }
     setOpen(saved);
     btn.addEventListener('click', function () {
-      setOpen(panel.style.display === 'none');
+      var open = panel.style.display === 'none';
+      setOpen(open);
     });
   })();
 
