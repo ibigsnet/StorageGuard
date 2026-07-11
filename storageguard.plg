@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10au">
+<!ENTITY version "2026.07.10av">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings layout: Array thresholds, Alerts, Appearance (Array/Pool coloring); advanced pools for thresholds.
+
+###2026.07.10au
 - Settings: free-space thresholds always visible for alerts; highlight style / which-pools only under Enable coloring.
 
 ###2026.07.10at
@@ -297,7 +300,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10au"
+[ -z "$VER" ] && VER="2026.07.10av"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
