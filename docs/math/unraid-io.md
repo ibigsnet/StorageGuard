@@ -14,7 +14,7 @@ On a multi-device **BTRFS pool**, Unraid:
 
 - creates and manages the device set,  
 - mounts the filesystem (e.g. under `/mnt/cache`),  
-- shows free/used on Main,  
+- shows free/used on Unraid’s main page,  
 - exposes balance / replace UI,
 
 but **does not** run its own stripe engine for pool data the way the **array** uses parity for `disk1`…`diskN`.

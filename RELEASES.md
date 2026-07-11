@@ -17,7 +17,7 @@ plugin install https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-re
 
 Asset downloads for this tag are locked to commit `731bc29` (same tree as the working host build), not live `main`.
 
-Hard-refresh **Main** after install. If Unraid reports **same version**, you are already on `2026.07.10ar`.
+Hard-refresh Unraid’s **main page** after install. If Unraid reports **same version**, you are already on `2026.07.10ar`.
 
 ### Roll back from a newer plugin version
 

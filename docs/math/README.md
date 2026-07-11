@@ -30,7 +30,7 @@ Official profile table: [mkfs.btrfs — PROFILES](https://btrfs.readthedocs.io/e
 
 ### Data vs metadata
 
-Capacity math targets the pool’s **data** profile (what free space on Main is about). Metadata is usually smaller but should stay **redundant** (e.g. RAID1 / RAID1c3 even if data is RAID0/single). Free-threshold math does **not** model metadata overhead.
+Capacity math targets the pool’s **data** profile (what free space on Unraid’s main page is about). Metadata is usually smaller but should stay **redundant** (e.g. RAID1 / RAID1c3 even if data is RAID0/single). Free-threshold math does **not** model metadata overhead.
 
 ### Mixed device sizes
 
@@ -79,7 +79,9 @@ Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** �
 
 ### Speeds (comparison only)
 
-When shown, speeds are **best-case multi-stream ceilings** from the storage path (SATA rate, NVMe gen×width), not lab sequential results. For **RAID1**, ideal multi-stream write scales like \(N/2\) (each logical write uses two devices), not \(1\times W\). Single-stream writes stay nearer one-disk \(W\). Real results are lower.
+When shown, speeds are **best-case multi-stream ceilings** from the storage path (SATA rate, NVMe gen×width), not lab sequential results.
+
+On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **RAID1** mostly keeps **two** disks busy (~1× disk write); many parallel jobs can approach \((N/2)\times W\) write and \(N\times R\) read. That matches real Unraid experience and is written up in [unraid-io.md](unraid-io.md).
 
 ### Profile summary
 
@@ -139,7 +141,7 @@ For profiles where one disk loss can keep data online but **shrinks** usable cap
 | Surface | Role |
 |---------|------|
 | Settings → Advanced pools | Suggest button, loss table, alternate-profile table |
-| Main free bars | Paint from configured free thresholds |
+| Unraid main-page free bars (array / pool) | Paint from configured free thresholds |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
 | `get-config` → `_status.pools.*.math` | Machine-readable package for UI |
 
@@ -153,4 +155,5 @@ For profiles where one disk loss can keep data online but **shrinks** usable cap
 |-----|--------|
 | This file | Index + global math + Storage Guard product map |
 | [scenarios.md](scenarios.md) | Fit vs rebalance language + worked examples |
+| [unraid-io.md](unraid-io.md) | How Unraid/BTRFS pool reads and writes actually behave |
 | Profile `*.md` | Per-profile math, then Storage Guard section |
