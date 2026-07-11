@@ -92,7 +92,7 @@ When shown, speeds are **best-case bus/link ceilings** (SATA rate, NVMe gen×wid
 | RAID5 | \(\sum S_i - \max S_i\) | If within tolerance | ⚠ stability caveats |
 | RAID6 | \(\sum S_i - 2\max S_i\) | If within tolerance | ⚠ stability caveats |
 
-### Generic examples
+### Generic Examples
 
 - **Many small equal:** 8 × 1 TB  
 - **Equal:** 4 × 4 TB  
