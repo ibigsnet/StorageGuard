@@ -1,9 +1,9 @@
-/* Quiet page intro (Settings) */
+/* Quiet page intro (Settings) — keep on one visual line when possible */
 .sg-page-lead {
   margin: 0 0 0.85em;
-  max-width: 44em;
+  max-width: none;
   font-size: 0.88em;
-  line-height: 1.4;
+  line-height: 1.35;
   opacity: 0.72;
   font-weight: 400;
 }
@@ -53,13 +53,28 @@
 .sg-appearance-sub > p {
   margin-left: 0;
 }
-/* Style / which-pools nest one level deeper under Yes */
+/* Style / pools-to-color nest one level deeper under Yes */
 .sg-appearance-sub .sg-color-options {
   margin: 0.5em 0 0.35em 0.85em;
   padding: 0.4em 0.5em 0.35em 0.85em;
   border-left: 2px dashed rgba(128, 128, 128, 0.35);
   background: rgba(128, 128, 128, 0.03);
   border-radius: 0 2px 2px 0;
+}
+/* Split: who is painted vs per-pool Outline/Solid */
+.sg-color-options-who {
+  margin-bottom: 0.65em;
+}
+.sg-color-options-styles {
+  margin-top: 0.55em;
+  padding-top: 0.55em;
+  border-top: 1px solid rgba(128, 128, 128, 0.22);
+}
+.sg-color-options-styles-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  margin: 0 0 0.4em;
+  opacity: 0.9;
 }
 
 /* Pool capacity math / Suggest (Settings) */

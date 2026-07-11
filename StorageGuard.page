@@ -291,7 +291,7 @@ foreach ($pool_names as $p) {
 <p class="sg-page-lead">Preview mode — example sizes only (no live disks.ini).</p>
 <?php endif; ?>
 
-<p class="sg-page-lead">Thresholds feed <strong>Alerts</strong> and optional free-bar <strong>coloring</strong>. Prefer Critical free amount smaller than Warning; None = level off.</p>
+<p class="sg-page-lead">Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.</p>
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
@@ -477,15 +477,23 @@ _(Pool coloring)_:
 
 <div id="pool-color-options" class="sg-details sg-color-options" markdown="1">
 
-_(Which pools?)_:
+<div class="sg-color-options-who" markdown="1">
+
+_(Pools to color)_:
 : <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
   $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
 ?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars(sg_pool_title($p))?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
 
 <blockquote class="inline_help">
-Only checked pools get free-bar coloring. Unchecked pools can still have thresholds and Alerts.
+Which pools get free-bar paint on Main. Unchecked pools can still have thresholds and Alerts. Each checked pool can use a different style below (e.g. Cache solid, another pool outline).
 </blockquote>
+
+</div>
+
+<?php if (!empty($pool_names)): ?>
+<div class="sg-color-options-styles" markdown="1">
+<div class="sg-color-options-styles-title">Highlight style (per pool)</div>
 
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
@@ -494,17 +502,19 @@ Only checked pools get free-bar coloring. Unchecked pools can still have thresho
   $p_title = sg_pool_title($p);
 ?>
 
-_(<?=htmlspecialchars($p_title)?> coloring)_:
+_(<?=htmlspecialchars($p_title)?>)_:
 : <select name="<?=$style_key?>" id="<?=$style_key?>">
   <?=mk_option($p_style, "outline", _("Outline"))?>
   <?=mk_option($p_style, "solid", _("Solid"))?>
   </select>
 
 <blockquote class="inline_help">
-Highlight style for the <strong><?=htmlspecialchars($p_title)?></strong> free bar when it is checked above and Pool coloring is Yes. Outline = border only; Solid = recolor free fill.
+Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspecialchars($p_title)?></strong> is checked under Pools to color.
 </blockquote>
 
 <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 </div><!-- /#pool-color-options -->
 </div><!-- /#sg-pool-appearance -->
