@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10bc">
+<!ENTITY version "2026.07.10bd">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: compact select/input widths (fix full-width stretch in nested blocks).
+
+###2026.07.10bc
 - Settings: hide array UI when no array; Show hidden items to edit (inactive until array returns).
 
 ###2026.07.10ba
@@ -318,7 +321,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bc"
+[ -z "$VER" ] && VER="2026.07.10bd"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

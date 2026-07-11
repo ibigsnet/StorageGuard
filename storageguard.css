@@ -8,6 +8,24 @@
   font-weight: 400;
 }
 
+/*
+ * Unraid themes set select { width: 100% }. That looks fine in the main
+ * two-column form table, but nested markdown blocks make a full-width
+ * row so dropdowns stretch across the page. Keep controls compact.
+ */
+#storageguard-form select:not([multiple]) {
+  width: auto !important;
+  min-width: 9em;
+  max-width: 22em;
+  box-sizing: border-box;
+}
+#storageguard-form input[type="text"] {
+  width: auto !important;
+  min-width: 12em;
+  max-width: 24em;
+  box-sizing: border-box;
+}
+
 .sg-advanced-btn {
   cursor: pointer;
   padding: 6px 12px;
@@ -30,11 +48,12 @@
   line-height: 1.4;
 }
 
-/* Appearance → nested Array / Pool coloring blocks */
+/* Appearance → nested Array / Pool coloring blocks (indent, not full-bleed stretch) */
 .sg-appearance-targets {
-  margin: 0.85em 0 0.5em 0.5em;
-  padding: 0.35em 0 0.15em 1.1em;
+  margin: 0.85em 0 0.5em 0.35em;
+  padding: 0.25em 0 0.15em 0.9em;
   border-left: 3px solid rgba(128, 128, 128, 0.4);
+  max-width: 52em;
 }
 .sg-appearance-sub {
   margin: 0.75em 0 1em;
@@ -42,6 +61,10 @@
   border-left: 2px solid rgba(128, 128, 128, 0.28);
   background: rgba(128, 128, 128, 0.04);
   border-radius: 0 3px 3px 0;
+  max-width: 48em;
+}
+#sg-array-block {
+  max-width: 52em;
 }
 .sg-appearance-sub-title {
   font-weight: 600;
