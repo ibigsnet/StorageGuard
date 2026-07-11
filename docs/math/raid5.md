@@ -1,27 +1,23 @@
 # Profile: RAID5 (BTRFS)
 
-## Status warning
+---
 
-BTRFS **RAID5/6** have a long history of **write-hole** and recovery edge cases. Kernel/docs still treat them as **not production-recommended** for many setups. Prefer **RAID1 / RAID1c3 / RAID10** for important data unless you have explicitly accepted the risk and tested recovery.
+## Math & concepts
 
-Official status notes: [BTRFS Status](https://btrfs.readthedocs.io/en/latest/Status.html). mkfs warns against casual RAID5/6 use.
+### Status warning
 
-## What it is
+BTRFS **RAID5/6** have a long history of **write-hole** and recovery edge cases. Kernel/docs still treat them as **not production-recommended** for many setups. Prefer **RAID1 / RAID1c3 / RAID10** for important data unless you have accepted the risk and tested recovery.
 
-Chunk-level **striping with one parity** stripe (not whole-disk md RAID5 geometry). Space efficiency approaches \((N-1)/N\) on equal disks.
+Official status: [BTRFS Status](https://btrfs.readthedocs.io/en/latest/Status.html).
 
-- Min devices: **2** (with 2 devices, parity largely wastes space — effectively RAID1-like overhead; **3+** is the practical case)  
+### What it is
+
+Chunk-level **striping with one parity** stripe. Space efficiency approaches \((N-1)/N\) on equal disks.
+
+- Min devices: **2** (with 2 devices, mostly wasted overhead; **3+** practical)  
 - Typical resiliency: **one** device failure while degraded  
 
-## Redundancy / recovery
-
-After one loss, data can remain available if parity reconstruction works and the filesystem mounts degraded. Restoring full redundancy usually means **replace** (or add) a device and rebalance. **Remove** without replacement needs remaining devices and free space to rebuild parity layouts — tighter than RAID1/10 “just keep two copies on survivors.”
-
-Same-profile **Δ** still answers: *will used data fit after one member is gone if we stay on RAID5?*
-
-## Usable capacity (estimate)
-
-First-order mixed-size model (common “sum − largest” tables):
+### Usable capacity (estimate)
 
 \[
 U(\mathrm{RAID5}, S_1,\ldots,S_N) \approx \sum_i S_i - \max_i S_i \quad (N \ge 2)
@@ -29,26 +25,41 @@ U(\mathrm{RAID5}, S_1,\ldots,S_N) \approx \sum_i S_i - \max_i S_i \quad (N \ge 2
 
 Equal disks of size \(S\): \((N-1)\cdot S\).
 
-## Free headroom after losing disk \(i\) (same profile)
+### Free headroom after losing disk \(i\)
 
 \[
-\Delta(i) = U(\mathrm{RAID5}, \text{all}) - U(\mathrm{RAID5}, \text{without } i)
+\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 \]
 
-Suggest: **Critical** = \(\max\Delta_{\mathrm{fit}}\), **Warning** = \(2\times\max\Delta_{\mathrm{fit}}\) (fit + rebalance comfort). Per-disk table still shows each \(\Delta\). See [scenarios.md](scenarios.md).
+Planning: Critical = \(\max\Delta_{\mathrm{fit}}\), Warning = \(2\times\max\Delta_{\mathrm{fit}}\) ([scenarios.md](scenarios.md)).
 
 ### Example: 4 × 4 TB
+
 - Healthy: \(16 - 4 = 12\) TB  
 - After one loss (3 × 4 TB): \(12 - 4 = 8\) TB  
-- **Δ = 4 TB**
+- \(\Delta_{\mathrm{fit}} = 4\) TB → Critical **4 T**, Warning **8 T**
 
 ### Example: 4 × 4 TB + 2 × 8 TB
-- Healthy: \(32 - 8 = 24\) TB  
-- After losing an 8 TB: remaining raw 24, largest 8 → \(24 - 8 = 16\) TB → **Δ = 8 TB**  
-- After losing a 4 TB: remaining raw 28, largest 8 → \(28 - 8 = 20\) TB → **Δ = 4 TB**
 
-## Speeds (best-case bus ceiling)
-Simple comparison model (not a controller datasheet):
+- Healthy: \(32 - 8 = 24\) TB  
+- Lose an 8 TB: \(\Delta = 8\) TB  
+- Lose a 4 TB: \(\Delta = 4\) TB  
+- Critical **8 T**, Warning **16 T** (worst-case planning)
+
+### Speeds (best-case bus ceiling)
 
 - Read ≈ \(N \cdot R\)  
-- Write ≈ \((N/4)\cdot W\) for \(N \ge 3\) (parity cost; intentionally rough)
+- Write ≈ \((N/4)\cdot W\) for \(N \ge 3\) (intentionally rough)
+
+---
+
+# What Storage Guard does
+
+| Behavior | Detail |
+|----------|--------|
+| **Suggest** | **Yes** (parity class) |
+| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Help / alerts | Mentions capacity + recovery headroom; stability caveats in docs |
+| Not claimed | That RAID5 is production-safe |
+
+Code: profile key `raid5`, class `parity`.

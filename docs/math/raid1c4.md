@@ -1,6 +1,10 @@
 # Profile: RAID1c4 (BTRFS)
 
-## What it is
+---
+
+## Math & concepts
+
+### What it is
 
 **RAID1c4** = each chunk stored as **four copies on four different devices**.
 
@@ -10,27 +14,37 @@
 
 Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrfs.html#profiles).
 
-Rare for bulk **data** (expensive). Sometimes chosen for critical **metadata** on large multi-device pools.
+Rare for bulk **data** (expensive). Sometimes chosen for critical **metadata**.
 
-## Redundancy / recovery
-
-Same BTRFS recovery menu as other mirror-like profiles: degraded mount, optional replace, optional remove+rebalance if free space allows, optional profile convert. Access does not wait on a rebuild the way classic RAID rebuilds do for “the array to exist,” but **redundancy and free space** still matter.
-
-## Usable capacity (estimate)
+### Usable capacity (estimate)
 
 \[
 U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4)
 \]
 
-## Free threshold suggestion
+| Layout | Raw | Usable (est.) |
+|--------|-----|---------------|
+| 4 × 4 TB | 16 TB | **~4 TB** |
+| 4 × 4 TB + 2 × 8 TB | 32 TB | **~8 TB** |
 
-**Mirror** class: Suggest = Critical \(\max\Delta_{\mathrm{fit}}\), Warning \(2\times\max\Delta_{\mathrm{fit}}\) ([scenarios.md](scenarios.md)).
+### After disk loss
 
-## Example: 4 × 4 TB (16 TB raw)
-- Usable ≈ **4 TB**
+Degraded / remove / replace / convert — same BTRFS menu as other multi-copy profiles.  
+\(\Delta_{\mathrm{fit}}\) and Critical / Warning planning rule: [scenarios.md](scenarios.md).
 
-## Example: 4 × 4 TB + 2 × 8 TB (32 TB raw)
-- Usable ≈ **8 TB**
+### Speeds (best-case bus ceiling)
 
-## Speeds (best-case bus ceiling)
 Read ≈ \(N\cdot R\), write ≈ \(W\) (simple model).
+
+---
+
+# What Storage Guard does
+
+| Behavior | Detail |
+|----------|--------|
+| **Suggest** | **Yes** (mirror class) |
+| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Disk-size dropdowns | **Ignored** for paint/alerts |
+| Alerts | Mirror-class wording |
+
+Code: profile key `raid1c4`, class `mirror`.

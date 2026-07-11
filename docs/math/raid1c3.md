@@ -1,41 +1,51 @@
 # Profile: RAID1c3 (BTRFS)
 
-## What it is
+---
 
-**RAID1c3** = each chunk stored as **three copies on three different devices** (not “triple mirror of the whole pool” in the md sense — still chunk-level).
+## Math & concepts
+
+### What it is
+
+**RAID1c3** = each chunk stored as **three copies on three different devices** (chunk-level, not “triple mirror of the whole pool” in the md sense).
 
 - Min devices: **3**  
 - Space utilization ≈ **33%** of raw  
-- Typical resiliency: **two** device failures (every chunk still has a copy if any two of its three holders fail — layout-dependent edge cases exist; plan for two)
+- Typical resiliency: **two** device failures (layout-dependent edge cases exist; plan for two)
 
 Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrfs.html#profiles).
 
-Often used for **metadata** (or small high-value pools) while data uses RAID1 or RAID10 — higher metadata redundancy while data stays cheaper.
+Often used for **metadata** while data uses RAID1 or RAID10.
 
-## Redundancy / recovery
-
-Same BTRFS ideas as RAID1:
-
-- Surviving copies keep data online after loss(es) within the profile’s tolerance.  
-- **Replace is optional** for immediate access if remaining devices still hold enough copies and capacity.  
-- **Remove** + rebalance or **replace** restores full three-copy spread and capacity.  
-- Converting away from RAID1c3 frees space but lowers resiliency.
-
-## Usable capacity (estimate)
+### Usable capacity (estimate)
 
 \[
 U(\mathrm{RAID1c3}, S_1,\ldots,S_N) \approx \frac{1}{3}\sum_i S_i \quad (N \ge 3)
 \]
 
-## Free threshold suggestion
+| Layout | Raw | Usable (est.) |
+|--------|-----|---------------|
+| 4 × 4 TB | 16 TB | **~5.33 TB** |
+| 4 × 4 TB + 2 × 8 TB | 32 TB | **~10.67 TB** |
 
-**Mirror** class: Suggest uses capacity **fit** \(\Delta_{\mathrm{fit}}\) (Critical) and \(2\times\) for Warning rebalance comfort — same product rule as RAID1 ([scenarios.md](scenarios.md)). Not array-style evacuate.
+### After disk loss
 
-## Example: 4 × 4 TB (16 TB raw)
-- Usable ≈ **5.33 TB**
+Same recovery menu as RAID1: degraded mount, optional remove/rebalance/replace/convert.  
+\(\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)\).  
+Planning Critical / Warning: \(\max\Delta\) / \(2\times\max\Delta\) — [scenarios.md](scenarios.md).
 
-## Example: 4 × 4 TB + 2 × 8 TB (32 TB raw)
-- Usable ≈ **10.67 TB**
+### Speeds (best-case bus ceiling)
 
-## Speeds (best-case bus ceiling)
-Same simple model as RAID1: read ≈ \(N\cdot R\), write ≈ \(W\) (three copies limit write fan-out in this model).
+Read ≈ \(N\cdot R\), write ≈ \(W\) (simple model).
+
+---
+
+# What Storage Guard does
+
+| Behavior | Detail |
+|----------|--------|
+| **Suggest** | **Yes** (mirror class) |
+| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Disk-size dropdowns | **Ignored** for paint/alerts |
+| Alerts | Mirror-class wording |
+
+Code: profile key `raid1c3`, class `mirror`.
