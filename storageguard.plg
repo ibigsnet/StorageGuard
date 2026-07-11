@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10as">
+<!ENTITY version "2026.07.10at">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: Suggest free thresholds for pools (capacity Δ); profile what-if tables; bus-ceiling speed notes. Math library + docs/math.
+
+###2026.07.10as
 - BTRFS pool math library (capacity Δ free suggestions, bus-ceiling speed notes); docs/math per profile. Not auto-applied to Settings yet.
 
 ###2026.07.10ar
@@ -291,7 +294,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10as"
+[ -z "$VER" ] && VER="2026.07.10at"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

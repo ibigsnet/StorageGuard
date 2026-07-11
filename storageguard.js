@@ -377,6 +377,44 @@ function initStorageGuardUI() {
   }
 
   const form = document.getElementById('storageguard-form');
+
+  function markFormDirty() {
+    if (!form) return;
+    var apply = form.querySelector('input[type="submit"][name="#apply"]');
+    if (apply) apply.disabled = false;
+  }
+
+  // Pool math: fill Custom free thresholds from capacity-Δ suggestions (does not save until Apply)
+  document.querySelectorAll('.sg-suggest-pool').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var safe = btn.getAttribute('data-pool-safe');
+      var warn = btn.getAttribute('data-warn') || '';
+      var crit = btn.getAttribute('data-crit') || '';
+      if (!safe) return;
+      var use = document.getElementById('pool_' + safe + '_use_custom');
+      if (use) {
+        use.value = 'yes';
+        updatePoolCustom(safe);
+      }
+      var wIn = document.getElementById('pool_' + safe + '_warning_custom');
+      var cIn = document.getElementById('pool_' + safe + '_critical_custom');
+      if (wIn) wIn.value = warn;
+      if (cIn) cIn.value = crit;
+      markFormDirty();
+      updateOrderNote();
+      try {
+        btn.classList.add('sg-suggest-applied');
+        var prev = btn.textContent;
+        btn.textContent = 'Suggested — click Apply to save';
+        setTimeout(function () {
+          btn.textContent = prev;
+          btn.classList.remove('sg-suggest-applied');
+        }, 2500);
+      } catch (err) { /* ignore */ }
+    });
+  });
+
   if (form) {
     form.addEventListener('submit', function (e) {
       var submitter = e.submitter || document.activeElement;

@@ -301,8 +301,8 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 
 ## Planned / future
 
-1. **Settings “Suggest”** — apply library Warning/Critical free values from capacity \(\Delta\) (opt-in button; show what-if table).  
-2. **Better speed estimates** — model JSON by drive name, optional read-only probe, user overrides (bus ceilings already sketched).  
+1. **Settings “Suggest free thresholds”** — fills Custom Warning/Critical from capacity \(\Delta\) (opt-in; Apply to save). What-if + profile comparison tables on the pool block.  
+2. **Better speed estimates** — model JSON by drive name, optional read-only probe, user overrides (bus ceilings already used as best-case ceilings).  
 3. **Per-failure-device analysis** (“if disk X fails…”).  
 4. **Approximate BTRFS rebalance free-space estimator** (beyond capacity-fit \(\Delta\)).  
 5. **Profile conversion guidance** in Settings UI (capacity + bus-ceiling speeds).  

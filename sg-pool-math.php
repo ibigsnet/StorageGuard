@@ -31,6 +31,20 @@ function sg_pool_member_sizes_tb($pool) {
     return $out;
 }
 
+/** Format TB float as short label for Settings custom fields (e.g. 2T, 4.5T, 500G). */
+function sg_format_tb_label($tb) {
+    $tb = (float)$tb;
+    if ($tb <= 0) return '';
+    if ($tb >= 1) {
+        $v = round($tb, 1);
+        return rtrim(rtrim(sprintf('%.1f', $v), '0'), '.') . 'T';
+    }
+    $g = round($tb * 1000.0, 0);
+    if ($g >= 1) return (string)$g . 'G';
+    $m = round($tb * 1e6, 0);
+    return (string)$m . 'M';
+}
+
 function sg_math_sum($sizes) {
     $s = 0.0;
     foreach ($sizes as $x) $s += (float)$x;

@@ -6,6 +6,14 @@ Icon="shield"
 $plugin = "StorageGuard";
 $cfg = parse_plugin_cfg($plugin);
 
+// Pool capacity math (optional on partial installs)
+if (is_file(__DIR__ . '/sg-lib.php')) {
+  require_once __DIR__ . '/sg-lib.php';
+}
+if (is_file(__DIR__ . '/sg-pool-math.php')) {
+  require_once __DIR__ . '/sg-pool-math.php';
+}
+
 // Load disk information from Unraid
 $disks_ini = '/var/local/emhttp/disks.ini';
 $has_disks = file_exists($disks_ini);
@@ -450,7 +458,7 @@ Uses the thresholds above. Default: Array Warning only. Pool rows appear under A
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span>
 
-> Optional. Thresholds, coloring, and alerts work now. Defaults: coloring **No**, thresholds **None**, pool alerts **off**. On **RAID1 / RAID1cN / dup**, member **disk-size** thresholds are ignored (mirrors do not need array-style evacuate room); use **Custom values** for capacity policy.
+> Optional. Thresholds, coloring, and alerts work now. Defaults: coloring **No**, thresholds **None**, pool alerts **off**. On **RAID1 / RAID1cN / dup**, member **disk-size** thresholds are ignored (use **Custom** for capacity policy). For RAID10/5/6, use **Suggest free thresholds** under each pool (capacity headroom after a single disk loss).
 
 _(Enable coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
@@ -559,6 +567,63 @@ _(<?=htmlspecialchars($p)?> Warning (custom))_:
 _(<?=htmlspecialchars($p)?> Critical (custom))_:
 : <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G, 1.2T — blank = None">
 
+</div>
+
+<?php
+  $p_math = null;
+  if (function_exists('sg_pool_math_package')) {
+    $p_math = sg_pool_math_package($p, $current_profile);
+  }
+  $sug = is_array($p_math) ? ($p_math['suggest'] ?? null) : null;
+  $bus = is_array($p_math) ? ($p_math['bus'] ?? null) : null;
+  $alts = is_array($p_math) ? ($p_math['alternatives'] ?? []) : [];
+  $warn_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['warn_tb']) : '';
+  $crit_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['crit_tb']) : '';
+?>
+<div class="sg-pool-math" id="pool-<?=htmlspecialchars($safe)?>-math" data-pool-safe="<?=htmlspecialchars($safe)?>">
+<?php if ($sug && !empty($sug['apply']) && $warn_lbl !== ''): ?>
+: <button type="button" class="sg-suggest-pool" data-pool-safe="<?=htmlspecialchars($safe)?>" data-warn="<?=htmlspecialchars($warn_lbl)?>" data-crit="<?=htmlspecialchars($crit_lbl)?>">Suggest free thresholds</button>
+  <span class="sg-math-inline-hint">Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> — free headroom to still fit data after a single disk loss on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <?=htmlspecialchars((string)($sug['usable_tb'] ?? ''))?>T). Switches this pool to Custom values; click Apply to save.</span>
+
+<blockquote class="inline_help">
+Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. See docs/math on GitHub.
+</blockquote>
+<?php elseif ($p_mirror): ?>
+> No automatic free-threshold suggestion for mirrored profiles. Use Custom values if you want a capacity-policy alert.
+<?php elseif ($sug): ?>
+> No automatic free-threshold suggestion for this profile (<?=htmlspecialchars((string)($sug['profile_key'] ?? 'unknown'))?>). Use Custom values if needed.
+<?php endif; ?>
+
+<?php if (is_array($sug) && !empty($sug['losses'])): ?>
+**<?=htmlspecialchars($p)?> — if one member is lost (same profile)**
+
+| Member size | Usable after (est.) | Free needed (Δ) |
+|-------------|---------------------|-----------------|
+<?php foreach ($sug['losses'] as $loss): ?>
+| <?=htmlspecialchars(sg_format_tb_label($loss['size_tb']))?> | <?=htmlspecialchars(sg_format_tb_label($loss['usable_after_tb']))?> | <?=htmlspecialchars(sg_format_tb_label($loss['delta_tb']))?> |
+<?php endforeach; ?>
+<?php endif; ?>
+
+<?php if (is_array($alts) && !empty($alts)): ?>
+**<?=htmlspecialchars($p)?> — profile comparison (estimates)**
+
+<?php if (!empty($bus['note'])): ?>
+> <?=htmlspecialchars($bus['note'])?>
+<?php endif; ?>
+
+| Profile | Usable now | After worst loss | Δ free | Read ceiling* | Write ceiling* |
+|---------|------------|------------------|--------|---------------|----------------|
+<?php foreach ($alts as $row):
+  if (empty($row['viable_full']) && empty($row['viable_after_worst'])) continue;
+  $pk = $row['profile'] ?? '';
+  $r = isset($row['read_mbs_ceiling']) ? ('~' . (int)$row['read_mbs_ceiling']) : '—';
+  $w = isset($row['write_mbs_ceiling']) ? ('~' . (int)$row['write_mbs_ceiling']) : '—';
+?>
+| <?=htmlspecialchars($pk)?> | <?=htmlspecialchars(sg_format_tb_label($row['usable_tb'] ?? 0))?> | <?=htmlspecialchars(sg_format_tb_label($row['usable_after_worst_loss_tb'] ?? 0))?> | <?=htmlspecialchars(sg_format_tb_label($row['delta_worst_tb'] ?? 0))?> | <?=$r?> | <?=$w?> |
+<?php endforeach; ?>
+
+\* Absolute best-case from **bus/link** ceilings (and simple profile multipliers), not measured disk sequential speeds. For comparing profiles only.
+<?php endif; ?>
 </div>
 
 <?php endforeach; ?>
