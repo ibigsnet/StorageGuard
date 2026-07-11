@@ -302,7 +302,7 @@ foreach ($pool_names as $p) {
 </p>
 <?php endif; ?>
 
-<div id="sg-array-block" class="sg-array-block<?= $has_array_disks ? '' : ' sg-array-hidden-default' ?>"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
+<div id="sg-array-block" class="sg-array-block<?= $has_array_disks ? '' : ' sg-array-hidden-default' ?>"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
 
 <?php if (!$has_array_disks): ?>
 > **No array detected.** Array thresholds, alerts, and coloring below do <strong>nothing</strong> until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here.
@@ -439,7 +439,7 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 
 <div class="sg-appearance-targets">
 
-<div id="sg-array-appearance" class="sg-appearance-sub sg-array-hidden-default"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
+<div id="sg-array-appearance" class="sg-appearance-sub sg-array-hidden-default"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
 <div class="sg-appearance-sub-title">Array coloring</div>
 Optional. Paint the array free bar on Main using the Array thresholds above.
 <?php if (!$has_array_disks): ?>
@@ -606,7 +606,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
 Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on RAID1 / RAID1c3 / RAID1c4 — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for pool coloring under Appearance if that pool is included.
 </blockquote>
 
-<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
+<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects">
 
 _(<?=htmlspecialchars($p)?> Warning)_:
 : <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>">
@@ -620,7 +620,7 @@ _(<?=htmlspecialchars($p)?> Critical)_:
 
 </div>
 
-<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
+<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" style="display:none">
 
 _(<?=htmlspecialchars($p)?> Warning (custom))_:
 : <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">

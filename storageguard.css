@@ -1,0 +1,229 @@
+/* Quiet page intro (Settings) — keep on one visual line when possible */
+.sg-page-lead {
+  margin: 0 0 0.85em;
+  max-width: none;
+  font-size: 0.88em;
+  line-height: 1.35;
+  opacity: 0.72;
+  font-weight: 400;
+}
+
+.sg-advanced-btn {
+  cursor: pointer;
+  padding: 6px 12px;
+  font-size: 0.95em;
+}
+.sg-pools-wip {
+  margin-top: 0.5em;
+  padding: 8px 12px 4px;
+  border-left: 3px solid #ff9800;
+  background: transparent;
+}
+
+.sg-order-note {
+  margin: 0.75em 0 1em;
+  padding: 10px 12px;
+  border-left: 4px solid #ff9800;
+  background: rgba(255, 152, 0, 0.12);
+  border-radius: 2px;
+  font-size: 0.95em;
+  line-height: 1.4;
+}
+
+/* Appearance subsections — light visual nest only */
+.sg-appearance-targets {
+  margin: 0.5em 0 0.25em;
+}
+.sg-appearance-sub {
+  margin: 0.65em 0 0.85em;
+}
+.sg-appearance-sub-title {
+  font-weight: 600;
+  font-size: 1.02em;
+  margin: 0 0 0.4em;
+  letter-spacing: 0.01em;
+}
+.sg-appearance-sub > .inline_help,
+.sg-appearance-sub > p {
+  margin-left: 0;
+}
+/* Style / pools-to-color nest one level deeper under Yes */
+.sg-appearance-sub .sg-color-options {
+  margin: 0.5em 0 0.35em 0.85em;
+  padding: 0.4em 0.5em 0.35em 0.85em;
+  border-left: 2px dashed rgba(128, 128, 128, 0.35);
+  background: rgba(128, 128, 128, 0.03);
+  border-radius: 0 2px 2px 0;
+}
+/* Split: who is painted vs per-pool Outline/Solid */
+.sg-color-options-who {
+  margin-bottom: 0.65em;
+}
+.sg-color-options-styles {
+  margin-top: 0.55em;
+  padding-top: 0.55em;
+  border-top: 1px solid rgba(128, 128, 128, 0.22);
+}
+.sg-color-options-styles-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  margin: 0 0 0.4em;
+  opacity: 0.9;
+}
+
+/* Pool capacity math / Suggest (Settings) */
+.sg-pool-math {
+  margin: 0.75em 0 1.25em;
+  padding: 8px 0 4px;
+}
+.sg-suggest-pool {
+  cursor: pointer;
+  margin: 0 8px 6px 0;
+  vertical-align: middle;
+}
+.sg-suggest-pool.sg-suggest-applied {
+  opacity: 0.85;
+}
+.sg-math-inline-hint {
+  display: inline-block;
+  max-width: 52em;
+  font-size: 0.92em;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.sg-pool-math table {
+  border-collapse: collapse;
+  margin: 0.4em 0 0.9em;
+  font-size: 0.9em;
+}
+.sg-pool-math th,
+.sg-pool-math td {
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  padding: 4px 8px;
+  text-align: left;
+}
+
+/* Solid + Pulse=No: lock warn/crit fill over Unraid free bar */
+.usage-disk[data-sg-solid="warning"]:not(.sg-pulse) > span:first-child,
+.usage-disk:not(.sg-pulse) > span.sg-bar.sg-solid.sg-warning,
+.usage-disk:not(.sg-pulse) > span[data-sg-bar="warning"][data-sg-style="solid"] {
+  background-color: #ffc107 !important;
+  background: #ffc107 !important;
+}
+
+.usage-disk[data-sg-solid="critical"]:not(.sg-pulse) > span:first-child,
+.usage-disk:not(.sg-pulse) > span.sg-bar.sg-solid.sg-critical,
+.usage-disk:not(.sg-pulse) > span[data-sg-bar="critical"][data-sg-style="solid"] {
+  background-color: #e53935 !important;
+  background: #e53935 !important;
+}
+
+td[data-sg-outline] .usage-disk {
+  outline-offset: 2px;
+  border-radius: 2px;
+  transition: none !important;
+}
+
+/* OK: always static */
+td[data-sg-outline="ok"] .usage-disk {
+  outline: 2px solid #4caf50 !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+/* Warning/critical base color (no !important on color/shadow so pulse keyframes can run) */
+td[data-sg-outline="warning"] .usage-disk {
+  outline-width: 2px;
+  outline-style: solid;
+  outline-color: #ffc107;
+}
+
+td[data-sg-outline="critical"] .usage-disk {
+  outline-width: 2px;
+  outline-style: solid;
+  outline-color: #e53935;
+}
+
+/* Pulse=No: force static outline */
+td[data-sg-outline="warning"]:not(.sg-pulse) .usage-disk,
+td[data-sg-outline="critical"]:not(.sg-pulse) .usage-disk {
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+/* Outline Pulse=Yes: hard on/off border */
+td[data-sg-outline="warning"].sg-pulse .usage-disk {
+  animation: sg-pulse-outline-warn 1.2s step-end infinite;
+}
+
+td[data-sg-outline="critical"].sg-pulse .usage-disk {
+  animation: sg-pulse-outline-crit 1.2s step-end infinite;
+}
+
+/* Solid Pulse=No: no animation */
+.usage-disk[data-sg-solid="warning"]:not(.sg-pulse) > span:first-child,
+.usage-disk[data-sg-solid="critical"]:not(.sg-pulse) > span:first-child {
+  animation: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+}
+
+/* Solid Pulse=Yes: hard flash warn/crit over native free fill (greenbar shows between) */
+.usage-disk[data-sg-solid="warning"].sg-pulse > span:first-child,
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-warning {
+  animation: sg-pulse-solid-warn 1.2s step-end infinite;
+}
+
+.usage-disk[data-sg-solid="critical"].sg-pulse > span:first-child,
+.usage-disk.sg-pulse > span.sg-bar.sg-solid.sg-critical {
+  animation: sg-pulse-solid-crit 1.2s step-end infinite;
+}
+
+@keyframes sg-pulse-outline-warn {
+  0%, 49.9% {
+    outline-color: #ffc107;
+    box-shadow: none;
+  }
+  50%, 100% {
+    outline-color: transparent;
+    box-shadow: none;
+  }
+}
+
+@keyframes sg-pulse-outline-crit {
+  0%, 49.9% {
+    outline-color: #e53935;
+    box-shadow: none;
+  }
+  50%, 100% {
+    outline-color: transparent;
+    box-shadow: none;
+  }
+}
+
+/* Off half = Unraid greenbar (same vars as default-base.css). `revert` would
+   drop ALL author rules and show empty track — not the free fill. */
+@keyframes sg-pulse-solid-warn {
+  0%, 49.9% {
+    background: #ffc107;
+  }
+  50%, 100% {
+    background: linear-gradient(90deg, var(--green-900) 0, var(--green-500));
+  }
+}
+
+@keyframes sg-pulse-solid-crit {
+  0%, 49.9% {
+    background: #e53935;
+  }
+  50%, 100% {
+    background: linear-gradient(90deg, var(--green-900) 0, var(--green-500));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  td[data-sg-outline].sg-pulse .usage-disk,
+  .usage-disk.sg-pulse > span:first-child {
+    animation: none !important;
+  }
+}
