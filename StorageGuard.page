@@ -439,7 +439,7 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 
 <div class="sg-appearance-targets">
 
-<div id="sg-array-appearance" class="sg-appearance-sub sg-array-appearance"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
+<div id="sg-array-appearance" class="sg-appearance-sub sg-array-appearance"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
 <div class="sg-appearance-sub-title">Array coloring</div>
 Optional. Paint the array free bar on Main using the Array thresholds above.
 <?php if (!$has_array_disks): ?>
@@ -457,7 +457,7 @@ _(Array coloring)_:
 <strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="array-color-options" class="sg-details sg-color-options">
+<div id="array-color-options" class="sg-details sg-color-options" markdown="1">
 
 _(Highlight style)_:
 : <select name="array_color_style" id="array_color_style">
@@ -474,7 +474,7 @@ Pulse / green-when-OK (above) apply when Array coloring is Yes.
 </div>
 </div><!-- /#sg-array-appearance -->
 
-<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
+<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none" markdown="1">
 <div class="sg-appearance-sub-title">Pool coloring</div>
 Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.
 
@@ -489,9 +489,9 @@ _(Pool coloring)_:
 <strong>No</strong> = leave all pool free bars alone (default). Pool thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="pool-color-options" class="sg-details sg-color-options">
+<div id="pool-color-options" class="sg-details sg-color-options" markdown="1">
 
-<div class="sg-color-options-who">
+<div class="sg-color-options-who" markdown="1">
 
 _(Pools to color)_:
 : <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
@@ -506,7 +506,7 @@ Which pools get free-bar paint on Main. Unchecked pools can still have threshold
 </div>
 
 <?php if (!empty($pool_names)): ?>
-<div class="sg-color-options-styles">
+<div class="sg-color-options-styles" markdown="1">
 <div class="sg-color-options-styles-title">Highlight style (per pool)</div>
 
 <?php foreach ($pool_names as $p):
