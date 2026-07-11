@@ -36,11 +36,13 @@ With **6×2 TB**, usable capacity is about **6 TB**, not 2 TB. Extra drive
 
 Mixed sizes: half-raw is a first-order bound; real usable can be lower when one disk is much larger ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)).
 
-### After one disk loss
+### After one disk loss (any equal-disk RAID1)
+
+In general:
 
 - Data usually stays **online** (surviving copy).  
-- Usable capacity **drops** (half-raw on remaining members).  
-- With enough survivors, RAID1 can still place **two** copies — a replace is optional for “RAID1 to exist,” not required for access.  
+- Usable capacity **drops** to half-raw of the **remaining** members.  
+- With enough survivors, RAID1 can still place **two** copies — replace is optional for access.  
 - Options: run degraded · remove+rebalance (if free) · replace · convert profile.
 
 \[
@@ -49,34 +51,36 @@ Mixed sizes: half-raw is a first-order bound; real usable can be lower when one 
 
 Equal disks of size \(S\): \(\Delta_{\mathrm{fit}} \approx S/2\).
 
-### Example: 6 × 2 TB RAID1
+The worked numbers below are for **6 × 2 TB only** (not the older 8 × 1 TB example).
 
-| | |
-|--|--|
-| Healthy usable | **6 TB** |
-| After one loss | **5 TB** |
-| \(\Delta_{\mathrm{fit}}\) | **1 TB** |
-| Planning Critical / Warning | **1 T** / **2 T** (\(2\Delta\)) |
+### Worked example: 6 × 2 TB RAID1
 
-| Free now | Used now | After 1 disk dies | Fit? | Rebalance room? |
-|----------|----------|-------------------|------|-----------------|
-| 1 T | 5 TB | ~0 free on 5 TB usable | Barely | Essentially none |
-| 2 T | 4 TB | ~1 T free | Yes | Some |
-| 0 | 6 TB | used 6 TB > 5 TB usable | **No** | N/A |
+Pool: **six 2 TB members**, data profile RAID1.
 
-Full scenario language: [scenarios.md](scenarios.md).
+| Step | Calculation | Result |
+|------|-------------|--------|
+| Raw | \(6 \times 2\) | 12 TB |
+| Healthy usable \(U\) | \(12/2\) | **6 TB** |
+| After losing one 2 TB disk | five members left → \(10/2\) | **5 TB** usable |
+| Fit free \(\Delta_{\mathrm{fit}}\) | \(6 - 5\) | **1 TB** |
+| Planning Critical / Warning | \(\Delta\) / \(2\Delta\) | **1 T** / **2 T** |
 
-### Example: 4 × 4 TB RAID1
+Same pool, different free levels **before** the disk fails (`Used ≈ 6 TB − Free`):
 
-| Healthy | After one loss | \(\Delta_{\mathrm{fit}}\) | Critical / Warning |
-|---------|----------------|---------------------------|--------------------|
-| 8 TB | 6 TB | **2 TB** | **2 T** / **4 T** |
+| Free now (on 6 TB usable) | Used now | After the 2 TB disk dies | Fit on 5 TB usable? | Rebalance room? |
+|---------------------------|----------|--------------------------|---------------------|-----------------|
+| 1 T | 5 TB | ~0 free left | Barely | Essentially none |
+| 2 T | 4 TB | ~1 T free left | Yes | Some |
+| 0 | 6 TB | used 6 TB > 5 TB | **No** | N/A |
 
-### Example: 4 × 4 TB + 2 × 8 TB (first-order)
+Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
 
-| Healthy | Worst \(\Delta_{\mathrm{fit}}\) (lose 8 TB) | Critical / Warning |
-|---------|---------------------------------------------|--------------------|
-| ~16 TB | ~4 TB | **4 T** / **8 T** |
+### Other layouts (same formulas)
+
+| Layout | Healthy \(U\) | After one equal loss | \(\Delta_{\mathrm{fit}}\) | Critical / Warning |
+|--------|---------------|----------------------|---------------------------|--------------------|
+| 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 4 T |
+| 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB | 4 T / 8 T |
 
 ### Speeds (best-case bus ceiling)
 

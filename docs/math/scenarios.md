@@ -58,31 +58,37 @@ Why \(2\Delta\) for comfort? After a loss, free left is roughly \(\mathrm{free}_
 
 ## Worked example: 6 × 2 TB, BTRFS **RAID1**
 
+This entire section is one layout: **six disks × 2 TB each**, data profile **RAID1**.  
+(Replaces the older 8 × 1 TB walkthrough.)
+
 ### Copies and usable
 
 | | |
 |--|--|
+| Members | 6 × 2 TB |
 | Profile | RAID1 = **two** copies per chunk on different devices |
-| Raw | 12 TB |
+| Raw | \(6 \times 2 =\) **12 TB** |
 | Usable \(U\) | \(12/2 =\) **6 TB** |
-| Not | 2 TB usable, and not six mirrors of the same 2 TB |
+| Not | 2 TB usable (one disk), and not six mirrors of the same 2 TB |
 
-### After one 2 TB disk is gone (stay on RAID1)
+### After one of those 2 TB disks is gone (stay on RAID1)
 
 | | |
 |--|--|
-| Remaining | 5 × 2 TB |
+| Remaining members | 5 × 2 TB |
 | Usable after | \(10/2 =\) **5 TB** |
 | \(\Delta_{\mathrm{fit}}\) | \(6 - 5 =\) **1 TB** |
 
-| Free before loss | Used before | After one loss | Fit? | Room to rebalance? |
-|------------------|-------------|----------------|------|---------------------|
-| **1 TB** | 5 TB | Usable 5 TB, free ~0 | **Yes (tight)** | **No** |
+So on this 6 TB-usable pool, you need at least **1 TB free** before the failure for used data to still **fit** after the failure.
+
+| Free now (while healthy, \(U=6\) TB) | Used now | After that 2 TB disk dies (\(U=5\) TB) | Fit? | Room to rebalance? |
+|-------------------------------------|----------|----------------------------------------|------|---------------------|
+| **1 TB** | 5 TB | free ~0 | **Yes (tight)** | **No** |
 | **2 TB** | 4 TB | free ~1 TB | Yes | **Marginal / some** |
 | **3 TB** | 3 TB | free ~2 TB | Yes | **More comfortable** |
-| **0 TB** | 6 TB | Used 6 TB > 5 TB usable | **No** | N/A |
+| **0 TB** | 6 TB | used 6 TB > 5 TB usable | **No** | N/A |
 
-Planning numbers for this layout: Critical **1 T**, Warning **2 T** (\(2\Delta\)).
+Planning numbers for **this 6 × 2 TB layout only**: Critical **1 T**, Warning **2 T** (\(2\Delta\)).
 
 Crossing Critical does not mean “RAID1 dies.” It means that if a disk fails now, used may already exceed post-loss usable capacity.
 
