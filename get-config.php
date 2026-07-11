@@ -69,9 +69,15 @@ function sg_largest_data_disk_tb() {
   return ($max_kb * 1024.0) / 1e12;
 }
 
-$array_free = sg_free_tb_mount('/mnt/user0');
-if ($array_free === null || $array_free <= 0) {
-  $array_free = sg_free_tb_mount('/mnt/user');
+$array_present = function_exists('sg_array_present') ? sg_array_present() : (sg_largest_data_disk_tb() > 0);
+
+// Prefer array-only mount; do not treat pools-only /mnt/user as the array
+$array_free = null;
+if ($array_present) {
+  $array_free = sg_free_tb_mount('/mnt/user0');
+  if ($array_free === null || $array_free <= 0) {
+    $array_free = sg_free_tb_mount('/mnt/user');
+  }
 }
 
 $sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
@@ -83,7 +89,7 @@ if ($use_custom) {
   if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
     $arr_warn = sg_parse_to_tb($cfg['array_warning']);
   } else {
-    $arr_warn = sg_largest_data_disk_tb();
+    $arr_warn = $array_present ? sg_largest_data_disk_tb() : 0.0;
   }
   $arr_crit = sg_parse_to_tb($cfg['array_critical'] ?? '');
 }
@@ -93,13 +99,16 @@ $pool_coloring = ($cfg['pool_coloring'] ?? 'no') === 'yes';
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';
 $array_style = sg_style($cfg, 'array_color_style');
 
+// No array: keep cfg values in payload but do not paint / treat as active
+$array_enabled = $array_present && $array_coloring;
 $status = [
   'array' => [
-    'enabled' => $array_coloring,
-    'free_tb' => $array_free !== null ? round($array_free, 3) : null,
+    'present' => $array_present,
+    'enabled' => $array_enabled,
+    'free_tb' => ($array_present && $array_free !== null) ? round($array_free, 3) : null,
     'warn_tb' => round($arr_warn, 3),
     'crit_tb' => round($arr_crit, 3),
-    'level'   => $array_coloring ? sg_level($array_free, $arr_warn, $arr_crit) : 'ok',
+    'level'   => $array_enabled ? sg_level($array_free, $arr_warn, $arr_crit) : 'ok',
     'style'   => $array_style,
   ],
   'pools' => new stdClass(),

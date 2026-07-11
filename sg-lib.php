@@ -45,6 +45,11 @@ function sg_array_data_disks() {
     return $out;
 }
 
+/** True when Unraid has array data disks (not pools-only / no-array). */
+function sg_array_present() {
+    return !empty(sg_array_data_disks());
+}
+
 function sg_disks_matching_threshold($label, $tb) {
     $label = trim((string)$label);
     $tb = (float)$tb;

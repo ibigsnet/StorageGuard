@@ -295,11 +295,20 @@ foreach ($pool_names as $p) {
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
-### Array
+<?php if (!$has_array_disks): ?>
+<p style="margin:0.5em 0 0.75em;">
+  <button type="button" id="sg-toggle-array-hidden" class="sg-advanced-btn">Show hidden items…</button>
+  <span id="sg-array-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.75em;">No array data disks — array settings hidden (saved config kept).</span>
+</p>
+<?php endif; ?>
+
+<div id="sg-array-block" class="sg-array-block<?= $has_array_disks ? '' : ' sg-array-hidden-default' ?>"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
 
 <?php if (!$has_array_disks): ?>
-> No array data disks detected. Thresholds apply when data disks exist.
+> **No array detected.** Array thresholds, alerts, and coloring below do <strong>nothing</strong> until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here.
 <?php endif; ?>
+
+### Array
 
 _(Thresholds from)_:
 : <select name="array_use_custom" id="array_use_custom">
@@ -345,6 +354,8 @@ Remaining free space. Examples that work: <code>7.5T</code>, <code>1.2T</code>, 
 
 </div>
 
+</div><!-- /#sg-array-block thresholds -->
+
 ---
 
 ### Alerts
@@ -361,15 +372,15 @@ Unraid notifications when free space crosses a threshold. **Independent of color
 </tr>
 </thead>
 <tbody>
-<tr>
-  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no disks)</span>' ?></td>
+<tr class="sg-array-alert-row"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
+  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no disks — inactive)</span>' ?></td>
   <td style="padding:6px 12px; text-align:center;">
     <input type="hidden" name="alerts_array_warning" value="no">
-    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?>>
   </td>
   <td style="padding:6px 12px; text-align:center;">
     <input type="hidden" name="alerts_array_critical" value="no">
-    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?> <?= $has_array_disks ? '' : 'disabled' ?>>
+    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?>>
   </td>
 </tr>
 <?php foreach ($pool_alert_cfg as $p => $ac): ?>
@@ -393,7 +404,7 @@ Unraid notifications when free space crosses a threshold. **Independent of color
 </div>
 
 <blockquote class="inline_help">
-Uses free-space thresholds from Array and (when Advanced pools is open) Pools. Default: Array Warning only. Pool rows and pool thresholds appear with Advanced pools. Coloring does not need to be Yes.
+Uses free-space thresholds from Array and (when Advanced pools is open) Pools. Default: Array Warning only. Pool rows and pool thresholds appear with Advanced pools. Coloring does not need to be Yes. Array alerts are inactive when no array is present (even if checked).
 </blockquote>
 
 ---
@@ -428,9 +439,12 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 
 <div class="sg-appearance-targets" markdown="1">
 
-<div class="sg-appearance-sub" markdown="1">
+<div id="sg-array-appearance" class="sg-appearance-sub sg-array-hidden-default"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
 <div class="sg-appearance-sub-title">Array coloring</div>
 Optional. Paint the array free bar on Main using the Array thresholds above.
+<?php if (!$has_array_disks): ?>
+> Inactive until array data disks are present (settings still save).
+<?php endif; ?>
 
 _(Array coloring)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
@@ -458,7 +472,7 @@ Pulse / green-when-OK (above) apply when Array coloring is Yes.
 </blockquote>
 
 </div>
-</div><!-- /.sg-appearance-sub array -->
+</div><!-- /#sg-array-appearance -->
 
 <div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none" markdown="1">
 <div class="sg-appearance-sub-title">Pool coloring</div>

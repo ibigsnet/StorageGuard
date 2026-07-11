@@ -29,13 +29,15 @@ $state_dir = '/tmp/storageguard_alerts';
 @mkdir($state_dir, 0755, true);
 
 function sg_get_array_free_tb() {
+    // Prefer array-only share; require real free (do not treat missing array as 0 → critical)
     foreach (['/mnt/user0', '/mnt/user'] as $mnt) {
         if (!is_dir($mnt)) continue;
         $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mnt) . " 2>/dev/null | tail -1");
         $bytes = (float)trim((string)$out);
-        if ($bytes > 0 || $mnt === '/mnt/user') return $bytes / 1e12;
+        if ($bytes > 0) return $bytes / 1e12;
+        if ($mnt === '/mnt/user0' && $bytes === 0.0) return 0.0;
     }
-    return 0.0;
+    return null;
 }
 
 function sg_get_pool_free_tb($pool) {
@@ -220,7 +222,8 @@ function sg_pool_thresholds($cfg, $safe, $pname = null) {
 }
 
 $sent = [];
-$array_free = sg_get_array_free_tb();
+$array_present = function_exists('sg_array_present') ? sg_array_present() : false;
+$array_free = $array_present ? sg_get_array_free_tb() : null;
 
 $has_legacy_alerts = isset($cfg['alerts_enabled']) || isset($cfg['alerts_for'])
     || isset($cfg['warning_alerts_enabled']) || isset($cfg['critical_alerts_enabled']);
@@ -246,7 +249,8 @@ if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $arr_crit_on = false;
 }
 
-if ($arr_warn_on || $arr_crit_on) {
+// Keep saved flags/thresholds in cfg, but do not evaluate without a real array
+if ($array_present && $array_free !== null && ($arr_warn_on || $arr_crit_on)) {
     $th = sg_array_thresholds($cfg);
     $level = sg_level($array_free, $th['warn'], $th['crit']);
     if ($level === 'critical' && !$arr_crit_on) $level = $arr_warn_on ? 'warning' : 'ok';
@@ -323,5 +327,6 @@ foreach ($cfg as $k => $v) {
 echo json_encode([
     'sent' => !empty($sent),
     'alerts' => $sent,
-    'array_free_tb' => round($array_free, 3),
+    'array_present' => $array_present,
+    'array_free_tb' => ($array_free !== null) ? round($array_free, 3) : null,
 ]);

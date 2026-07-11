@@ -259,6 +259,42 @@ function initStorageGuardUI() {
   updateOrderNote();
 
 
+  // No array: hide Array thresholds / alerts row / Array coloring until "Show hidden items"
+  (function wireArrayHiddenToggle() {
+    var btn = document.getElementById('sg-toggle-array-hidden');
+    if (!btn) return;
+    var block = document.getElementById('sg-array-block');
+    var appear = document.getElementById('sg-array-appearance');
+    var hint = document.getElementById('sg-array-hidden-hint');
+    var key = 'sg_show_array_hidden';
+    function setOpen(open) {
+      if (block) block.style.display = open ? '' : 'none';
+      if (appear) appear.style.display = open ? '' : 'none';
+      document.querySelectorAll('.sg-array-alert-row').forEach(function (tr) {
+        tr.style.display = open ? '' : 'none';
+      });
+      btn.textContent = open ? 'Hide array settings' : 'Show hidden items…';
+      if (hint) hint.style.display = open ? 'none' : 'inline';
+      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) { /* ignore */ }
+      if (open) {
+        updateArrayCustom();
+        var ac = document.getElementById('array_coloring');
+        if (ac) {
+          var sec = document.getElementById(ac.getAttribute('data-sg-section') || 'array-color-options');
+          setVisible(sec, ac.value === 'yes');
+        }
+        updateOrderNote();
+      }
+    }
+    var saved = false;
+    try { saved = localStorage.getItem(key) === '1'; } catch (e) { /* ignore */ }
+    setOpen(saved);
+    btn.addEventListener('click', function () {
+      var open = !block || block.style.display === 'none';
+      setOpen(open);
+    });
+  })();
+
   (function wirePoolsWipToggle() {
     var btn = document.getElementById('sg-toggle-pools-wip');
     var panel = document.getElementById('sg-pools-wip');
