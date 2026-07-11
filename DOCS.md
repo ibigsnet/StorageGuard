@@ -202,8 +202,8 @@ Each target (**array**, and every **pool**) has its own style:
 
 | Option | Default | Applies to | Effect |
 |--------|---------|------------|--------|
-| **Pulse free-bar colors on warn/crit** | Off | Outline **and** Solid | Flasher for Warning/Critical. Outline: pulses the border. Solid: pulses the free fill. Never pulses healthy/OK. |
 | **Color outlines green when OK/Normal** | Off | Outline only | Static **green** border when free space is still **above** your thresholds |
+| **Pulse free-bar colors on warn/crit** | Off | Outline **and** Solid | Flasher for Warning/Critical. Outline: pulses the border. Solid: pulses the free fill. Never pulses healthy/OK. |
 
 | Level (Outline) | Look |
 |-----------------|------|
