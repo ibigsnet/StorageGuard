@@ -24,7 +24,7 @@ U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4
 
 ## Free threshold suggestion
 
-**Mirror** class: **no** automatic free Suggest. Custom free optional.
+**Mirror** class: Suggest = Critical \(\max\Delta_{\mathrm{fit}}\), Warning \(2\times\max\Delta_{\mathrm{fit}}\) ([scenarios.md](scenarios.md)).
 
 ## Example: 4 × 4 TB (16 TB raw)
 - Usable ≈ **4 TB**

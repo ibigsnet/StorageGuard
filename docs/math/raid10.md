@@ -48,12 +48,13 @@ Real mutt layouts can leave some raw unusable; see [btrfs disk usage calculator]
 \Delta(i) = U(\mathrm{RAID10}, \text{all}) - U(\mathrm{RAID10}, \text{all without } i)
 \]
 
-Suggested free thresholds (Storage Guard **Suggest**):
+Suggested free thresholds (Storage Guard **Suggest** — see [scenarios.md](scenarios.md)):
 
-- **Warning** = \(\max_i \Delta(i)\) (worst single-disk loss)  
-- **Critical** = \(\min_i \Delta(i)\) (mildest; equals Warning when all members match)
+- **Critical** = \(\max_i \Delta_{\mathrm{fit}}(i)\) — capacity **fit** after worst single-disk loss  
+- **Warning** = \(2 \times \max_i \Delta_{\mathrm{fit}}(i)\) — fit + first-order **rebalance comfort**  
+- When sizes differ, mildest loss \(\min\Delta\) still appears in the per-disk table; Suggest Critical uses the **worst** loss  
 
-Meaning: *keep at least this much free so that if disk \(i\) dies and you stay on RAID10, used data still fits on the remaining devices.* It is **not** “evacuate one full disk of unique data.”
+Meaning: *if free is below Critical and a worst disk dies while staying on RAID10, used data may not fit remaining usable.* It is **not** “evacuate one full disk of unique data.”
 
 ### Example A — 4 × 4 TB
 | State | Usable (est.) |
@@ -62,7 +63,7 @@ Meaning: *keep at least this much free so that if disk \(i\) dies and you stay o
 | After one loss (3 × 4 TB) | \(12/2 = 6\) TB |
 | **Δ** | **2 TB** free needed so used ≤ 6 TB |
 
-Warning ≈ Critical ≈ **2 TB**. After the loss you still have **three** devices and can keep RAID10 (or convert); replace is optional for capacity/redundancy restoration, not for “having any data left.”
+\(\Delta_{\mathrm{fit}} = 2\) TB → Suggest **Critical 2 T**, **Warning 4 T**. After the loss you still have **three** devices and can keep RAID10 (or convert); replace is optional for capacity/redundancy restoration, not for “having any data left.”
 
 ### Example B — 3 × 4 TB (small / odd count)
 | State | Usable (est.) |

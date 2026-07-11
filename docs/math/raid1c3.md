@@ -29,7 +29,7 @@ U(\mathrm{RAID1c3}, S_1,\ldots,S_N) \approx \frac{1}{3}\sum_i S_i \quad (N \ge 3
 
 ## Free threshold suggestion
 
-**Mirror** class in Storage Guard: **no** automatic Δ-based Suggest. Capacity still shrinks when devices leave; use **Custom** free if you want policy alerts. Another full copy already exists for each chunk (until multiple failures).
+**Mirror** class: Suggest uses capacity **fit** \(\Delta_{\mathrm{fit}}\) (Critical) and \(2\times\) for Warning rebalance comfort — same product rule as RAID1 ([scenarios.md](scenarios.md)). Not array-style evacuate.
 
 ## Example: 4 × 4 TB (16 TB raw)
 - Usable ≈ **5.33 TB**

@@ -35,7 +35,7 @@ Equal disks of size \(S\): \((N-1)\cdot S\).
 \Delta(i) = U(\mathrm{RAID5}, \text{all}) - U(\mathrm{RAID5}, \text{without } i)
 \]
 
-Warning = \(\max \Delta\), Critical = \(\min \Delta\). Storage Guard may **Suggest** these for free thresholds.
+Suggest: **Critical** = \(\max\Delta_{\mathrm{fit}}\), **Warning** = \(2\times\max\Delta_{\mathrm{fit}}\) (fit + rebalance comfort). Per-disk table still shows each \(\Delta\). See [scenarios.md](scenarios.md).
 
 ### Example: 4 × 4 TB
 - Healthy: \(16 - 4 = 12\) TB  

@@ -33,7 +33,7 @@ Equal disks of size \(S\): \((N-2)\cdot S\).
 \Delta(i) = U(\mathrm{RAID6}, \text{all}) - U(\mathrm{RAID6}, \text{without } i)
 \]
 
-Warning = \(\max \Delta\), Critical = \(\min \Delta\).
+Suggest: **Critical** = \(\max\Delta_{\mathrm{fit}}\), **Warning** = \(2\times\max\Delta_{\mathrm{fit}}\). See [scenarios.md](scenarios.md).
 
 ### Example: 4 × 4 TB
 - Healthy: \(16 - 8 = 8\) TB  

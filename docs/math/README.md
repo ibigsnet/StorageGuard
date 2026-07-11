@@ -49,34 +49,50 @@ On BTRFS, after a loss you may:
 3. **Replace** the device (`btrfs replace` / Unraid pool replace) to restore capacity and full redundancy.  
 4. **Convert** data (or metadata) profile with `btrfs balance … convert=` when another profile fits remaining disks better — needs unallocated space; **not** the same formula as Δ.
 
-## What we do **not** auto-suggest for free thresholds
+## Free threshold Suggest (product rule)
 
-| Class | Profiles | Why |
-|-------|----------|-----|
-| **mirror** | RAID1, RAID1c3, RAID1c4, dup | Capacity still drops when a disk is gone (`Δ ≈ size_lost / copies` as a rough idea for equal disks), but the **evacuate-one-disk** model is wrong: another copy already exists. Policy free alerts are **custom** only. |
-| **none** | single, RAID0 | No redundancy; auto “recovery free” is not meaningful the same way. Custom free only if you want capacity policy. |
+For profiles where a single disk loss **keeps data online** but **shrinks usable capacity**, Suggest uses two layers (see [scenarios.md](scenarios.md)):
 
-**RAID10 / RAID5 / RAID6** use **same-profile Δ** for Suggest when the pool is in that class (parity / striped-mirror capacity drop).
+| Level | Formula | Meaning |
+|-------|---------|---------|
+| **Critical** | \(\max_i \Delta_{\mathrm{fit}}(i)\) | Capacity **fit** after worst one-disk loss |
+| **Warning** | \(2 \times \max_i \Delta_{\mathrm{fit}}(i)\) | Fit + first-order **rebalance comfort** |
+
+| Class | Profiles | Suggest? |
+|-------|----------|----------|
+| **mirror** | RAID1, RAID1c3, RAID1c4 | **Yes** (fit / \(2\times\) warn) — **not** array evacuate |
+| **striped_mirror** | RAID10 | **Yes** |
+| **parity** | RAID5, RAID6 | **Yes** (⚠ profile stability caveats) |
+| **none** | single, RAID0 | **No** — no recovery model; Custom only |
+
+**dup** is multi-copy on one device (no disk-failure protection); treated like unknown/policy, not multi-device Suggest.
+
+Disk-size dropdowns on **mirror** pools stay ignored for paint/alerts (evacuate semantics). Suggest writes **Custom** free amounts.
 
 ## Speeds (profile comparison only)
 
 When shown, speeds are **absolute best-case ceilings from the storage path** (SATA link rate, NVMe PCIe gen × width), not lab disk sequential results. Real workloads are lower. They exist so you can **compare profiles** (e.g. RAID10 vs RAID1 writes), not to promise throughput.
 
+## Scenario language (start here for “what free means”)
+
+**[scenarios.md](scenarios.md)** — fit free vs rebalance free, **8×1 TB RAID1** walkthrough (4 TB usable, Critical **500 G**, Warning **1 T**), RAID10 mixed examples, recovery options.
+
 ## Profile pages
 
-| Profile | Doc | Redundancy (typical) | Suggest free from Δ? |
-|---------|-----|----------------------|----------------------|
+| Profile | Doc | Redundancy (typical) | Suggest free? |
+|---------|-----|----------------------|---------------|
 | single | [single.md](single.md) | None | No |
 | RAID0 | [raid0.md](raid0.md) | None | No |
-| RAID1 / dup | [raid1.md](raid1.md) | 2 copies (diff. devices for RAID1) | No (mirror) |
-| RAID1c3 | [raid1c3.md](raid1c3.md) | 3 copies | No (mirror) |
-| RAID1c4 | [raid1c4.md](raid1c4.md) | 4 copies | No (mirror) |
-| RAID10 | [raid10.md](raid10.md) | 2 copies + striping | Yes |
-| RAID5 | [raid5.md](raid5.md) | 1 parity (⚠ production caution) | Yes |
-| RAID6 | [raid6.md](raid6.md) | 2 parity (⚠ production caution) | Yes |
+| RAID1 | [raid1.md](raid1.md) | 2 copies (not N) | **Yes** (fit / \(2\times\)) |
+| RAID1c3 | [raid1c3.md](raid1c3.md) | 3 copies | **Yes** |
+| RAID1c4 | [raid1c4.md](raid1c4.md) | 4 copies | **Yes** |
+| RAID10 | [raid10.md](raid10.md) | 2 copies + striping | **Yes** |
+| RAID5 | [raid5.md](raid5.md) | 1 parity (⚠ caution) | **Yes** |
+| RAID6 | [raid6.md](raid6.md) | 2 parity (⚠ caution) | **Yes** |
 
 ## Generic examples (not anyone’s real server)
 
+- **Many small equal:** 8 × 1 TB (great for “is usable 1 TB or 4 TB?”)  
 - **Equal:** 4 × 4 TB  
 - **Mixed:** 4 × 4 TB + 2 × 8 TB  
 - **Small RAID10:** 3 × 4 TB (odd/small pools are valid on BTRFS)
