@@ -58,16 +58,16 @@ Why \(2\Delta\) for comfort? After a loss, free left is roughly \(\mathrm{free}_
 
 ## Worked example: 6 × 2 TB, BTRFS **RAID1**
 
-### Capacity
+### Copies and usable
 
 | | |
 |--|--|
-| Profile | RAID1 — two copies per chunk on different devices |
+| Profile | RAID1 = **two** copies per chunk on different devices |
 | Raw | 12 TB |
 | Usable \(U\) | \(12/2 =\) **6 TB** |
-| Copies | 2 (not one per disk) |
+| Not | 2 TB usable, and not six mirrors of the same 2 TB |
 
-### After one 2 TB disk is removed (same profile)
+### After one 2 TB disk is gone (stay on RAID1)
 
 | | |
 |--|--|
@@ -75,16 +75,18 @@ Why \(2\Delta\) for comfort? After a loss, free left is roughly \(\mathrm{free}_
 | Usable after | \(10/2 =\) **5 TB** |
 | \(\Delta_{\mathrm{fit}}\) | \(6 - 5 =\) **1 TB** |
 
-| Free before loss | Used before | After one loss | Capacity fit | Rebalance room |
-|------------------|-------------|----------------|--------------|----------------|
-| **1 TB** | 5 TB | Usable 5 TB, free ~0 | Marginal | None |
-| **2 TB** | 4 TB | free ~1 TB | Yes | Limited |
-| **3 TB** | 3 TB | free ~2 TB | Yes | Comfortable |
-| **0 TB** | 6 TB | Used 6 TB > 5 TB usable | No | N/A |
+| Free before loss | Used before | After one loss | Fit? | Room to rebalance? |
+|------------------|-------------|----------------|------|---------------------|
+| **1 TB** | 5 TB | Usable 5 TB, free ~0 | **Yes (tight)** | **No** |
+| **2 TB** | 4 TB | free ~1 TB | Yes | **Marginal / some** |
+| **3 TB** | 3 TB | free ~2 TB | Yes | **More comfortable** |
+| **0 TB** | 6 TB | Used 6 TB > 5 TB usable | **No** | N/A |
 
-Planning: Critical **1 T**, Warning **2 T** (\(2\Delta\)).
+Planning numbers for this layout: Critical **1 T**, Warning **2 T** (\(2\Delta\)).
 
-Critical marks **post-loss capacity risk** (used may exceed remaining \(U\)), not failure of the RAID1 profile itself. Free is not array-style full-disk evacuate headroom; a second copy already exists on another device.
+Crossing Critical does not mean “RAID1 dies.” It means that if a disk fails now, used may already exceed post-loss usable capacity.
+
+Free is not array-style full-disk evacuate headroom. A second copy already exists on another device; free is capacity fit plus working room for rebalance/remove/convert.
 
 ---
 
