@@ -78,7 +78,7 @@ Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** �
 
 ### Speeds (comparison only)
 
-When shown, speeds are **best-case bus/link ceilings** (SATA rate, NVMe gen×width), not lab sequential results. For comparing profiles only.
+When shown, speeds are **best-case multi-stream ceilings** from the storage path (SATA rate, NVMe gen×width), not lab sequential results. For **RAID1**, ideal multi-stream write scales like \(N/2\) (each logical write uses two devices), not \(1\times W\). Single-stream writes stay nearer one-disk \(W\). Real results are lower.
 
 ### Profile summary
 

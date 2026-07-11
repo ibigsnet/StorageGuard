@@ -32,9 +32,14 @@ U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4
 Degraded / remove / replace / convert — same BTRFS menu as other multi-copy profiles.  
 \(\Delta_{\mathrm{fit}}\) and Critical / Warning planning rule: [scenarios.md](scenarios.md).
 
-### Speeds (best-case bus ceiling)
+### Speeds (best-case multi-stream ceiling)
 
-Read ≈ \(N\cdot R\), write ≈ \(W\) (simple model).
+| Direction | Ideal ceiling |
+|-----------|----------------|
+| Read | ≈ \(N \cdot R\) |
+| Write | ≈ \((N/4) \cdot W\) (four copies per logical write) |
+
+Single-stream write remains closer to ~\(W\).
 
 ---
 

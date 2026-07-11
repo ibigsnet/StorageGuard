@@ -82,10 +82,18 @@ Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
 | 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 4 T |
 | 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB | 4 T / 8 T |
 
-### Speeds (best-case bus ceiling)
+### Speeds (best-case multi-stream ceiling)
 
-- Read ≈ \(N\cdot R\) (can fan out across devices holding copies)  
-- Write ≈ \(W\) (two copies; this simple model does not scale write with \(N\))
+Let \(R,W\) be one device’s sequential read/write path ceiling. For **many independent streams** (not one large sequential file):
+
+| Direction | Ideal ceiling (RAID1) | 6 × devices example |
+|-----------|----------------------|---------------------|
+| **Read** | ≈ \(N \cdot R\) | ≈ **6×** one disk |
+| **Write** | ≈ \((N/2) \cdot W\) | ≈ **3×** one disk |
+
+Why write is \(N/2\): each logical write needs **two** physical writes on different devices. Six disks can host about **three** such pairs at once if work is parallel and perfectly spread. A **single** sequential write stream is still closer to **~1×** \(W\) (two devices busy, others idle).
+
+These are **upper bounds** for comparing profiles — caching, seeks, metadata, checksums, and BTRFS allocation usually land well below.
 
 ---
 

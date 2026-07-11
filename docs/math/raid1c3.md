@@ -33,9 +33,14 @@ Same recovery menu as RAID1: degraded mount, optional remove/rebalance/replace/c
 \(\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)\).  
 Planning Critical / Warning: \(\max\Delta\) / \(2\times\max\Delta\) — [scenarios.md](scenarios.md).
 
-### Speeds (best-case bus ceiling)
+### Speeds (best-case multi-stream ceiling)
 
-Read ≈ \(N\cdot R\), write ≈ \(W\) (simple model).
+| Direction | Ideal ceiling |
+|-----------|----------------|
+| Read | ≈ \(N \cdot R\) |
+| Write | ≈ \((N/3) \cdot W\) (three copies per logical write) |
+
+Single-stream write remains closer to ~\(W\).
 
 ---
 

@@ -307,12 +307,15 @@ function sg_pool_profile_speed_ceiling($profile_key, $n, $disk_read_mbs, $disk_w
         case 'single':
             return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round($n * $w, 0)];
         case 'raid1':
+            // Multi-stream ideal: each logical write needs 2 devices → ~N/2 write; reads can use all N.
+            // Single-stream write is still ~W (not modeled separately).
+            return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round(($n / 2.0) * $w, 0)];
         case 'raid1c3':
+            return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round(($n / 3.0) * $w, 0)];
         case 'raid1c4':
-            // Copies: read can fan out; write limited by one stream class (all mirrors)
-            return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round($w, 0)];
+            return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round(($n / 4.0) * $w, 0)];
         case 'raid10':
-            // Stripe of mirrors: ~N read, ~N/2 write
+            // Two copies + striping: multi-stream ideal ~N read, ~N/2 write (same order as RAID1)
             return ['read_mbs' => round($n * $r, 0), 'write_mbs' => round(($n / 2.0) * $w, 0)];
         case 'raid5':
             // Simplified: read ~N, write much lower (parity); ~N/4 write class if N>=3 else lower
