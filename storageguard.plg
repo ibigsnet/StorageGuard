@@ -369,7 +369,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bs"
+[ -z "$VER" ] && VER="2026.07.10bt"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
