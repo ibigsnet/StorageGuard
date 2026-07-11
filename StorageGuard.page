@@ -437,12 +437,14 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 <strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default. Only where coloring is enabled.
 </blockquote>
 
-<?php if (!$has_array_disks): ?>
-<div id="sg-array-appearance" class="sg-array-appearance" style="display:none" markdown="1">
-> Array coloring is inactive until array data disks are present (settings still save).
-<?php endif; ?>
+<div class="sg-appearance-targets">
 
-#### Array coloring
+<div id="sg-array-appearance" class="sg-appearance-sub sg-array-appearance"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
+<div class="sg-appearance-sub-title">Array coloring</div>
+Optional. Paint the array free bar on Main using the Array thresholds above.
+<?php if (!$has_array_disks): ?>
+> Inactive until array data disks are present (settings still save).
+<?php endif; ?>
 
 _(Array coloring)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
@@ -455,7 +457,7 @@ _(Array coloring)_:
 <strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="array-color-options" class="sg-details" markdown="1">
+<div id="array-color-options" class="sg-details sg-color-options">
 
 _(Highlight style)_:
 : <select name="array_color_style" id="array_color_style">
@@ -470,14 +472,11 @@ Pulse / green-when-OK (above) apply when Array coloring is Yes.
 </blockquote>
 
 </div>
-
-<?php if (!$has_array_disks): ?>
 </div><!-- /#sg-array-appearance -->
-<?php endif; ?>
 
-<div id="sg-pool-appearance" class="sg-pool-appearance" style="display:none" markdown="1">
-
-#### Pool coloring
+<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
+<div class="sg-appearance-sub-title">Pool coloring</div>
+Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.
 
 _(Pool coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
@@ -490,7 +489,9 @@ _(Pool coloring)_:
 <strong>No</strong> = leave all pool free bars alone (default). Pool thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="pool-color-options" class="sg-details" markdown="1">
+<div id="pool-color-options" class="sg-details sg-color-options">
+
+<div class="sg-color-options-who">
 
 _(Pools to color)_:
 : <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
@@ -502,8 +503,11 @@ _(Pools to color)_:
 Which pools get free-bar paint on Main. Unchecked pools can still have thresholds and Alerts. Each checked pool can use a different style below (e.g. Cache solid, another pool outline).
 </blockquote>
 
+</div>
+
 <?php if (!empty($pool_names)): ?>
-> **Highlight style (per pool)** — Outline or Solid for each pool independently.
+<div class="sg-color-options-styles">
+<div class="sg-color-options-styles-title">Highlight style (per pool)</div>
 
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
@@ -523,10 +527,13 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 </blockquote>
 
 <?php endforeach; ?>
+</div>
 <?php endif; ?>
 
 </div><!-- /#pool-color-options -->
 </div><!-- /#sg-pool-appearance -->
+
+</div><!-- /.sg-appearance-targets -->
 
 ---
 

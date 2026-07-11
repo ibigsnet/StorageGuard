@@ -260,6 +260,8 @@ function initStorageGuardUI() {
 
 
   // No array: hide Array thresholds / alerts row / Array coloring until "Show hidden items"
+  // Exposed so Default can re-collapse (clears localStorage preference).
+  var setArrayHiddenOpen = null;
   (function wireArrayHiddenToggle() {
     var btn = document.getElementById('sg-toggle-array-hidden');
     if (!btn) return;
@@ -286,6 +288,7 @@ function initStorageGuardUI() {
         updateOrderNote();
       }
     }
+    setArrayHiddenOpen = setOpen;
     var saved = false;
     try { saved = localStorage.getItem(key) === '1'; } catch (e) { /* ignore */ }
     setOpen(saved);
@@ -414,6 +417,10 @@ function initStorageGuardUI() {
       var safe = s.getAttribute('data-pool-safe');
       if (safe) updatePoolCustom(safe);
     });
+    // Product Default: re-hide array settings when no array (config values stay; UI collapses)
+    if (typeof setArrayHiddenOpen === 'function') {
+      setArrayHiddenOpen(false);
+    }
     updateOrderNote();
   }
 
