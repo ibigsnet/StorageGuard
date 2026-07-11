@@ -35,8 +35,12 @@ function sg_array_data_disks() {
         if (!$is_data) continue;
         $kb = isset($d['size']) ? (int)$d['size'] : 0;
         if ($kb <= 0) continue;
+        // Unraid disks.ini "device" is the kernel id (sda, nvme0n1, …), not /dev/…
+        $dev = trim((string)($d['device'] ?? ''));
+        $dev = preg_replace('#^/dev/#', '', $dev);
         $out[] = [
             'name' => $name,
+            'device' => $dev,
             'label' => sg_format_size_kb($kb),
             'tb' => sg_kb_to_tb($kb),
             'kb' => $kb,
@@ -74,11 +78,22 @@ function sg_disks_matching_threshold($label, $tb) {
     return $uniq;
 }
 
+/**
+ * Human list for array alerts, e.g. "disk1 | sdc (26T) or disk2 | sdb (26T)".
+ * Device id is Unraid disks.ini "device" (sda, nvme0n1, …) when present.
+ */
 function sg_format_disk_list($disks) {
     if (empty($disks)) return '';
     $parts = [];
     foreach ($disks as $d) {
-        $parts[] = $d['name'] . ' (' . $d['label'] . ')';
+        $name = $d['name'] ?? '';
+        $label = $d['label'] ?? '';
+        $dev = trim((string)($d['device'] ?? ''));
+        if ($dev !== '') {
+            $parts[] = $name . ' | ' . $dev . ' (' . $label . ')';
+        } else {
+            $parts[] = $name . ' (' . $label . ')';
+        }
     }
     if (count($parts) === 1) return $parts[0];
     if (count($parts) === 2) return $parts[0] . ' or ' . $parts[1];

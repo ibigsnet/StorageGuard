@@ -255,7 +255,7 @@ When free space was at warning or critical and later rises **above** your thresh
 
 1. Current free space and your warning threshold  
 2. **If you lost …**  
-   - Disk-size match: names matching data disks, e.g. `disk1 (26T) or disk2 (26T)`  
+   - Disk-size match: Unraid disk name plus kernel device id, e.g. `disk1 | sdc (26T) or disk2 | sdb (26T)` (also `nvme0n1`, USB block ids, etc. when present)  
    - Custom threshold: “your custom free-space threshold of 7.5T”  
    - No exact match: “a data disk of about {threshold}”  
 3. Risk: may not have enough free space on the **rest of the array** to move that disk’s data off without a replacement  
