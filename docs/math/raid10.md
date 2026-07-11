@@ -32,32 +32,32 @@ After a single disk loss, common options:
 - Replace the failed member  
 - Convert data profile via balance (needs unallocated space)
 
-**Wiggle room:** if used data is well under post-loss usable capacity, you often have time without an emergency replace. That is what \(\Delta_{\mathrm{fit}}\) measures.
+**Wiggle room:** if used data is well under post-loss usable capacity, you often have time without an emergency replace. That is what $\Delta_{\mathrm{fit}}$ measures.
 
 ### Usable capacity (estimate)
 
-\[
+$$
 U(\mathrm{RAID10}, S_1,\ldots,S_N) \approx \frac{1}{2}\sum_i S_i \quad (N \ge 2)
-\]
+$$
 
 Real mutt layouts can leave some raw unusable; see [btrfs disk usage calculator](https://carfax.org.uk/btrfs-usage/).
 
-### Free headroom after losing disk \(i\) (same profile)
+### Free headroom after losing disk $i$ (same profile)
 
-\[
+$$
 \Delta_{\mathrm{fit}}(i) = U(\mathrm{RAID10}, \text{all}) - U(\mathrm{RAID10}, \text{without } i)
-\]
+$$
 
-Planning: Critical = \(\max_i\Delta_{\mathrm{fit}}\), Warning = \(2\times\max_i\Delta_{\mathrm{fit}}\)  
+Planning: Critical = $\max_i\Delta_{\mathrm{fit}}$, Warning = $2\times\max_i\Delta_{\mathrm{fit}}$  
 (see [scenarios.md](scenarios.md)). Not “evacuate one full disk of unique data.”
 
 ### Example A — 4 × 4 TB
 
 | State | Usable (est.) |
 |-------|----------------|
-| Healthy | \(16/2 = 8\) TB |
-| After one loss (3 × 4 TB) | \(12/2 = 6\) TB |
-| \(\Delta_{\mathrm{fit}}\) | **2 TB** |
+| Healthy | $16/2 = 8$ TB |
+| After one loss (3 × 4 TB) | $12/2 = 6$ TB |
+| $\Delta_{\mathrm{fit}}$ | **2 TB** |
 
 Planning: Critical **2 T**, Warning **4 T**. Three devices remain; replace optional for capacity/redundancy, not for “having any data left.”
 
@@ -65,15 +65,15 @@ Planning: Critical **2 T**, Warning **4 T**. Three devices remain; replace o
 
 | State | Usable (est.) |
 |-------|----------------|
-| Healthy | \(12/2 = 6\) TB |
-| After one loss (2 × 4 TB) | \(8/2 = 4\) TB |
-| \(\Delta_{\mathrm{fit}}\) | **2 TB** |
+| Healthy | $12/2 = 6$ TB |
+| After one loss (2 × 4 TB) | $8/2 = 4$ TB |
+| $\Delta_{\mathrm{fit}}$ | **2 TB** |
 
 Still online with two devices if used ≤ 4 TB.
 
 ### Example C — 4 × 4 TB + 2 × 8 TB
 
-| Event | Usable after (est.) | \(\Delta_{\mathrm{fit}}\) |
+| Event | Usable after (est.) | $\Delta_{\mathrm{fit}}$ |
 |-------|---------------------|---------------------------|
 | Healthy | 16 TB | — |
 | Lose one **8 TB** | 12 TB | **4 TB** (worst) |
@@ -83,13 +83,13 @@ Planning: Critical **4 T**, Warning **8 T**.
 
 ### Profile conversion (education)
 
-Converting after a loss (e.g. to RAID1 or RAID5) can **change** usable on remaining disks. That is a deliberate trade — **not** the same as \(\Delta_{\mathrm{fit}}\) for **staying RAID10**.
+Converting after a loss (e.g. to RAID1 or RAID5) can **change** usable on remaining disks. That is a deliberate trade — **not** the same as $\Delta_{\mathrm{fit}}$ for **staying RAID10**.
 
 ### Speeds (best-case multi-stream ceiling)
 
-With path ceiling \(R,W\) and \(N\) devices:
+With path ceiling $R,W$ and $N$ devices:
 
-- Multi-stream read ≈ \(N \cdot R\), write ≈ \((N/2) \cdot W\)  
+- Multi-stream read ≈ $N \cdot R$, write ≈ $(N/2) \cdot W$  
 - Single sequential stream is often lower; Unraid still uses kernel BTRFS for the pool  
 
 See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid does (and does not) implement.
@@ -108,7 +108,7 @@ See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid doe
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **Yes** |
-| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
 | Settings tables | Per-member loss Δ, usable after loss, profile comparison |
 | Alerts | RAID10 / striped-mirror wording: data usually online; free = fit + recovery wiggle room |
 | Not claimed | Forced immediate replace |

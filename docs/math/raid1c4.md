@@ -18,9 +18,9 @@ Rare for bulk **data** (expensive). Sometimes chosen for critical **metadata**.
 
 ### Usable capacity (estimate)
 
-\[
+$$
 U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4)
-\]
+$$
 
 | Layout | Raw | Usable (est.) |
 |--------|-----|---------------|
@@ -30,16 +30,16 @@ U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4
 ### After disk loss
 
 Degraded / remove / replace / convert — same BTRFS menu as other multi-copy profiles.  
-\(\Delta_{\mathrm{fit}}\) and Critical / Warning planning rule: [scenarios.md](scenarios.md).
+$\Delta_{\mathrm{fit}}$ and Critical / Warning planning rule: [scenarios.md](scenarios.md).
 
 ### Speeds (best-case multi-stream ceiling)
 
 | Direction | Ideal ceiling |
 |-----------|----------------|
-| Read | ≈ \(N \cdot R\) |
-| Write | ≈ \((N/4) \cdot W\) (four copies per logical write) |
+| Read | ≈ $N \cdot R$ |
+| Write | ≈ $(N/4) \cdot W$ (four copies per logical write) |
 
-Single-stream write remains closer to ~\(W\).
+Single-stream write remains closer to ~$W$.
 
 ---
 
@@ -48,7 +48,7 @@ Single-stream write remains closer to ~\(W\).
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (mirror class) |
-| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
 | Disk-size dropdowns | **Ignored** for paint/alerts |
 | Alerts | Mirror-class wording |
 

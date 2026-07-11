@@ -18,9 +18,9 @@ Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrf
 
 ### Usable capacity
 
-\[
+$$
 U(\mathrm{single}, S_1,\ldots,S_N) = \sum_i S_i
-\]
+$$
 
 ### Example: 4 × 4 TB
 
@@ -29,7 +29,7 @@ U(\mathrm{single}, S_1,\ldots,S_N) = \sum_i S_i
 
 ### Speeds (best-case bus ceiling)
 
-Rough upper bound ≈ \(N\cdot R\) read / \(N\cdot W\) write when work fans across devices — not guaranteed striping like RAID0.
+Rough upper bound ≈ $N\cdot R$ read / $N\cdot W$ write when work fans across devices — not guaranteed striping like RAID0.
 
 ---
 

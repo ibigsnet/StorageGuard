@@ -18,18 +18,18 @@ No “run degraded and rebuild later” safety net like RAID1/10.
 
 ### Usable capacity
 
-\[
+$$
 U(\mathrm{RAID0}, S_1,\ldots,S_N) = \sum_i S_i
-\]
+$$
 
 ### Example: 4 × 4 TB
 
 - Usable ≈ **16 TB**  
-- After one loss: remaining raw ≈ 12 TB, but **missing chunks are gone** — not a clean “\(U\) drops by 4 TB and everything remounts happily.”
+- After one loss: remaining raw ≈ 12 TB, but **missing chunks are gone** — not a clean “$U$ drops by 4 TB and everything remounts happily.”
 
 ### Speeds (best-case bus ceiling)
 
-≈ \(N\cdot R\) read / \(N\cdot W\) write for equal path ceilings \(R,W\).
+≈ $N\cdot R$ read / $N\cdot W$ write for equal path ceilings $R,W$.
 
 ---
 

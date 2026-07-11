@@ -8,7 +8,7 @@
 
 BTRFS **RAID1** is **not** an N-way mirror of all disks.
 
-Each data (or metadata) chunk is stored as **exactly two copies on two different devices**. With 2, 3, or 6 devices, every chunk still has **two** copies — not one per disk and not \(N\) copies.
+Each data (or metadata) chunk is stored as **exactly two copies on two different devices**. With 2, 3, or 6 devices, every chunk still has **two** copies — not one per disk and not $N$ copies.
 
 - Writing a chunk only needs **two** devices.  
 - Reading can use either copy; scrub/self-heal can repair from the good copy.  
@@ -22,9 +22,9 @@ Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrf
 
 ### Usable capacity (estimate)
 
-\[
+$$
 U(\mathrm{RAID1}, S_1,\ldots,S_N) \approx \frac{1}{2}\sum_i S_i
-\]
+$$
 
 | Layout | Raw | Usable (est.) | Copies |
 |--------|-----|---------------|--------|
@@ -45,11 +45,11 @@ In general:
 - With enough survivors, RAID1 can still place **two** copies — replace is optional for access.  
 - Options: run degraded · remove+rebalance (if free) · replace · convert profile.
 
-\[
+$$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
-\]
+$$
 
-Equal disks of size \(S\): \(\Delta_{\mathrm{fit}} \approx S/2\).
+Equal disks of size $S$: $\Delta_{\mathrm{fit}} \approx S/2$.
 
 The worked numbers below are for **6 × 2 TB only** (not the older 8 × 1 TB example).
 
@@ -59,11 +59,11 @@ Pool: **six 2 TB members**, data profile RAID1.
 
 | Step | Calculation | Result |
 |------|-------------|--------|
-| Raw | \(6 \times 2\) | 12 TB |
-| Healthy usable \(U\) | \(12/2\) | **6 TB** |
-| After losing one 2 TB disk | five members left → \(10/2\) | **5 TB** usable |
-| Fit free \(\Delta_{\mathrm{fit}}\) | \(6 - 5\) | **1 TB** |
-| Planning Critical / Warning | \(\Delta\) / \(2\Delta\) | **1 T** / **2 T** |
+| Raw | $6 \times 2$ | 12 TB |
+| Healthy usable $U$ | $12/2$ | **6 TB** |
+| After losing one 2 TB disk | five members left → $10/2$ | **5 TB** usable |
+| Fit free $\Delta_{\mathrm{fit}}$ | $6 - 5$ | **1 TB** |
+| Planning Critical / Warning | $\Delta$ / $2\Delta$ | **1 T** / **2 T** |
 
 Same pool, different free levels **before** the disk fails (`Used ≈ 6 TB − Free`):
 
@@ -77,19 +77,19 @@ Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
 
 ### Other layouts (same formulas)
 
-| Layout | Healthy \(U\) | After one equal loss | \(\Delta_{\mathrm{fit}}\) | Critical / Warning |
+| Layout | Healthy $U$ | After one equal loss | $\Delta_{\mathrm{fit}}$ | Critical / Warning |
 |--------|---------------|----------------------|---------------------------|--------------------|
 | 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 4 T |
 | 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB | 4 T / 8 T |
 
 ### Speeds (best-case multi-stream ceiling)
 
-Let \(R,W\) be one device’s sequential read/write path ceiling.
+Let $R,W$ be one device’s sequential read/write path ceiling.
 
 | Direction | Multi-stream ideal | Single-stream (typical Unraid feel) | 6 devices |
 |-----------|--------------------|-------------------------------------|-----------|
-| **Read** | ≈ \(N \cdot R\) | ≈ \(R\) | up to ~6× / ~1× |
-| **Write** | ≈ \((N/2) \cdot W\) | ≈ \(W\) | up to ~3× / ~1× |
+| **Read** | ≈ $N \cdot R$ | ≈ $R$ | up to ~6× / ~1× |
+| **Write** | ≈ $(N/2) \cdot W$ | ≈ $W$ | up to ~3× / ~1× |
 
 On Unraid, the pool is mounted BTRFS: one big write keeps **two** members busy; parallel jobs can light up more pairs. Full write-up: [unraid-io.md](unraid-io.md).
 
@@ -102,8 +102,8 @@ These multi-stream figures are **upper bounds** for comparing profiles — cachi
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **Yes** for RAID1 / RAID1c3 / RAID1c4 |
-| Critical | \(\max\Delta_{\mathrm{fit}}\) — capacity still **fits** after worst one-disk loss |
-| Warning | \(2\times\max\Delta_{\mathrm{fit}}\) — fit + rebalance comfort |
+| Critical | $\max\Delta_{\mathrm{fit}}$ — capacity still **fits** after worst one-disk loss |
+| Warning | $2\times\max\Delta_{\mathrm{fit}}$ — fit + rebalance comfort |
 | Disk-size dropdowns | **Ignored** for paint/alerts (array evacuate model is wrong) |
 | Custom free | Still works; Suggest writes Custom values |
 | Settings tables | Usable now, fit free, rebalance comfort, per-member loss rows |

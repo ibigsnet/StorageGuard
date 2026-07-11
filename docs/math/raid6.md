@@ -10,44 +10,44 @@ Same as RAID5: BTRFS **RAID5/6** are **not** broadly recommended for production.
 
 ### What it is
 
-Chunk-level striping with **two parity** syndromes. Space efficiency approaches \((N-2)/N\) on equal disks.
+Chunk-level striping with **two parity** syndromes. Space efficiency approaches $(N-2)/N$ on equal disks.
 
 - Min devices: **3** (practical layouts usually **4+**)  
 - Typical resiliency: **two** device failures while degraded  
 
 ### Usable capacity (estimate)
 
-\[
+$$
 U(\mathrm{RAID6}, S_1,\ldots,S_N) \approx \sum_i S_i - 2\cdot\max_i S_i \quad (N \ge 3)
-\]
+$$
 
-Equal disks of size \(S\): \((N-2)\cdot S\).
+Equal disks of size $S$: $(N-2)\cdot S$.
 
-### Free headroom after losing disk \(i\)
+### Free headroom after losing disk $i$
 
-\[
+$$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
-\]
+$$
 
-Planning: Critical = \(\max\Delta_{\mathrm{fit}}\), Warning = \(2\times\max\Delta_{\mathrm{fit}}\) ([scenarios.md](scenarios.md)).  
+Planning: Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{\mathrm{fit}}$ ([scenarios.md](scenarios.md)).  
 Suggest uses **single-disk** Δ (not simultaneous double failure).
 
 ### Example: 4 × 4 TB
 
-- Healthy: \(16 - 8 = 8\) TB  
-- After one loss: \(12 - 8 = 4\) TB → \(\Delta = 4\) TB  
+- Healthy: $16 - 8 = 8$ TB  
+- After one loss: $12 - 8 = 4$ TB → $\Delta = 4$ TB  
 - Critical **4 T**, Warning **8 T**
 
 ### Example: 4 × 4 TB + 2 × 8 TB
 
-- Healthy: \(32 - 16 = 16\) TB  
-- After losing an 8 TB: \(\Delta = 8\) TB  
+- Healthy: $32 - 16 = 16$ TB  
+- After losing an 8 TB: $\Delta = 8$ TB  
 - Critical **8 T**, Warning **16 T**
 
 ### Speeds (best-case bus ceiling)
 
-- Read ≈ \(N \cdot R\)  
-- Write ≈ \((N/6)\cdot W\) for larger \(N\) (very rough)
+- Read ≈ $N \cdot R$  
+- Write ≈ $(N/6)\cdot W$ for larger $N$ (very rough)
 
 ---
 
@@ -56,7 +56,7 @@ Suggest uses **single-disk** Δ (not simultaneous double failure).
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
-| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
 | Help / alerts | Capacity + recovery headroom; stability caveats |
 | Not claimed | Double-failure capacity model or production safety |
 

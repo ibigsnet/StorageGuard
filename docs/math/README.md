@@ -48,7 +48,7 @@ BTRFS can use uneven disks. Usable space is **not** always “sum of smallest ×
 
 | Name | Question | If free is too low… |
 |------|----------|---------------------|
-| **Fit free** \(\Delta_{\mathrm{fit}}\) | After worst single disk loss, does **used** still fit remaining usable? | Used can exceed post-loss \(U\) |
+| **Fit free** $\Delta_{\mathrm{fit}}$ | After worst single disk loss, does **used** still fit remaining usable? | Used can exceed post-loss $U$ |
 | **Rebalance free** (planning) | After that loss, is there **working room** to remove/rebalance / restore multi-copy / convert without sitting at 100% full? | Data may still fit and stay online, but recovery actions are tight |
 
 After a loss you may: run degraded · remove+rebalance (if free) · replace · convert profile.  
@@ -56,24 +56,24 @@ After a loss you may: run degraded · remove+rebalance (if free) · replace · c
 
 ### Same-profile loss math
 
-\[
+$$
 U_{\mathrm{full}} = U(P, S_1,\ldots,S_N)
-\]
-\[
+$$
+$$
 U_{\mathrm{after}}(i) = U(P,\text{without disk }i)
-\]
-\[
+$$
+$$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
-\]
+$$
 
-First-order **product planning rule** (equal disks: Critical = \(\Delta\), Warning = \(2\Delta\)):
+First-order **product planning rule** (equal disks: Critical = $\Delta$, Warning = $2\Delta$):
 
-\[
+$$
 \mathrm{Critical} = \max_i \Delta_{\mathrm{fit}}(i)
-\]
-\[
+$$
+$$
 \mathrm{Warning} = 2 \times \max_i \Delta_{\mathrm{fit}}(i)
-\]
+$$
 
 Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** → usable **6 TB**, fit **1 T**, comfort **2 T**).
 
@@ -81,19 +81,19 @@ Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** �
 
 When shown, speeds are **best-case multi-stream ceilings** from the storage path (SATA rate, NVMe gen×width), not lab sequential results.
 
-On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **RAID1** mostly keeps **two** disks busy (~1× disk write); many parallel jobs can approach \((N/2)\times W\) write and \(N\times R\) read. That matches real Unraid experience and is written up in [unraid-io.md](unraid-io.md).
+On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **RAID1** mostly keeps **two** disks busy (~1× disk write); many parallel jobs can approach $(N/2)\times W$ write and $N\times R$ read. That matches real Unraid experience and is written up in [unraid-io.md](unraid-io.md).
 
 ### Profile summary
 
 | Profile | Usable (first-order) | 1-disk data online? | Notes |
 |---------|----------------------|---------------------|--------|
-| single / RAID0 | \(\sum S_i\) | **No** | No recovery free model |
-| RAID1 | \(\sum S_i / 2\) | Usually yes | **2** copies, not N |
-| RAID1c3 | \(\sum S_i / 3\) | Usually yes (2 losses) | 3 copies |
-| RAID1c4 | \(\sum S_i / 4\) | Usually yes (3 losses) | 4 copies |
-| RAID10 | \(\sum S_i / 2\) | Usually yes | 2 copies + striping |
-| RAID5 | \(\sum S_i - \max S_i\) | If within tolerance | ⚠ stability caveats |
-| RAID6 | \(\sum S_i - 2\max S_i\) | If within tolerance | ⚠ stability caveats |
+| single / RAID0 | $\sum S_i$ | **No** | No recovery free model |
+| RAID1 | $\sum S_i / 2$ | Usually yes | **2** copies, not N |
+| RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
+| RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
+| RAID10 | $\sum S_i / 2$ | Usually yes | 2 copies + striping |
+| RAID5 | $\sum S_i - \max S_i$ | If within tolerance | ⚠ stability caveats |
+| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | ⚠ stability caveats |
 
 ### Generic Examples
 
@@ -122,8 +122,8 @@ For profiles where one disk loss can keep data online but **shrinks** usable cap
 
 | Level | Rule | User meaning |
 |-------|------|--------------|
-| **Critical** | \(\max_i \Delta_{\mathrm{fit}}(i)\) | Capacity **fit** after worst one-disk loss |
-| **Warning** | \(2 \times \max_i \Delta_{\mathrm{fit}}(i)\) | Fit + first-order **rebalance comfort** |
+| **Critical** | $\max_i \Delta_{\mathrm{fit}}(i)$ | Capacity **fit** after worst one-disk loss |
+| **Warning** | $2 \times \max_i \Delta_{\mathrm{fit}}(i)$ | Fit + first-order **rebalance comfort** |
 
 | Class | Profiles | Suggest button? |
 |-------|----------|-----------------|

@@ -18,9 +18,9 @@ Often used for **metadata** while data uses RAID1 or RAID10.
 
 ### Usable capacity (estimate)
 
-\[
+$$
 U(\mathrm{RAID1c3}, S_1,\ldots,S_N) \approx \frac{1}{3}\sum_i S_i \quad (N \ge 3)
-\]
+$$
 
 | Layout | Raw | Usable (est.) |
 |--------|-----|---------------|
@@ -30,17 +30,17 @@ U(\mathrm{RAID1c3}, S_1,\ldots,S_N) \approx \frac{1}{3}\sum_i S_i \quad (N \ge 3
 ### After disk loss
 
 Same recovery menu as RAID1: degraded mount, optional remove/rebalance/replace/convert.  
-\(\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)\).  
-Planning Critical / Warning: \(\max\Delta\) / \(2\times\max\Delta\) — [scenarios.md](scenarios.md).
+$\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)$.  
+Planning Critical / Warning: $\max\Delta$ / $2\times\max\Delta$ — [scenarios.md](scenarios.md).
 
 ### Speeds (best-case multi-stream ceiling)
 
 | Direction | Ideal ceiling |
 |-----------|----------------|
-| Read | ≈ \(N \cdot R\) |
-| Write | ≈ \((N/3) \cdot W\) (three copies per logical write) |
+| Read | ≈ $N \cdot R$ |
+| Write | ≈ $(N/3) \cdot W$ (three copies per logical write) |
 
-Single-stream write remains closer to ~\(W\).
+Single-stream write remains closer to ~$W$.
 
 ---
 
@@ -49,7 +49,7 @@ Single-stream write remains closer to ~\(W\).
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (mirror class) |
-| Critical / Warning | \(\max\Delta_{\mathrm{fit}}\) / \(2\times\max\Delta_{\mathrm{fit}}\) |
+| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
 | Disk-size dropdowns | **Ignored** for paint/alerts |
 | Alerts | Mirror-class wording |
 
