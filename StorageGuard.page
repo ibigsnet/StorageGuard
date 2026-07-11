@@ -291,21 +291,17 @@ foreach ($pool_names as $p) {
 <p class="sg-page-lead">Preview mode — example sizes only (no live disks.ini).</p>
 <?php endif; ?>
 
-<p class="sg-page-lead">Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.</p>
+> Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
 <?php if (!$has_array_disks): ?>
-<p style="margin:0.5em 0 0.75em;">
-  <button type="button" id="sg-toggle-array-hidden" class="sg-advanced-btn">Show hidden items…</button>
-  <span id="sg-array-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.75em;">No array data disks — array settings hidden (saved config kept).</span>
-</p>
-<?php endif; ?>
+<button type="button" id="sg-toggle-array-hidden" class="sg-advanced-btn">Show hidden items…</button>
+<span id="sg-array-hidden-hint" class="sg-page-lead" style="margin-left:0.75em;">No array data disks — array settings hidden (saved config kept).</span>
 
-<div id="sg-array-block" class="sg-array-block<?= $has_array_disks ? '' : ' sg-array-hidden-default' ?>"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
+<div id="sg-array-block" class="sg-array-block" style="display:none" markdown="1">
 
-<?php if (!$has_array_disks): ?>
-> **No array detected.** Array thresholds, alerts, and coloring below do <strong>nothing</strong> until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here.
+> **No array detected.** Array settings below do **nothing** until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here.
 <?php endif; ?>
 
 ### Array
@@ -321,7 +317,7 @@ _(Thresholds from)_:
 <strong>Custom</strong> — type remaining free space. Decimals and mixed units work, e.g. <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>.
 </blockquote>
 
-<div id="array-disk-selects">
+<div id="array-disk-selects" markdown="1">
 
 _(Warning)_:
 : <select name="array_warning" id="array_warning" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" data-sg-default-warn="<?=htmlspecialchars($array_defaults['warning'] ?? '')?>">
@@ -340,7 +336,7 @@ Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical
 
 </div>
 
-<div id="array-custom-fields" style="display:none">
+<div id="array-custom-fields" style="display:none" markdown="1">
 
 _(Warning (custom))_:
 : <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
@@ -354,7 +350,9 @@ Remaining free space. Examples that work: <code>7.5T</code>, <code>1.2T</code>, 
 
 </div>
 
-</div><!-- /#sg-array-block thresholds -->
+<?php if (!$has_array_disks): ?>
+</div><!-- /#sg-array-block -->
+<?php endif; ?>
 
 ---
 
@@ -437,14 +435,12 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 <strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default. Only where coloring is enabled.
 </blockquote>
 
-<div class="sg-appearance-targets">
-
-<div id="sg-array-appearance" class="sg-appearance-sub sg-array-hidden-default"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
-<div class="sg-appearance-sub-title">Array coloring</div>
-Optional. Paint the array free bar on Main using the Array thresholds above.
 <?php if (!$has_array_disks): ?>
-> Inactive until array data disks are present (settings still save).
+<div id="sg-array-appearance" class="sg-array-appearance" style="display:none" markdown="1">
+> Array coloring is inactive until array data disks are present (settings still save).
 <?php endif; ?>
+
+#### Array coloring
 
 _(Array coloring)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
@@ -457,7 +453,7 @@ _(Array coloring)_:
 <strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="array-color-options" class="sg-details sg-color-options">
+<div id="array-color-options" class="sg-details" markdown="1">
 
 _(Highlight style)_:
 : <select name="array_color_style" id="array_color_style">
@@ -472,11 +468,14 @@ Pulse / green-when-OK (above) apply when Array coloring is Yes.
 </blockquote>
 
 </div>
-</div><!-- /#sg-array-appearance -->
 
-<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
-<div class="sg-appearance-sub-title">Pool coloring</div>
-Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.
+<?php if (!$has_array_disks): ?>
+</div><!-- /#sg-array-appearance -->
+<?php endif; ?>
+
+<div id="sg-pool-appearance" class="sg-pool-appearance" style="display:none" markdown="1">
+
+#### Pool coloring
 
 _(Pool coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
@@ -489,9 +488,7 @@ _(Pool coloring)_:
 <strong>No</strong> = leave all pool free bars alone (default). Pool thresholds still apply to Alerts if enabled.
 </blockquote>
 
-<div id="pool-color-options" class="sg-details sg-color-options">
-
-<div class="sg-color-options-who">
+<div id="pool-color-options" class="sg-details" markdown="1">
 
 _(Pools to color)_:
 : <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
@@ -503,11 +500,8 @@ _(Pools to color)_:
 Which pools get free-bar paint on Main. Unchecked pools can still have thresholds and Alerts. Each checked pool can use a different style below (e.g. Cache solid, another pool outline).
 </blockquote>
 
-</div>
-
 <?php if (!empty($pool_names)): ?>
-<div class="sg-color-options-styles">
-<div class="sg-color-options-styles-title">Highlight style (per pool)</div>
+> **Highlight style (per pool)** — Outline or Solid for each pool independently.
 
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
@@ -527,13 +521,10 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 </blockquote>
 
 <?php endforeach; ?>
-</div>
 <?php endif; ?>
 
 </div><!-- /#pool-color-options -->
 </div><!-- /#sg-pool-appearance -->
-
-</div><!-- /.sg-appearance-targets -->
 
 ---
 
@@ -542,7 +533,7 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
   <span id="sg-pools-wip-hint" style="margin-left:0.75em;color:#888;font-size:0.9em;">Pool thresholds, pool alerts, and pool coloring options</span>
 </p>
 
-<div id="sg-pools-wip" class="sg-pools-wip" style="display:none">
+<div id="sg-pools-wip" class="sg-pools-wip" style="display:none" markdown="1">
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span> — free-space thresholds
 
@@ -606,7 +597,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
 Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on RAID1 / RAID1c3 / RAID1c4 — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for pool coloring under Appearance if that pool is included.
 </blockquote>
 
-<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects">
+<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
 
 _(<?=htmlspecialchars($p)?> Warning)_:
 : <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>">
@@ -620,7 +611,7 @@ _(<?=htmlspecialchars($p)?> Critical)_:
 
 </div>
 
-<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" style="display:none">
+<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
 
 _(<?=htmlspecialchars($p)?> Warning (custom))_:
 : <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">

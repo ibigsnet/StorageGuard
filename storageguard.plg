@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10bf">
+<!ENTITY version "2026.07.10bg">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: when array present, array fields sit in main Unraid form table again (no always-on wrapper).
+
+###2026.07.10bf
 - Settings: restore Unraid two-column form layout; nested wrappers no longer use markdown.
 
 ###2026.07.10be
@@ -327,7 +330,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bf"
+[ -z "$VER" ] && VER="2026.07.10bg"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
