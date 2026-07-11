@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10bl">
+<!ENTITY version "2026.07.10bm">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: fix Array coloring form row when no array (inactive note no longer breaks the dl line).
+
+###2026.07.10bl
 - Settings: restore pre-hide-array Appearance blockouts (bb layout) while keeping hide-array and new labels.
 
 ###2026.07.10bk
@@ -345,7 +348,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bl"
+[ -z "$VER" ] && VER="2026.07.10bm"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

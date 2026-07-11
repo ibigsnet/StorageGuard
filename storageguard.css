@@ -70,6 +70,14 @@
   margin: 0 0 0.4em;
   letter-spacing: 0.01em;
 }
+/* Intro lines as real <p> so markdown blockquotes cannot glue into form dl rows */
+.sg-appearance-sub-lead {
+  margin: 0 0 0.55em;
+  font-size: 0.92em;
+  line-height: 1.35;
+  opacity: 0.78;
+  font-weight: 400;
+}
 .sg-appearance-sub > .inline_help,
 .sg-appearance-sub > p {
   margin-left: 0;

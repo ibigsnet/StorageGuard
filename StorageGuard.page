@@ -447,9 +447,9 @@ Applies only where coloring is enabled. Does <strong>not</strong> pulse green / 
 
 <div id="sg-array-appearance" class="sg-appearance-sub"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
 <div class="sg-appearance-sub-title">Array coloring</div>
-Optional. Paint the array free bar on Main using the Array thresholds above.
+<p class="sg-appearance-sub-lead">Optional. Paint the array free bar on Main using the Array thresholds above.</p>
 <?php if (!$has_array_disks): ?>
-> Inactive until array data disks are present (settings still save).
+<p class="sg-appearance-sub-lead">Inactive until array data disks are present (settings still save).</p>
 <?php endif; ?>
 
 _(Array coloring)_:
@@ -482,7 +482,7 @@ Pulse and green-outline-when-OK (above) apply when Array coloring is Yes.
 
 <div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none" markdown="1">
 <div class="sg-appearance-sub-title">Pool coloring</div>
-Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.
+<p class="sg-appearance-sub-lead">Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.</p>
 
 _(Pool coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
