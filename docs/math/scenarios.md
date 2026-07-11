@@ -56,33 +56,33 @@ Why \(2\Delta\) for comfort? After a loss, free left is roughly \(\mathrm{free}_
 
 ---
 
-## Worked example: 8 × 1 TB, BTRFS **RAID1**
+## Worked example: 6 × 2 TB, BTRFS **RAID1**
 
-### Copies and usable (not 8 copies)
+### Copies and usable (not 6 copies)
 
 | | |
 |--|--|
 | Profile | RAID1 = **two** copies per chunk on different devices |
-| Raw | 8 TB |
-| Usable \(U\) | \(8/2 =\) **4 TB** |
-| Not | 1 TB usable, and not 8 mirrors of the same 1 TB |
+| Raw | 12 TB |
+| Usable \(U\) | \(12/2 =\) **6 TB** |
+| Not | 2 TB usable, and not 6 mirrors of the same 2 TB |
 
-### After one 1 TB disk is gone (stay on RAID1)
+### After one 2 TB disk is gone (stay on RAID1)
 
 | | |
 |--|--|
-| Remaining | 7 × 1 TB |
-| Usable after | \(7/2 =\) **3.5 TB** |
-| \(\Delta_{\mathrm{fit}}\) | \(4 - 3.5 =\) **0.5 TB** |
+| Remaining | 5 × 2 TB |
+| Usable after | \(10/2 =\) **5 TB** |
+| \(\Delta_{\mathrm{fit}}\) | \(6 - 5 =\) **1 TB** |
 
 | Free before loss | Used before | After one loss | Fit? | Room to rebalance? |
 |------------------|-------------|----------------|------|---------------------|
-| **0.5 TB** | 3.5 TB | Usable 3.5 TB, free ~0 | **Yes (tight)** | **No** |
-| **1.0 TB** | 3.0 TB | free ~0.5 TB | Yes | **Marginal** |
-| **1.5 TB** | 2.5 TB | free ~1.0 TB | Yes | **More comfortable** |
-| **0 TB** | 4.0 TB | Used 4.0 > 3.5 usable | **No** | N/A |
+| **1 TB** | 5 TB | Usable 5 TB, free ~0 | **Yes (tight)** | **No** |
+| **2 TB** | 4 TB | free ~1 TB | Yes | **Marginal / some** |
+| **3 TB** | 3 TB | free ~2 TB | Yes | **More comfortable** |
+| **0 TB** | 6 TB | Used 6 TB > 5 TB usable | **No** | N/A |
 
-Planning numbers for this layout: Critical **500 G**, Warning **1 T** (\(2\Delta\)).
+Planning numbers for this layout: Critical **1 T**, Warning **2 T** (\(2\Delta\)).
 
 Crossing Critical does **not** mean “RAID1 dies.” It means: *if a disk fails now, used may already exceed post-loss usable.*
 

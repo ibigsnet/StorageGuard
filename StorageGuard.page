@@ -604,7 +604,7 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
 <?php if ($p_raid1): ?>
-> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has **two / three / four** copies — **not** one copy per disk. Example: 8×1 TB RAID1 ≈ **4 TB** usable (two copies), not 1 TB. A single disk loss usually leaves data online; usable capacity still drops. **Disk size** thresholds are **not used** for paint/alerts. Use **Suggest free thresholds** or **Custom** for capacity-fit / rebalance headroom (see math tables below).
+> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has **two / three / four** copies — **not** one copy per disk. Example: 6×2 TB RAID1 ≈ **6 TB** usable (two copies), not 2 TB. A single disk loss usually leaves data online; usable capacity still drops. **Disk size** thresholds are **not used** for paint/alerts. Use **Suggest free thresholds** or **Custom** for capacity-fit / rebalance headroom (see math tables below).
 <?php elseif ($p_raid0 || $p_single): ?>
 > **<?= $p_raid0 ? 'RAID0' : 'Single' ?> profile:** little or no redundancy. Free thresholds here are capacity policy only (not array-style evacuate room). **Suggest free thresholds** is not offered — use **Custom values** if you want alerts.
 <?php endif; ?>

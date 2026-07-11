@@ -74,7 +74,7 @@ First-order **product planning rule** (equal disks: Critical = \(\Delta\), Warni
 \mathrm{Warning} = 2 \times \max_i \Delta_{\mathrm{fit}}(i)
 \]
 
-Full walkthroughs: [scenarios.md](scenarios.md) (includes **8×1 TB RAID1** → usable **4 TB**, fit **500 G**, comfort **1 T**).
+Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** → usable **6 TB**, fit **1 T**, comfort **2 T**).
 
 ### Speeds (comparison only)
 
@@ -94,7 +94,7 @@ When shown, speeds are **best-case bus/link ceilings** (SATA rate, NVMe gen×wid
 
 ### Generic Examples
 
-- **Many small equal:** 8 × 1 TB  
+- **Equal mid-size:** 6 × 2 TB  
 - **Equal:** 4 × 4 TB  
 - **Mixed:** 4 × 4 TB + 2 × 8 TB  
 - **Small RAID10:** 3 × 4 TB  

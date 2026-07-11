@@ -8,7 +8,7 @@
 
 **Not** “N-way mirror of all disks.”
 
-On BTRFS, **RAID1** means: each data (or metadata) chunk is stored as **exactly two copies on two different devices**. With 2, 3, or **8** devices, every chunk still has **two** copies — not N.
+On BTRFS, **RAID1** means: each data (or metadata) chunk is stored as **exactly two copies on two different devices**. With 2, 3, or **6** devices, every chunk still has **two** copies — not N.
 
 - Writing a chunk only needs **two** devices.  
 - Reading can use either copy (scrub/self-heal can repair from the good copy).  
@@ -28,11 +28,11 @@ U(\mathrm{RAID1}, S_1,\ldots,S_N) \approx \frac{1}{2}\sum_i S_i
 
 | Layout | Raw | Usable (est.) | Copies |
 |--------|-----|---------------|--------|
-| 2 × 1 TB | 2 TB | **1 TB** | 2 |
-| 8 × 1 TB | 8 TB | **4 TB** | 2 (not 8) |
+| 2 × 2 TB | 4 TB | **2 TB** | 2 |
+| 6 × 2 TB | 12 TB | **6 TB** | 2 (not 6) |
 | 4 × 4 TB | 16 TB | **8 TB** | 2 |
 
-**Yes — with 8×1 TB, the data pool is about 4 TB, not 1 TB.** More drives add capacity (~half of each new disk), not more copies of the same small volume.
+**Yes — with 6×2 TB, the data pool is about 6 TB, not 2 TB.** More drives add capacity (~half of each new disk), not more copies of the same small volume.
 
 Mixed sizes: half-raw is a first-order bound; real usable can be lower when one disk is much larger ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)).
 
@@ -49,20 +49,20 @@ Mixed sizes: half-raw is a first-order bound; real usable can be lower when one 
 
 Equal disks of size \(S\): \(\Delta_{\mathrm{fit}} \approx S/2\).
 
-### Example: 8 × 1 TB RAID1
+### Example: 6 × 2 TB RAID1
 
 | | |
 |--|--|
-| Healthy usable | **4 TB** |
-| After one loss | **3.5 TB** |
-| \(\Delta_{\mathrm{fit}}\) | **0.5 TB** |
-| Planning Critical / Warning | **500 G** / **1 T** (\(2\Delta\)) |
+| Healthy usable | **6 TB** |
+| After one loss | **5 TB** |
+| \(\Delta_{\mathrm{fit}}\) | **1 TB** |
+| Planning Critical / Warning | **1 T** / **2 T** (\(2\Delta\)) |
 
 | Free now | Used now | After 1 disk dies | Fit? | Rebalance room? |
 |----------|----------|-------------------|------|-----------------|
-| 500 G | 3.5 TB | ~0 free on 3.5 TB usable | Barely | Essentially none |
-| 1 T | 3.0 TB | ~0.5 T free | Yes | Some |
-| 0 | 4.0 TB | used 4 TB > 3.5 TB usable | **No** | N/A |
+| 1 T | 5 TB | ~0 free on 5 TB usable | Barely | Essentially none |
+| 2 T | 4 TB | ~1 T free | Yes | Some |
+| 0 | 6 TB | used 6 TB > 5 TB usable | **No** | N/A |
 
 Full scenario language: [scenarios.md](scenarios.md).
 
