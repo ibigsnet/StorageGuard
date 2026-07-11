@@ -184,18 +184,18 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
     switch ($class) {
         case 'mirror':
             $line2 = $is_crit
-                ? "On a mirrored pool (RAID1/RAID1cN), a single disk failure usually still leaves a full copy of your data. Free space matters mainly when replacing a disk and rebuilding redundancy, or if you convert the profile."
-                : "On a mirrored pool (RAID1/RAID1cN), losing one disk usually still leaves your data available on the remaining copy/copies—you typically do not need free space to 'move data off' the failed disk the way you do on the array. Free space still matters for rebuilds after a replacement and for balance/profile changes.";
+                ? "On BTRFS RAID1/RAID1cN, each chunk has multiple copies on different devices—a single disk loss usually still leaves data online. Free space is not 'evacuate the failed disk' headroom (unlike the array); it matters for capacity after the loss, optional remove/rebalance, replace, or profile convert."
+                : "On BTRFS RAID1/RAID1cN, losing one disk usually still leaves your data on the remaining copy/copies—you typically do not need free space to 'move data off' the failed disk the way you do on the array. Free still matters so used data fits at the reduced usable capacity, and for optional remove/rebalance, replace, or profile changes.";
             break;
         case 'parity':
             $line2 = $is_crit
-                ? "On RAID5/RAID6, data can survive a limited number of disk failures while degraded, but restoring full redundancy (replace + rebalance) often needs free-space headroom. Free space this low may block or stress recovery."
-                : "On RAID5/RAID6, free space is recovery headroom: after a disk failure you may need room to rebalance/restripe when replacing a drive. This is closer to the array's 'room to recover' idea than RAID1.";
+                ? "On BTRFS RAID5/RAID6, data can survive a limited number of failures while degraded (profiles have stability caveats). Free space this low may block remove/rebalance or replace recovery, or leave used data larger than post-loss usable capacity."
+                : "On BTRFS RAID5/RAID6, free space is capacity + recovery headroom: after a loss, used data must still fit, and replace/remove/rebalance often needs room. Closer to the array's 'room to recover' idea than RAID1. These profiles have known stability caveats—see docs.";
             break;
         case 'striped_mirror':
             $line2 = $is_crit
-                ? "On RAID10, a single disk failure often leaves data available, but restoring full redundancy can require free space depending on layout. Free space this low may limit rebalance or recovery options (including profile conversion)."
-                : "On RAID10, data often survives a single disk failure; free space still matters for restoring full redundancy after a replace/rebalance, and for some layout-dependent cases.";
+                ? "On BTRFS RAID10 (two copies + striping, not fixed mirror pairs), a single disk loss usually leaves data available. Free space this low may mean used data no longer fits after capacity drops, or block remove-to-remaining-disks / rebalance / convert without adding a drive."
+                : "On BTRFS RAID10, one disk loss usually leaves data online; you are not forced to replace immediately if remaining disks can hold the data. Free space is wiggle room so used data still fits after the capacity drop, and so optional remove/rebalance or profile convert can succeed.";
             break;
         case 'none':
             $line2 = "This pool has little or no redundancy (single/RAID0). Free-space thresholds here are capacity policy only: a disk failure risks data—there is no parity-style evacuate-to-siblings story.";

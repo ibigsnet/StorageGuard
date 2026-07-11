@@ -595,7 +595,7 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
   $current_profile = get_btrfs_profile($p);
   $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
   $pc = strtolower(trim((string)$current_profile));
-  // RAID1 family only — not RAID10 (striped mirrors get capacity-Δ suggestions)
+  // RAID1 family only — not RAID10 (BTRFS RAID10 gets capacity-Δ suggestions)
   $p_raid1 = (strpos($pc, 'raid10') === false)
     && (preg_match('/raid1c[34]/', $pc) || preg_match('/\braid1\b/', $pc) || strpos($pc, 'dup') !== false);
   $p_raid0 = (strpos($pc, 'raid0') !== false);
@@ -604,7 +604,7 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
 <?php if ($p_raid1): ?>
-> **RAID1 profile** (RAID1, RAID1c3, RAID1c4): surviving a disk loss usually still leaves a full copy — you do not need free space to evacuate data the way the array does. **Disk size** thresholds are **not used** for paint/alerts on this profile. Set **Custom values** only if you want a capacity-policy free-space threshold (e.g. rebuild headroom after replace). **RAID10**, **RAID5**, and **RAID6** are different: they can use **Suggest free thresholds** (capacity headroom after a single disk loss).
+> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has multiple copies on different devices — a single disk loss usually still leaves data online. You do **not** need free space to “evacuate” the failed disk the way the array does. **Disk size** thresholds are **not used** for paint/alerts. Set **Custom values** only for capacity policy (e.g. room after usable capacity drops, or before remove/rebalance/replace). **RAID10 / RAID5 / RAID6** can use **Suggest free thresholds** (same-profile capacity headroom after one disk loss).
 <?php elseif ($p_raid0 || $p_single): ?>
 > **<?= $p_raid0 ? 'RAID0' : 'Single' ?> profile:** little or no redundancy. Free thresholds here are capacity policy only (not array-style evacuate room). **Suggest free thresholds** is not offered — use **Custom values** if you want alerts.
 <?php endif; ?>
@@ -660,10 +660,10 @@ _(<?=htmlspecialchars($p)?> Critical (custom))_:
   <span class="sg-math-inline-hint">Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> — free headroom to still fit data after a single disk loss on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <?=htmlspecialchars((string)($sug['usable_tb'] ?? ''))?>T). Switches this pool to Custom values; click Apply to save.</span>
 
 <blockquote class="inline_help">
-Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. Available for <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> — not RAID1 or RAID0/single.
+Suggested free amounts use BTRFS capacity math: for each member, estimate usable capacity if that disk is lost while <strong>staying on the current profile</strong>; Warning = worst loss, Critical = mildest (same when members match). That is “will used data still fit?” — not “you must replace the disk.” Estimates ignore metadata. Available for <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> — not RAID1 or RAID0/single.
 </blockquote>
 <?php elseif ($p_raid1): ?>
-> No automatic free-threshold suggestion for <strong>RAID1</strong> profiles (RAID1, RAID1c3, RAID1c4). Surviving a disk loss usually does not require free space the way the array does. Use <strong>Custom values</strong> if you want a capacity-policy alert. <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> are different and can get suggestions.
+> No automatic free-threshold suggestion for <strong>BTRFS RAID1</strong> profiles (RAID1, RAID1c3, RAID1c4). Surviving a disk loss usually does not require array-style evacuate free space. Use <strong>Custom values</strong> for capacity policy. <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> can get Suggest (same-profile capacity headroom).
 <?php elseif ($p_raid0): ?>
 > No automatic free-threshold suggestion for <strong>RAID0</strong>. Free thresholds are capacity policy only (no redundancy recovery model). Use <strong>Custom values</strong> if you want alerts.
 <?php elseif ($p_single): ?>

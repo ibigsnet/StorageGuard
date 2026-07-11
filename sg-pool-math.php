@@ -109,14 +109,14 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
         case 'raid0':
             return $sum;
         case 'raid1':
-            // Two copies: ≈ half raw. Mixed: sum/2 is a common first-order bound.
+            // BTRFS RAID1: exactly two copies on different devices (any N). ≈ half raw.
             return $sum / 2.0;
         case 'raid1c3':
             return $sum / 3.0;
         case 'raid1c4':
             return $sum / 4.0;
         case 'raid10':
-            // Striped mirrors: ≈ half raw when layout can place pairs.
+            // BTRFS RAID10: two copies + striping (not fixed mirror pairs). ≈ half raw.
             if ($n < 2) return 0.0;
             return $sum / 2.0;
         case 'raid5':

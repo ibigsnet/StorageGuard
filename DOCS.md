@@ -111,53 +111,63 @@ For each pool you can:
 
 ### Why free space matters on BTRFS pools
 
-Unraid pools are often BTRFS. BTRFS is not classic mdadm RAID: it allocates **chunks**, supports **mixed disk sizes**, and can use different profiles for data and metadata (RAID1, RAID10, RAID5/6, single, …).
+Unraid pools are often BTRFS. **BTRFS profiles are not mdadm/hardware RAID:**
 
-After a drive fails, the pool can stay online **degraded**. Restoring full redundancy usually means replace + rebalance (or a profile change). **Rebalance needs free space**—often on the order of the data that must be rewritten (roughly “size of what was on the failed device,” plus overhead).
+- Allocation is **chunk / block-group** based (~1 GiB), not whole-disk stripes  
+- **Data** and **metadata** can use different profiles  
+- **RAID1** = exactly **two** copies on different devices (not N-way mirror of all disks)  
+- **RAID10** = two copies **plus striping** at chunk level (not fixed mirror pairs)  
+- Odd device counts and mixed sizes are normal  
 
-So the same idea as the array applies: thresholds tell you *before* a failure whether you still have room to recover without an emergency purchase.
+After a drive fails, the pool can stay online **degraded** when the profile’s copies/parity still cover every chunk. You are **not always forced to replace** immediately.
+
+Typical options:
+
+1. **Keep running degraded** until you can act  
+2. **Remove** the device and rebalance onto remaining disks **if free space and device count allow** (usable capacity shrinks)  
+3. **Replace** the member to restore capacity and full redundancy  
+4. **Convert** profile via balance (needs unallocated space; different tradeoffs)
+
+**Storage Guard free thresholds** for pools (especially **Suggest** on RAID10/5/6) answer: *if this disk is gone and you stay on the same profile, does used data still fit?* That **Δ** is capacity wiggle room — not “evacuate one full disk of unique data” like the Unraid **array**.
+
+Detailed formulas: [docs/math/](docs/math/README.md).
 
 Useful Unraid UI: **Main → click the pool name → Balance Status**  
 (direct link form: `http://your-server/Main/Device?name=yourpoolname`)
 
 ### BTRFS profiles (short reference)
 
-| Profile | Rough usable | Failure tolerance (typical) |
-|---------|----------------|-----------------------------|
-| single / RAID0 | High | None — any loss can mean data loss |
-| RAID1 | ~50% | 1 device |
-| RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices |
-| RAID10 | ~50% | Layout-dependent (often 1+) |
-| RAID5 | ~(N−1)/N | 1 device |
-| RAID6 | ~(N−2)/N | 2 devices |
+| Profile | Rough usable | Failure tolerance (typical) | Notes |
+|---------|----------------|-----------------------------|--------|
+| single / RAID0 | ~100% | None — any loss can mean data loss | |
+| RAID1 | ~50% | **1** device (always 2 copies) | N disks still only 2 copies per chunk |
+| RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices | Often used for metadata |
+| RAID10 | ~50% | **1** guaranteed | Not fixed pairs; odd N OK |
+| RAID5 | ~(N−1)/N | 1 device | ⚠ stability caveats |
+| RAID6 | ~(N−2)/N | 2 devices | ⚠ stability caveats |
 
-When a device fails, the pool goes **degraded** but can stay usable. Full recovery needs either:
-
-1. Replace the device and rebalance / replace, or  
-2. Sometimes convert profile (e.g. RAID10 → RAID5) to free capacity—**conversion itself needs free space**
-
-**Mixed sizes:** BTRFS can combine e.g. 4T and 8T drives; larger drives hold more chunks. Larger failures need more free space to re-mirror or re-stripe.
+**Mixed sizes:** BTRFS can combine e.g. 4T and 8T drives; usable is layout-dependent ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)). First-order Suggest math is simplified — see docs/math.
 
 ### Example: 4×4TB + 2×8TB (~32 TB raw)
 
-Approximate usable capacity (varies with metadata and allocation):
+Approximate usable (first-order, data profile only):
 
 | Profile | ~Usable | Notes |
 |---------|---------|--------|
-| RAID0 | ~32 TB | Max space/speed, no safety |
-| RAID1 / RAID10 | ~16 TB | Mirroring / striped mirrors |
-| RAID5 | ~higher | One parity |
-| RAID6 | ~lower than RAID5 | Two parity |
+| RAID0 / single | ~32 TB | Max space, no safety |
+| RAID1 / RAID10 | ~16 TB | Two copies (+ striping for RAID10) |
+| RAID5 | ~24 TB | sum − largest |
+| RAID6 | ~16 TB | sum − 2×largest |
 
-**Lose a 4T member:** rebalance often wants on the order of **~4T free** (plus overhead).  
-**Lose an 8T member:** plan for **more** free space (often several TB more).  
-A conservative pair for a busy mixed pool might be Warning in the **10–12T** free range and Critical around **6–8T** free (Warning free amount still larger than Critical)—tune to your used capacity and risk tolerance.
+**Lose one 8T on RAID10 (est.):** usable 16 T → 12 T → need **~4T free** so used still fits (Δ).  
+**Lose one 4T on RAID10:** Δ ≈ **2T**.  
+You may still run on remaining disks without an emergency replace if used ≤ post-loss U.
 
-**Rules of thumb**
+**Rules of thumb (RAID10/5/6 Suggest-style)**
 
-- **Warning** ≥ size of the **largest member** (plus a little headroom if you rebalance often)  
-- **Critical** a **smaller free amount** than Warning, still high enough that you can remove a failed device / start recovery without the pool filling solid  
-- Always keep backups; a degraded pool is not the time to discover bitrot  
+- Prefer **Δ-based** free (worst single-disk capacity drop), not “always free ≥ largest disk”  
+- **Warning** free amount larger than **Critical** when sizes differ  
+- Always keep **backups**; redundancy is not a backup  
 
 For detailed speed/capacity tables with mixed drives, this community spreadsheet is useful:  
 https://docs.google.com/spreadsheets/d/1_hyQBpp4EpSqxYUCarDHSfYkRkGiAHMIHbHz4uuAZHs/edit?usp=sharing
@@ -250,9 +260,9 @@ Always includes free space, threshold, and detected **BTRFS data profile** (when
 
 | Class | Profiles (examples) | Message focus |
 |-------|---------------------|---------------|
-| **Mirror** | RAID1, RAID1c3, RAID1c4 | One-disk loss usually still leaves a full copy; free space matters for **rebuild after replace** / balance / profile change—not array-style evacuate |
-| **Parity** | RAID5, RAID6 | Free space ≈ **recovery/rebalance headroom** after failure (closer to array anxiety) |
-| **Striped mirror** | RAID10 | One failure often OK for data; restoring full redundancy may need free space |
+| **Mirror** | RAID1, RAID1c3, RAID1c4 | Multi-copy chunks; one-disk loss usually leaves data online; free = capacity/policy, not array-style evacuate |
+| **Parity** | RAID5, RAID6 | Free ≈ capacity fit after loss + recovery headroom (⚠ profile stability caveats) |
+| **Striped mirror** | RAID10 | BTRFS two copies + striping; one failure usually OK; free = post-loss fit / remove-rebalance wiggle room |
 | **No redundancy** | single, RAID0 | Capacity policy only; disk loss **risks data** |
 | **Unknown** | other / non-BTRFS | Generic free-space threshold text |
 
@@ -279,9 +289,9 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 - Paint and thresholds: **raw free space** on `/mnt/{pool}` vs your Warning/Critical values (same math as array).  
 - Defaults: pool thresholds **None**; pool alerts **off**.  
 - Notifications: **profile-class wording** so RAID1 is not described like parity array evacuate.  
-- **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom free-space values** if you still want a capacity-policy threshold (e.g. room for rebuild/rebalance after replace).  
+- **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom free-space values** for capacity policy (post-loss fit, remove/rebalance, replace, convert).  
 - **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.  
-- **Capacity math (library):** for RAID10/5/6 (and similar), estimated free headroom after losing disk \(i\) while staying on the same profile is \(\Delta(i)=U_{\text{full}}-U_{\text{without }i}\). Suggested Warning = \(\max\Delta\), Critical = \(\min\Delta\). See [docs/math/](docs/math/README.md). Not written into Settings automatically yet.  
+- **Capacity math:** for RAID10/5/6, free headroom after losing disk \(i\) while staying on the same profile is \(\Delta(i)=U_{\text{full}}-U_{\text{without }i}\). Suggested Warning = \(\max\Delta\), Critical = \(\min\Delta\). Settings **Suggest** can fill Custom from that. See [docs/math/](docs/math/README.md).  
 - **Speeds:** optional best-case **bus/link ceilings** for comparing profiles only — not measured disk sequential throughput.
 
 ### Why profile matters (scenarios)
@@ -289,13 +299,13 @@ Pool thresholds remain **manual** (default None). Profile-aware **suggested** th
 | Layout | One disk fails — data? | Need free space to “move data off” failed disk? | Free-space meaning |
 |--------|------------------------|--------------------------------------------------|--------------------|
 | **Array (parity)** | Yes (emulated) | **Yes**, to evacuate without buying a disk | Evacuation room |
-| **RAID1 (2 equal disks)** | Yes (mirror) | **No** for data access | Rebuild/rebalance after replace; policy |
-| **RAID1c3 / RAID1c4** | Yes (extra copies) | **No** for single loss | Same as mirror |
-| **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; need room to **rebalance/replace** | Recovery headroom |
-| **RAID10** | Often yes | Often need free space to **restore full redundancy** | Layout-dependent |
+| **BTRFS RAID1 (any N≥2)** | Yes (2 copies) | **No** for data access | Capacity drop; optional remove/rebalance/replace/convert |
+| **RAID1c3 / RAID1c4** | Yes (extra copies) | **No** for single loss | Same as mirror class |
+| **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; capacity + recovery room | Recovery headroom (⚠ stability) |
+| **BTRFS RAID10** | Usually yes (1 disk) | **No** forced replace; free so used still fits | Same-profile Δ (Suggest) |
 | **single / RAID0** | **No** | N/A | Capacity only; data at risk |
 
-**Profile conversion** (e.g. RAID10 → RAID5) can **gain usable free space** after or before a failure, at the cost of different failure tolerance. Storage Guard will never auto-convert; guidance is planned.
+**Profile conversion** (e.g. RAID10 → RAID1 or RAID5) can **change** usable free space after or before a failure, at the cost of different failure tolerance and write shape. Storage Guard will never auto-convert.
 
 ---
 

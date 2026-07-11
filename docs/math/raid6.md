@@ -1,7 +1,21 @@
-# Profile: RAID6
+# Profile: RAID6 (BTRFS)
 
-## Redundancy
-Two parity. Typically survives two device losses while degraded.
+## Status warning
+
+Same as RAID5: BTRFS **RAID5/6** are **not** broadly recommended for production. See [BTRFS Status](https://btrfs.readthedocs.io/en/latest/Status.html). For “survive two disks” with more predictable behavior, many operators prefer **RAID1c3** (three copies) despite lower space efficiency.
+
+## What it is
+
+Chunk-level striping with **two parity** syndromes. Space efficiency approaches \((N-2)/N\) on equal disks.
+
+- Min devices: **3** (practical layouts usually **4+**)  
+- Typical resiliency: **two** device failures while degraded  
+
+## Redundancy / recovery
+
+Degraded operation after one or two losses is the design goal; real-world recovery has historically been the hard part (write hole, replace ordering). Plan backups regardless.
+
+Δ still models **capacity fit** if you stay on RAID6 after losing one member (Suggest uses single-disk Δ, not double-failure).
 
 ## Usable capacity (estimate)
 
@@ -23,12 +37,12 @@ Warning = \(\max \Delta\), Critical = \(\min \Delta\).
 
 ### Example: 4 × 4 TB
 - Healthy: \(16 - 8 = 8\) TB  
-- After one loss (3 × 4 TB): needs \(N \ge 3\); \(12 - 8 = 4\) TB → **Δ = 4 TB**
+- After one loss (3 × 4 TB): \(12 - 8 = 4\) TB → **Δ = 4 TB**
 
 ### Example: 4 × 4 TB + 2 × 8 TB
 - Healthy: \(32 - 16 = 16\) TB  
 - After losing an 8 TB: raw 24, max 8 → \(24 - 16 = 8\) TB → **Δ = 8 TB**
 
 ## Speeds (best-case bus ceiling)
-- Read ≈ \(N \cdot R\)
+- Read ≈ \(N \cdot R\)  
 - Write ≈ \((N/6)\cdot W\) for larger \(N\) (very rough parity cost model)
