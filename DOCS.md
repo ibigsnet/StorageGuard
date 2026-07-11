@@ -110,7 +110,7 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 > **Work in progress** (array remains primary). Pool UI is **hidden by default** — open **Show advanced pools (WIP)**.  
 > **OK to use:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), free-bar coloring on Unraid’s main page, and alerts.  
 > **Profile-aware today:** alert *wording* by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts.  
-> **Capacity math / Suggest:** Settings can fill Custom Warning/Critical from same-profile \(\Delta\) for RAID1/1cN, RAID10, RAID5, and RAID6. Formulas: [docs/math/](docs/math/README.md).
+> **Capacity math / Suggest:** Settings can fill Custom Warning/Critical from same-profile $\Delta$ for RAID1/1cN, RAID10, RAID5, and RAID6. Formulas: [docs/math/](docs/math/README.md).
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common Unraid default: every pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
 
@@ -306,7 +306,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 - Notifications: **profile-class wording** so RAID1 is not described like array evacuate.  
 - **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom** or **Suggest** for capacity-policy free amounts.  
 - **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.  
-- **Capacity math / Suggest:** Critical = \(\max\Delta_{\mathrm{fit}}\), Warning = \(2\times\max\Delta_{\mathrm{fit}}\) for RAID1/1cN, RAID10, RAID5, RAID6. See [docs/math/](docs/math/README.md).  
+- **Capacity math / Suggest:** Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{\mathrm{fit}}$ for RAID1/1cN, RAID10, RAID5, RAID6. See [docs/math/](docs/math/README.md).  
 - **Speeds:** optional best-case **bus/link multi-stream ceilings** for comparing profiles only — not measured disk sequential throughput. See [docs/math/unraid-io.md](docs/math/unraid-io.md).
 
 ### Why profile matters (scenarios)
@@ -326,7 +326,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 
 ## Planned / future
 
-1. **Richer rebalance free-space estimator** (beyond capacity-fit \(\Delta\) and \(2\times\) comfort).  
+1. **Richer rebalance free-space estimator** (beyond capacity-fit $\Delta$ and $2\times$ comfort).  
 2. **Better speed estimates** — model JSON by drive name, optional read-only probe, user overrides.  
 3. **Per-failure-device analysis** (“if disk X fails…”).  
 4. **Profile conversion guidance** in Settings UI (capacity + bus-ceiling speeds).  

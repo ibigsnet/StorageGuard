@@ -42,4 +42,4 @@ plugin install https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/stor
 
 ## Next major line of work
 
-After `stable-recommended-2026.07.10ar`: **BTRFS pool capacity math** (usable \(U\), free headroom \(\Delta\) after single-disk loss, suggested warn/crit, bus-ceiling speed notes for profile comparison, Settings “Suggest”). See [docs/math/](docs/math/README.md).
+After `stable-recommended-2026.07.10ar`: **BTRFS pool capacity math** (usable $U$, free headroom $\Delta$ after single-disk loss, suggested warn/crit, bus-ceiling speed notes for profile comparison, Settings “Suggest”). See [docs/math/](docs/math/README.md).
