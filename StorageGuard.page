@@ -443,14 +443,17 @@ When <strong>Yes</strong>, flash yellow/red on free bars that are at <strong>War
 Applies only where coloring is enabled. Does <strong>not</strong> pulse green / OK. Off by default (static warn/crit color).
 </blockquote>
 
-<div class="sg-appearance-targets" markdown="1">
+<div class="sg-appearance-targets">
 
-<div id="sg-array-appearance" class="sg-appearance-sub"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
+<?php /* Title/lead outside markdown so form dl rows parse cleanly (same for Array + Pool). */ ?>
+<div id="sg-array-appearance" class="sg-appearance-sub"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
 <div class="sg-appearance-sub-title">Array coloring</div>
 <p class="sg-appearance-sub-lead">Optional. Paint the array free bar on Main using the Array thresholds above.</p>
 <?php if (!$has_array_disks): ?>
 <p class="sg-appearance-sub-lead">Inactive until array data disks are present (settings still save).</p>
 <?php endif; ?>
+
+<div class="sg-appearance-fields" markdown="1">
 
 _(Array coloring)_:
 : <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
@@ -478,11 +481,14 @@ Pulse and green-outline-when-OK (above) apply when Array coloring is Yes.
 </blockquote>
 
 </div>
+</div><!-- /.sg-appearance-fields -->
 </div><!-- /#sg-array-appearance -->
 
-<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none" markdown="1">
+<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
 <div class="sg-appearance-sub-title">Pool coloring</div>
 <p class="sg-appearance-sub-lead">Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under Advanced pools below). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.</p>
+
+<div class="sg-appearance-fields" markdown="1">
 
 _(Pool coloring)_:
 : <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
@@ -537,6 +543,7 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 <?php endif; ?>
 
 </div><!-- /#pool-color-options -->
+</div><!-- /.sg-appearance-fields -->
 </div><!-- /#sg-pool-appearance -->
 
 </div><!-- /.sg-appearance-targets -->
