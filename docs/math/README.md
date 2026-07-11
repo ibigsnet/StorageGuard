@@ -128,7 +128,7 @@ For profiles where one disk loss can keep data online but **shrinks** usable cap
 |-------|----------|-----------------|
 | mirror | RAID1, RAID1c3, RAID1c4 | **Yes** |
 | striped_mirror | RAID10 | **Yes** |
-| parity | RAID5, RAID6 | **Yes** (⚠ caveats in help) |
+| parity | RAID5, RAID6 | **Yes** |
 | none | single, RAID0 | **No** — Custom only |
 
 - Suggest fills **Custom** free Warning/Critical; user clicks **Apply** to save.  
