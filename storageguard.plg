@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10az">
+<!ENTITY version "2026.07.10ba">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: RAID1 notes mention RAID10/5/6 can get Suggest free thresholds.
+
+###2026.07.10az
 - Settings: clarify no Suggest for RAID1 / RAID0 / single (not RAID10).
 
 ###2026.07.10ay
@@ -312,7 +315,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10az"
+[ -z "$VER" ] && VER="2026.07.10ba"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
