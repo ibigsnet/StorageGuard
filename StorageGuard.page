@@ -633,7 +633,7 @@ _(<?=htmlspecialchars($p)?> Critical (custom))_:
   <span class="sg-math-inline-hint">Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> — free headroom to still fit data after a single disk loss on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <?=htmlspecialchars((string)($sug['usable_tb'] ?? ''))?>T). Switches this pool to Custom values; click Apply to save.</span>
 
 <blockquote class="inline_help">
-Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. See docs/math on GitHub. Offered for profiles like RAID10 / RAID5 / RAID6 — not RAID1 or RAID0/single.
+Suggested free amounts use capacity math: for each member disk, estimate usable capacity if that disk is lost while staying on the current profile; Warning = worst loss, Critical = mildest loss (same when all members match). Estimates ignore metadata. Available for <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> — not RAID1 or RAID0/single.
 </blockquote>
 <?php elseif ($p_raid1): ?>
 > No automatic free-threshold suggestion for <strong>RAID1</strong> profiles (RAID1, RAID1c3, RAID1c4, dup). Surviving a disk usually does not require free space the way the array does. Use <strong>Custom values</strong> if you want a capacity-policy alert. <strong>RAID10</strong>, <strong>RAID5</strong>, and <strong>RAID6</strong> are different and can get suggestions.
