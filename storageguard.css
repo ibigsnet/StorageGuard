@@ -20,6 +20,38 @@
   line-height: 1.4;
 }
 
+/* Appearance → nested Array / Pool coloring blocks */
+.sg-appearance-targets {
+  margin: 0.85em 0 0.5em 0.5em;
+  padding: 0.35em 0 0.15em 1.1em;
+  border-left: 3px solid rgba(128, 128, 128, 0.4);
+}
+.sg-appearance-sub {
+  margin: 0.75em 0 1em;
+  padding: 0.45em 0.75em 0.55em 0.95em;
+  border-left: 2px solid rgba(128, 128, 128, 0.28);
+  background: rgba(128, 128, 128, 0.04);
+  border-radius: 0 3px 3px 0;
+}
+.sg-appearance-sub-title {
+  font-weight: 600;
+  font-size: 1.02em;
+  margin: 0 0 0.4em;
+  letter-spacing: 0.01em;
+}
+.sg-appearance-sub > .inline_help,
+.sg-appearance-sub > p {
+  margin-left: 0;
+}
+/* Style / which-pools nest one level deeper under Yes */
+.sg-appearance-sub .sg-color-options {
+  margin: 0.5em 0 0.35em 0.85em;
+  padding: 0.4em 0.5em 0.35em 0.85em;
+  border-left: 2px dashed rgba(128, 128, 128, 0.35);
+  background: rgba(128, 128, 128, 0.03);
+  border-radius: 0 2px 2px 0;
+}
+
 /* Pool capacity math / Suggest (Settings) */
 .sg-pool-math {
   margin: 0.75em 0 1.25em;
