@@ -306,6 +306,8 @@ foreach ($pool_names as $p) {
 
 ### Array
 
+Free-space thresholds for the array. Used by **Alerts** and by **Array coloring** under Appearance.
+
 _(Thresholds from)_:
 : <select name="array_use_custom" id="array_use_custom">
   <?=mk_option($array_use_custom, "no", _("Disk sizes"))?>
