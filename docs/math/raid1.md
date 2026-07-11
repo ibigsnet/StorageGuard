@@ -84,16 +84,16 @@ Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
 
 ### Speeds (best-case multi-stream ceiling)
 
-Let \(R,W\) be one device’s sequential read/write path ceiling. For **many independent streams** (not one large sequential file):
+Let \(R,W\) be one device’s sequential read/write path ceiling.
 
-| Direction | Ideal ceiling (RAID1) | 6 × devices example |
-|-----------|----------------------|---------------------|
-| **Read** | ≈ \(N \cdot R\) | ≈ **6×** one disk |
-| **Write** | ≈ \((N/2) \cdot W\) | ≈ **3×** one disk |
+| Direction | Multi-stream ideal | Single-stream (typical Unraid feel) | 6 devices |
+|-----------|--------------------|-------------------------------------|-----------|
+| **Read** | ≈ \(N \cdot R\) | ≈ \(R\) | up to ~6× / ~1× |
+| **Write** | ≈ \((N/2) \cdot W\) | ≈ \(W\) | up to ~3× / ~1× |
 
-Why write is \(N/2\): each logical write needs **two** physical writes on different devices. Six disks can host about **three** such pairs at once if work is parallel and perfectly spread. A **single** sequential write stream is still closer to **~1×** \(W\) (two devices busy, others idle).
+On Unraid, the pool is mounted BTRFS: one big write keeps **two** members busy; parallel jobs can light up more pairs. Full write-up: [unraid-io.md](unraid-io.md).
 
-These are **upper bounds** for comparing profiles — caching, seeks, metadata, checksums, and BTRFS allocation usually land well below.
+These multi-stream figures are **upper bounds** for comparing profiles — caching, seeks, metadata, checksums, and allocation usually land lower.
 
 ---
 

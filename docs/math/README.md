@@ -9,7 +9,8 @@ These are **not** mdadm / hardware-RAID formulas. Metadata is ignored; mixed-siz
 2. **Below the break** — what **Storage Guard** does with those numbers in the plugin.
 
 Per-profile detail: [single](single.md) · [RAID0](raid0.md) · [RAID1](raid1.md) · [RAID1c3](raid1c3.md) · [RAID1c4](raid1c4.md) · [RAID10](raid10.md) · [RAID5](raid5.md) · [RAID6](raid6.md)  
-Scenarios walkthrough: [scenarios.md](scenarios.md)
+Scenarios walkthrough: [scenarios.md](scenarios.md)  
+Unraid pool I/O (single- vs multi-stream): [unraid-io.md](unraid-io.md)
 
 ---
 

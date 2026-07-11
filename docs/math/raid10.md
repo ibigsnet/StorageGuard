@@ -85,12 +85,14 @@ Planning: Critical **4 T**, Warning **8 T**.
 
 Converting after a loss (e.g. to RAID1 or RAID5) can **change** usable on remaining disks. That is a deliberate trade — **not** the same as \(\Delta_{\mathrm{fit}}\) for **staying RAID10**.
 
-### Speeds (best-case bus ceiling)
+### Speeds (best-case multi-stream ceiling)
 
-With path ceiling \(R,W\) and \(N\) devices (comparison only):
+With path ceiling \(R,W\) and \(N\) devices:
 
-- Read ≈ \(N \cdot R\)  
-- Write ≈ \((N/2) \cdot W\)
+- Multi-stream read ≈ \(N \cdot R\), write ≈ \((N/2) \cdot W\)  
+- Single sequential stream is often lower; Unraid still uses kernel BTRFS for the pool  
+
+See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid does (and does not) implement.
 
 ### Caveats
 
