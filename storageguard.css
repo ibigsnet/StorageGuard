@@ -49,53 +49,40 @@
 }
 
 /*
- * Appearance mini-blockouts: left-rail accent only (no left padding/indent)
- * so Unraid's dl grid (35% label / value column) stays page-centered like
- * Pulse / Green when OK above.
+ * Appearance → nested Array / Pool coloring blocks (pre-hide-array layout, bb/aw).
+ * Nested markdown + compact select widths keep Unraid form columns usable.
  */
 .sg-appearance-targets {
-  margin: 0.85em 0 0.5em 0;
-  padding: 0.25em 0 0.1em 0;
+  margin: 0.85em 0 0.5em 0.5em;
+  padding: 0.35em 0 0.15em 1.1em;
   border-left: 3px solid rgba(128, 128, 128, 0.4);
-  box-sizing: border-box;
 }
 .sg-appearance-sub {
-  margin: 0.65em 0 0.9em 0;
-  padding: 0.4em 0 0.45em 0;
+  margin: 0.75em 0 1em;
+  padding: 0.45em 0.75em 0.55em 0.95em;
   border-left: 2px solid rgba(128, 128, 128, 0.28);
-  background: linear-gradient(
-    90deg,
-    rgba(128, 128, 128, 0.06) 0,
-    rgba(128, 128, 128, 0.02) 12em,
-    transparent 28em
-  );
+  background: rgba(128, 128, 128, 0.04);
   border-radius: 0 3px 3px 0;
-  box-sizing: border-box;
 }
 .sg-appearance-sub-title {
   font-weight: 600;
   font-size: 1.02em;
-  margin: 0 0 0.35em 0.65em;
+  margin: 0 0 0.4em;
   letter-spacing: 0.01em;
 }
-/* Nudge intro text slightly; form dl rows stay full-width for column align */
-.sg-appearance-sub > p,
-.sg-appearance-sub > .inline_help {
-  margin-left: 0.65em;
+.sg-appearance-sub > .inline_help,
+.sg-appearance-sub > p {
+  margin-left: 0;
 }
-/* Style / which-pools nest: dashed rail, still full-width for dl grid */
+/* Style / which-pools nest one level deeper under Yes */
 .sg-appearance-sub .sg-color-options {
-  margin: 0.45em 0 0.3em 0;
-  padding: 0.35em 0 0.3em 0;
+  margin: 0.5em 0 0.35em 0.85em;
+  padding: 0.4em 0.5em 0.35em 0.85em;
   border-left: 2px dashed rgba(128, 128, 128, 0.35);
-  background: linear-gradient(
-    90deg,
-    rgba(128, 128, 128, 0.04) 0,
-    transparent 18em
-  );
+  background: rgba(128, 128, 128, 0.03);
   border-radius: 0 2px 2px 0;
-  box-sizing: border-box;
 }
+/* Split: who is painted vs per-pool Outline/Solid */
 .sg-color-options-who {
   margin-bottom: 0.65em;
 }
@@ -107,7 +94,7 @@
 .sg-color-options-styles-title {
   font-weight: 600;
   font-size: 0.95em;
-  margin: 0 0 0.4em 0.65em;
+  margin: 0 0 0.4em;
   opacity: 0.9;
 }
 

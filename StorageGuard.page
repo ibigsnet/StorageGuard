@@ -291,13 +291,15 @@ foreach ($pool_names as $p) {
 <p class="sg-page-lead">Preview mode — example sizes only (no live disks.ini).</p>
 <?php endif; ?>
 
-> Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.
+<p class="sg-page-lead">Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.</p>
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
 <?php if (!$has_array_disks): ?>
-<button type="button" id="sg-toggle-array-hidden" class="sg-advanced-btn">Show hidden items…</button>
-<span id="sg-array-hidden-hint" class="sg-page-lead" style="margin-left:0.75em;">No array data disks — array settings hidden (saved config kept).</span>
+<p style="margin:0.5em 0 0.75em;">
+  <button type="button" id="sg-toggle-array-hidden" class="sg-advanced-btn">Show hidden items…</button>
+  <span id="sg-array-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.75em;">No array data disks — array settings hidden (saved config kept).</span>
+</p>
 
 <div id="sg-array-block" class="sg-array-block" style="display:none" markdown="1">
 
@@ -338,7 +340,7 @@ Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical
 
 </div>
 
-<div id="array-custom-fields" style="display:none" markdown="1">
+<div id="array-custom-fields" markdown="1" style="display:none">
 
 _(Warning (custom))_:
 : <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
@@ -441,9 +443,9 @@ When <strong>Yes</strong>, flash yellow/red on free bars that are at <strong>War
 Applies only where coloring is enabled. Does <strong>not</strong> pulse green / OK. Off by default (static warn/crit color).
 </blockquote>
 
-<div class="sg-appearance-targets">
+<div class="sg-appearance-targets" markdown="1">
 
-<div id="sg-array-appearance" class="sg-appearance-sub sg-array-appearance"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
+<div id="sg-array-appearance" class="sg-appearance-sub"<?= $has_array_disks ? '' : ' style="display:none"' ?> markdown="1">
 <div class="sg-appearance-sub-title">Array coloring</div>
 Optional. Paint the array free bar on Main using the Array thresholds above.
 <?php if (!$has_array_disks): ?>
