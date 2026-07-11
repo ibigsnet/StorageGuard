@@ -284,14 +284,14 @@ foreach ($pool_names as $p) {
 **Preview mode** — example sizes only (no live disks.ini).
 <?php endif; ?>
 
-Set free-space thresholds for the Main tab. When remaining free falls at or below a threshold, the free bar turns **yellow** (warning) or **red** (critical).  
+Set **free-space thresholds** for the array and pools. The same numbers drive **Alerts** and (optionally) **Main free-bar coloring**. You can alert with coloring off.  
 Tip: Critical should usually be the **smaller** free amount. If you reverse them, the smaller amount is still treated as critical. **None** turns a level off.
 
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
 ### Appearance
 
-Global look for any free bar you enable coloring on (array and/or pools).
+Global look for free bars that have **Main coloring** enabled (array and/or pools). Has no effect when coloring is off.
 
 _(Pulse color)_:
 : <select name="outline_pulse" id="outline_pulse">
@@ -300,7 +300,7 @@ _(Pulse color)_:
   </select>
 
 <blockquote class="inline_help">
-When <strong>Yes</strong>, yellow/red gently pulse so warning and critical stand out.<br>
+When <strong>Yes</strong>, yellow/red pulse on colored free bars (warn/crit only).<br>
 • <strong>Outline</strong> style → pulses the border<br>
 • <strong>Solid</strong> style → pulses the free fill<br>
 Does <strong>not</strong> pulse green / OK. Off by default (static color).
@@ -314,7 +314,7 @@ _(Green when OK)_:
 
 <blockquote class="inline_help">
 When free space is still <strong>above</strong> all thresholds, draw a static green border so “still OK” is visible.<br>
-<strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default.
+<strong>Outline style only</strong> (Solid has no healthy paint). Never pulses. Off by default. Only applies where Main coloring is enabled.
 </blockquote>
 
 ---
@@ -322,34 +322,12 @@ When free space is still <strong>above</strong> all thresholds, draw a static gr
 ### Array
 
 <?php if (!$has_array_disks): ?>
-> No array data disks detected. Array coloring applies when data disks exist.
+> No array data disks detected. Thresholds and coloring apply when data disks exist.
 <?php endif; ?>
 
-_(Enable coloring)_:
-: <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-details">
-  <?=mk_option($array_coloring, "yes", _("Yes"))?>
-  <?=mk_option($array_coloring, "no", _("No"))?>
-  </select>
+#### Free-space thresholds
 
-<blockquote class="inline_help">
-<strong>Yes</strong> = color the array <strong>Total free</strong> bar on Main (the “Array of N devices” free column) when free space hits your thresholds below.<br>
-<strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
-</blockquote>
-
-<div id="array-details" class="sg-details" markdown="1">
-
-_(Highlight style)_:
-: <select name="array_color_style" id="array_color_style">
-  <?=mk_option($array_color_style, "outline", _("Outline"))?>
-  <?=mk_option($array_color_style, "solid", _("Solid"))?>
-  </select>
-
-<blockquote class="inline_help">
-How status is shown on the free bar when coloring is on:<br>
-• <strong>Outline</strong> (default) — yellow/red <em>border only</em>; Unraid’s free fill stays as-is<br>
-• <strong>Solid</strong> — free <em>fill</em> itself becomes yellow/red<br>
-Pulse (above) works with either style.
-</blockquote>
+Always available for **Alerts** (and for Main coloring when enabled below).
 
 _(Thresholds from)_:
 : <select name="array_use_custom" id="array_use_custom">
@@ -375,7 +353,7 @@ _(Critical)_:
   </select>
 
 <blockquote class="inline_help">
-Yellow (Warning) / red (Critical) when remaining free is at or below this amount.<br>
+Alert (and optional paint) when remaining free is at or below this amount.<br>
 Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical <code>2T</code>). <strong>None</strong> = that level off.
 </blockquote>
 
@@ -394,13 +372,44 @@ Remaining free space. Examples that work: <code>7.5T</code>, <code>1.2T</code>, 
 </blockquote>
 
 </div>
+
+#### Main coloring
+
+Optional. Paint the array free bar on Main using the thresholds above. Alerts do **not** require this.
+
+_(Enable coloring)_:
+: <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
+  <?=mk_option($array_coloring, "yes", _("Yes"))?>
+  <?=mk_option($array_coloring, "no", _("No"))?>
+  </select>
+
+<blockquote class="inline_help">
+<strong>Yes</strong> = color the array <strong>Total free</strong> bar on Main (“Array of N devices”).<br>
+<strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
+</blockquote>
+
+<div id="array-color-options" class="sg-details sg-color-options" markdown="1">
+
+_(Highlight style)_:
+: <select name="array_color_style" id="array_color_style">
+  <?=mk_option($array_color_style, "outline", _("Outline"))?>
+  <?=mk_option($array_color_style, "solid", _("Solid"))?>
+  </select>
+
+<blockquote class="inline_help">
+How status is shown on the free bar when coloring is on:<br>
+• <strong>Outline</strong> (default) — yellow/red <em>border only</em>; Unraid’s free fill stays as-is<br>
+• <strong>Solid</strong> — free <em>fill</em> itself becomes yellow/red<br>
+Pulse / green-when-OK (Appearance) apply when coloring is Yes.
+</blockquote>
+
 </div>
 
 ---
 
 ### Alerts
 
-Unraid notifications when free space crosses a threshold. Separate from Main coloring. Nothing checked = no alerts.
+Unraid notifications when free space crosses a threshold. **Independent of Main coloring** — you can alert with coloring off. Nothing checked = no alerts.
 
 <div style="margin:0.5em 0 1em; overflow-x:auto;">
 <table class="tablesorter" style="width:auto; min-width:280px;">
@@ -444,7 +453,7 @@ Unraid notifications when free space crosses a threshold. Separate from Main col
 </div>
 
 <blockquote class="inline_help">
-Uses the thresholds above. Default: Array Warning only. Pool rows appear under Advanced pools.
+Uses the free-space thresholds set under Array and Pools. Default: Array Warning only. Pool alert checkboxes appear when Advanced pools is open. Coloring does not need to be Yes.
 </blockquote>
 
 ---
@@ -458,30 +467,11 @@ Uses the thresholds above. Default: Array Warning only. Pool rows appear under A
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span>
 
-> Optional. Thresholds, coloring, and alerts work now. Defaults: coloring **No**, thresholds **None**, pool alerts **off**. On **RAID1 / RAID1cN / dup**, member **disk-size** thresholds are ignored (use **Custom** for capacity policy). For RAID10/5/6, use **Suggest free thresholds** under each pool (capacity headroom after a single disk loss).
+> Thresholds and alerts work without Main coloring. Defaults: pool coloring **No**, thresholds **None**, pool alerts **off**. On **RAID1 / RAID1cN / dup**, member **disk-size** thresholds are ignored for paint/alerts (use **Custom** for capacity policy). For RAID10/5/6, **Suggest free thresholds** fills Custom from capacity headroom after a single disk loss.
 
-_(Enable coloring)_:
-: <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-details">
-  <?=mk_option($pool_coloring, "yes", _("Yes"))?>
-  <?=mk_option($pool_coloring, "no", _("No"))?>
-  </select>
+#### Free-space thresholds
 
-<blockquote class="inline_help">
-<strong>Yes</strong> = color each checked pool’s <strong>Total free</strong> bar on Main when thresholds are hit.<br>
-<strong>No</strong> = leave pool free bars alone (default). Thresholds still apply to Alerts if enabled.
-</blockquote>
-
-<div id="pool-details" class="sg-details" markdown="1">
-
-_(Which pools?)_:
-: <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
-  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
-  $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
-?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
-
-<blockquote class="inline_help">
-Only checked pools get Main coloring. Style and thresholds are per pool below.
-</blockquote>
+Each pool has its own Warning / Critical free amounts (for **Alerts** and optional coloring). Multiple pools are listed separately; each can differ.
 
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
@@ -525,16 +515,6 @@ Only checked pools get Main coloring. Style and thresholds are per pool below.
 > **Mirrored pool** (RAID1 / RAID1cN / dup): a single disk failure usually still leaves a full copy — you do not need free space to evacuate data the way the array does. **Disk size** thresholds are **not used** for paint/alerts on this profile. Set **Custom values** only if you want a capacity-policy free-space threshold (e.g. rebuild headroom after replace).
 <?php endif; ?>
 
-_(<?=htmlspecialchars($p)?> highlight style)_:
-: <select name="<?=$style_key?>" id="<?=$style_key?>">
-  <?=mk_option($p_style, "outline", _("Outline"))?>
-  <?=mk_option($p_style, "solid", _("Solid"))?>
-  </select>
-
-<blockquote class="inline_help">
-Same as array: <strong>Outline</strong> = border only; <strong>Solid</strong> = recolor free fill. Pulse / green-when-OK are global (Appearance).
-</blockquote>
-
 _(<?=htmlspecialchars($p)?> thresholds from)_:
 : <select name="<?=$use_key?>" id="<?=$use_key?>" class="pool-use-custom" data-pool-safe="<?=htmlspecialchars($safe)?>">
   <?=mk_option($p_use_custom, "no", _("Disk sizes"))?>
@@ -542,7 +522,7 @@ _(<?=htmlspecialchars($p)?> thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on mirrored RAID1/1cN/dup — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc.
+Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on mirrored RAID1/1cN/dup — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for Main coloring if this pool is included below.
 </blockquote>
 
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
@@ -627,8 +607,57 @@ Suggested free amounts use capacity math: for each member disk, estimate usable 
 </div>
 
 <?php endforeach; ?>
+<?php if (empty($pool_names)): ?>
+> No pools detected.
+<?php endif; ?>
 
-</div>
+#### Main coloring
+
+Optional. Paint pool free bars on Main using each pool’s thresholds above. Alerts do **not** require this. With multiple pools, only the pools you check are colored (each uses its own highlight style below).
+
+_(Enable coloring)_:
+: <select name="pool_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
+  <?=mk_option($pool_coloring, "yes", _("Yes"))?>
+  <?=mk_option($pool_coloring, "no", _("No"))?>
+  </select>
+
+<blockquote class="inline_help">
+<strong>Yes</strong> = color free bars on Main for the pools checked below.<br>
+<strong>No</strong> = leave all pool free bars alone (default). Pool thresholds still apply to Alerts if enabled in the matrix.
+</blockquote>
+
+<div id="pool-color-options" class="sg-details sg-color-options" markdown="1">
+
+_(Which pools to color on Main?)_:
+: <label style="margin-right:12px"><input type="checkbox" id="pool_all" value="yes"> All</label><?php foreach ($pool_names as $p):
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $checked = (strpos(','.$pools_to_color.',', ','.$p.',') !== false || $pools_to_color === 'all') ? 'checked' : '';
+?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars($p)?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
+
+<blockquote class="inline_help">
+Only checked pools get Main free-bar coloring. Unchecked pools can still have thresholds and Alerts. If you only have one pool, leave All checked.
+</blockquote>
+
+<?php foreach ($pool_names as $p):
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $style_key = "pool_{$safe}_color_style";
+  $p_style = sg_resolve_style($cfg, $style_key);
+?>
+
+_(<?=htmlspecialchars($p)?> highlight style)_:
+: <select name="<?=$style_key?>" id="<?=$style_key?>">
+  <?=mk_option($p_style, "outline", _("Outline"))?>
+  <?=mk_option($p_style, "solid", _("Solid"))?>
+  </select>
+
+<blockquote class="inline_help">
+<strong>Outline</strong> = border only; <strong>Solid</strong> = recolor free fill. Pulse / green-when-OK are global (Appearance).
+</blockquote>
+
+<?php endforeach; ?>
+
+</div><!-- /#pool-color-options -->
+
 </div><!-- /#sg-pools-wip -->
 
 <input type="submit" name="#default" value="_(Default)_">

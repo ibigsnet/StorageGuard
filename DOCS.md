@@ -32,7 +32,7 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 
 **None** (or a blank custom field) means that level is unused.
 
-Coloring on Main and notifications are **independent**: you can color without alerting, alert without coloring, or both.
+Coloring on Main and notifications are **independent**: you can color without alerting, **alert without coloring**, or both. Free-space thresholds are always editable in Settings; **Enable coloring** only shows paint options (highlight style, which pools).
 
 ### Recommended threshold order
 
@@ -331,7 +331,7 @@ Hard-refresh Main after install or update if styles look stale.
 | Wrong pool / no pool color | Confirm the pool is checked under “Which pools to color”; open the pool page and verify free space |
 | Yellow/red seem “swapped” vs labels | Check whether Critical free amount is higher than Warning—the plugin ranks by free-space severity (see notice on Settings) |
 | Alerts never fire | Check the alert matrix; confirm thresholds; Unraid notification settings must allow warnings/alerts |
-| Settings look empty | Array/pool details hide when Coloration is **No**—turn Yes to edit thresholds (saved values still apply to alerts) |
+| Settings look empty | Thresholds stay visible with coloring **No**. Only highlight style / which-pools hide under Enable coloring. Open **Advanced pools** for pool thresholds and alert checkboxes. |
 
 Config path: `/boot/config/plugins/StorageGuard/StorageGuard.cfg`  
 Plugin files: `/usr/local/emhttp/plugins/StorageGuard/`

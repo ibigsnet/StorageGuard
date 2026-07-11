@@ -190,6 +190,7 @@ function initStorageGuardUI() {
   });
 
 
+  // Only hide coloring options (style / which pools). Thresholds stay visible for alerts.
   function wireSectionToggle(selectId) {
     const sel = document.getElementById(selectId);
     if (!sel) return;
@@ -198,13 +199,6 @@ function initStorageGuardUI() {
     function apply() {
       const on = sel.value === 'yes';
       setVisible(section, on);
-      if (on && selectId === 'array_coloring') updateArrayCustom();
-      if (on && selectId === 'pool_coloring') {
-        document.querySelectorAll('.pool-use-custom').forEach(function (s) {
-          const safe = s.getAttribute('data-pool-safe');
-          if (safe) updatePoolCustom(safe);
-        });
-      }
       updateOrderNote();
     }
     sel.addEventListener('change', apply);
@@ -212,6 +206,12 @@ function initStorageGuardUI() {
   }
   wireSectionToggle('array_coloring');
   wireSectionToggle('pool_coloring');
+  // Threshold disk/custom toggles always active (not under coloring)
+  updateArrayCustom();
+  document.querySelectorAll('.pool-use-custom').forEach(function (s) {
+    const safe = s.getAttribute('data-pool-safe');
+    if (safe) updatePoolCustom(safe);
+  });
 
 
   const poolAll = document.getElementById('pool_all');
@@ -276,12 +276,14 @@ function initStorageGuardUI() {
       if (hint) hint.style.display = open ? 'none' : '';
       try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {  }
       if (open) {
+        document.querySelectorAll('.pool-use-custom').forEach(function (s) {
+          var safe = s.getAttribute('data-pool-safe');
+          if (safe) updatePoolCustom(safe);
+        });
         var pc = document.getElementById('pool_coloring');
-        if (pc && pc.value === 'yes') {
-          document.querySelectorAll('.pool-use-custom').forEach(function (s) {
-            var safe = s.getAttribute('data-pool-safe');
-            if (safe) updatePoolCustom(safe);
-          });
+        if (pc) {
+          var colorSec = document.getElementById(pc.getAttribute('data-sg-section') || 'pool-color-options');
+          setVisible(colorSec, pc.value === 'yes');
         }
         updateOrderNote();
       }
