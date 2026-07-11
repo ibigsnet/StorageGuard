@@ -11,6 +11,15 @@ Chunk-level **striping with one parity** stripe. Space efficiency approaches $(N
 - Min devices: **2** (with 2 devices, mostly wasted overhead; **3+** practical)  
 - Typical resiliency: **one** device failure while degraded  
 
+### Docs to read (RAID5 / RAID6)
+
+Storage Guard still plans free space for these profiles the same way as other multi-device layouts. For how the **profile itself** behaves on your OS and filesystem, use the vendor docs (Unraid labels BTRFS RAID5/6 **experimental** for pools; BTRFS has a dedicated RAID56 status section):
+
+- Unraid: [Cache pools](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/cache-pools/) · [File systems](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/file-systems/)  
+- BTRFS: [RAID56 status and practices](https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices) · [Status](https://btrfs.readthedocs.io/en/latest/Status.html)  
+
+This plugin’s job is free-space planning, not choosing a RAID profile for you.
+
 ### Usable capacity (estimate)
 
 $$
@@ -53,6 +62,6 @@ Planning: Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
 | Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
-| Help / alerts | Capacity + recovery headroom wording |
+| Help / alerts | Capacity + recovery headroom; points at Unraid/BTRFS RAID5/6 docs |
 
 Code: profile key `raid5`, class `parity`.

@@ -51,7 +51,7 @@ Why $2\Delta$ for comfort? After a loss, free left is roughly $\mathrm{free}_{\m
 |---------|---------------------------|-------------------|---------------------------|
 | RAID1 / 1c3 / 1c4 | Usually yes | Yes | Yes |
 | RAID10 | Usually yes | Yes | Yes |
-| RAID5 / RAID6 | If within tolerance (⚠) | Yes | Yes |
+| RAID5 / RAID6 | If within tolerance | Yes | Yes (see [raid5.md](raid5.md) / Unraid+BTRFS docs) |
 | single / RAID0 | **No** | Policy only | N/A recovery |
 
 ---

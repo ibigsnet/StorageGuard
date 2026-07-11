@@ -92,8 +92,8 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 | RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
 | RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
 | RAID10 | $\sum S_i / 2$ | Usually yes | 2 copies + striping |
-| RAID5 | $\sum S_i - \max S_i$ | If within tolerance | One parity |
-| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | Two parity |
+| RAID5 | $\sum S_i - \max S_i$ | If within tolerance | One parity; [docs](raid5.md#docs-to-read-raid5--raid6) |
+| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | Two parity; [docs](raid6.md#docs-to-read-raid5--raid6) |
 
 ### Generic Examples
 
@@ -128,10 +128,11 @@ For profiles where one disk loss can keep data online but **shrinks** usable cap
 |-------|----------|-----------------|
 | mirror | RAID1, RAID1c3, RAID1c4 | **Yes** |
 | striped_mirror | RAID10 | **Yes** |
-| parity | RAID5, RAID6 | **Yes** |
+| parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md) + Unraid/BTRFS profile docs) |
 | none | single, RAID0 | **No** — Custom only |
 
 - Suggest fills **Custom** free Warning/Critical; user clicks **Apply** to save.  
+- RAID5/6: capacity math still applies; read Unraid pool docs and BTRFS RAID56 notes for how those profiles behave on your system.
 - **Disk-size** dropdowns on **mirror** pools are **ignored** for paint/alerts (array evacuate semantics are wrong).  
 - Per-pool tables in Advanced pools: usable now, fit free, rebalance comfort, per-member loss, profile comparison.
 

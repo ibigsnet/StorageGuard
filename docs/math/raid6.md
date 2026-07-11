@@ -11,6 +11,15 @@ Chunk-level striping with **two parity** syndromes. Space efficiency approaches 
 - Min devices: **3** (practical layouts usually **4+**)  
 - Typical resiliency: **two** device failures while degraded  
 
+### Docs to read (RAID5 / RAID6)
+
+Same as RAID5: we compute free-space headroom for planning; profile behavior is documented upstream.
+
+- Unraid: [Cache pools](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/cache-pools/) · [File systems](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/file-systems/)  
+- BTRFS: [RAID56 status and practices](https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices) · [Status](https://btrfs.readthedocs.io/en/latest/Status.html)  
+
+See also [raid5.md](raid5.md).
+
 ### Usable capacity (estimate)
 
 $$
@@ -53,7 +62,7 @@ Suggest uses **single-disk** Δ (not simultaneous double failure).
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
 | Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
-| Help / alerts | Capacity + recovery headroom wording |
+| Help / alerts | Capacity + recovery headroom; points at Unraid/BTRFS RAID5/6 docs |
 | Not claimed | Simultaneous double-failure capacity model (Suggest is single-disk Δ) |
 
 Code: profile key `raid6`, class `parity`.

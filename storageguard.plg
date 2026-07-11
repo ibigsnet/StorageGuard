@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.10bs">
+<!ENTITY version "2026.07.10bt">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -37,6 +37,12 @@
 
 <CHANGES>
 ###&version;
+- RAID5/6: calm “read Unraid/BTRFS docs” notes in math docs, DOCS, Settings help, and parity alerts.
+
+###2026.07.10bs
+- Docs: drop RAID5/6 stability scare notes from caveats; parity alert text stays capacity-focused.
+
+###2026.07.10br
 - Array alerts: name matching disks as diskN | sdx (size), including nvme/USB device ids from disks.ini.
 
 ###2026.07.10bq
@@ -363,7 +369,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10br"
+[ -z "$VER" ] && VER="2026.07.10bs"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \

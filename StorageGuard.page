@@ -661,6 +661,17 @@ _(<?=htmlspecialchars($p)?> Critical (custom))_:
 
 <blockquote class="inline_help">
 BTRFS capacity math (not array “evacuate a whole disk”). <strong>Critical</strong> = max free needed so used data still fits after the worst single member loss while staying on this profile. <strong>Warning</strong> = 2× Critical (planning room so you are less likely to be full when removing/rebalancing). Applies to <strong>RAID1 / RAID1c3 / RAID1c4</strong>, <strong>RAID10</strong>, <strong>RAID5</strong>, <strong>RAID6</strong>. Not single/RAID0. Estimates ignore metadata. See docs/math/scenarios.md.
+<?php
+  $pc_lower = strtolower((string)$current_profile);
+  if (strpos($pc_lower, 'raid5') !== false || strpos($pc_lower, 'raid6') !== false):
+?>
+<br><br>
+<strong>RAID5/RAID6:</strong> free-space Suggest still applies. For how these BTRFS profiles behave on Unraid, see
+<a href="https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/cache-pools/" target="_blank" rel="noopener">Unraid cache pools</a>,
+<a href="https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/file-systems/" target="_blank" rel="noopener">file systems</a>,
+and BTRFS
+<a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices" target="_blank" rel="noopener">RAID56 notes</a>.
+<?php endif; ?>
 </blockquote>
 <?php elseif ($p_raid0): ?>
 > No automatic free-threshold suggestion for <strong>RAID0</strong>. Free thresholds are capacity policy only (no redundancy recovery model). Use <strong>Custom values</strong> if you want alerts.

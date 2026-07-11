@@ -158,8 +158,10 @@ Useful Unraid UI: **main page → click the pool name → Balance Status**
 | RAID1 | ~50% | **1** device (always 2 copies) | N disks still only 2 copies per chunk |
 | RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices | Often used for metadata |
 | RAID10 | ~50% | **1** guaranteed | Not fixed pairs; odd N OK |
-| RAID5 | ~(N−1)/N | 1 device | One parity |
-| RAID6 | ~(N−2)/N | 2 devices | Two parity |
+| RAID5 | ~(N−1)/N | 1 device | One parity; see Unraid/BTRFS notes below |
+| RAID6 | ~(N−2)/N | 2 devices | Two parity; see Unraid/BTRFS notes below |
+
+**RAID5 / RAID6:** Storage Guard still offers free-space **Suggest** and capacity tables for these profiles. For how the profiles themselves work on Unraid/BTRFS, read Unraid’s [cache pools](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/cache-pools/) and [file systems](https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/file-systems/) pages (they mark BTRFS RAID5/6 experimental), plus BTRFS [RAID56 status](https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices). Our job is free-space planning, not picking your RAID layout.
 
 **Mixed sizes:** BTRFS can combine e.g. 4T and 8T drives; usable is layout-dependent ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)). First-order Suggest math is simplified — see docs/math.
 
