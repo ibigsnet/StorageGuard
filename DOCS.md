@@ -123,10 +123,10 @@ After a drive fails, the pool can stay online **degraded** when the profile’s 
 
 Typical options:
 
-1. **Keep running degraded** until you can act  
-2. **Remove** the device and rebalance onto remaining disks **if free space and device count allow** (usable capacity shrinks)  
-3. **Replace** the member to restore capacity and full redundancy  
-4. **Convert** profile via balance (needs unallocated space; different tradeoffs)
+- **Keep running degraded** until you can act  
+- **Remove** the device and rebalance onto remaining disks **if free space and device count allow** (usable capacity shrinks)  
+- **Replace** the member to restore capacity and full redundancy  
+- **Convert** profile via balance (needs unallocated space; different tradeoffs)
 
 **Storage Guard free thresholds** for pools (especially **Suggest** on RAID10/5/6) answer: *if this disk is gone and you stay on the same profile, does used data still fit?* That **Δ** is capacity wiggle room — not “evacuate one full disk of unique data” like the Unraid **array**.
 

@@ -27,10 +27,10 @@ Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrf
 
 After a single disk loss, common options:
 
-1. Keep running degraded  
-2. Remove the device and rebalance onto remaining disks (if free space + device count allow)  
-3. Replace the failed member  
-4. Convert data profile via balance (needs unallocated space)
+- Keep running degraded  
+- Remove the device and rebalance onto remaining disks (if free space + device count allow)  
+- Replace the failed member  
+- Convert data profile via balance (needs unallocated space)
 
 **Wiggle room:** if used data is well under post-loss usable capacity, you often have time without an emergency replace. That is what \(\Delta_{\mathrm{fit}}\) measures.
 
