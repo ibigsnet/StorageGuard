@@ -17,9 +17,9 @@
 -->
 <!ENTITY version "2026.07.10bt">
 <!ENTITY launch "Settings/StorageGuard">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
-<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
+<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/8fcb806">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
 ]>
@@ -369,7 +369,7 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.10bs"
+[ -z "$VER" ] [ -z "$VER" ] && VER="2026.07.10bs"[ -z "$VER" ] && VER="2026.07.10bs" VER="2026.07.10bt"
 echo "StorageGuard: asset version tag $VER"
 
 for f in \
