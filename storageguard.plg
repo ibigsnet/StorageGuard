@@ -15,7 +15,7 @@
   Historical 2026.07.09 used a–z then za/zb for that day only; do not use aa on 07.09
   after z (update would not be offered).
 -->
-<!ENTITY version "2026.07.29">
+<!ENTITY version "2026.07.29aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -31,12 +31,15 @@
   pluginURL="&pluginURL;"
   icon="shield"
   min="6.12.0"
-  support="https://github.com/&github;"
+  support="https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/"
   project="https://github.com/&github;"
   readme="https://raw.githubusercontent.com/&github;/main/README.md">
 
 <CHANGES>
 ###&version;
+- Support link points at Unraid forum thread (topic 199796); project remains GitHub.
+
+###2026.07.29
 - Alerts/paint only when array is fully started (not stopped, starting/stopping, or maintenance). Missing mounts are not 0 free.
 - Version day rolled to calendar date (was incorrectly still on 2026.07.10 letter suffixes).
 

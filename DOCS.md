@@ -5,7 +5,8 @@ How free-space thresholds, free-bar coloring on Unraid’s **main page**, and al
 **Install:** Plugins → Install Plugin →  
 `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg`
 
-**Support / source:** [github.com/ibigsnet/StorageGuard](https://github.com/ibigsnet/StorageGuard)  
+**Support:** [Unraid forum — Storage Guard](https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/)  
+**Source:** [github.com/ibigsnet/StorageGuard](https://github.com/ibigsnet/StorageGuard)  
 **Support development:** [Patreon](https://www.patreon.com/cw/IBIGSNet) · [PayPal](https://www.paypal.com/paypalme/RifleJock)
 
 `README.md` is only the short Unraid Plugins-list blurb (`**Name**` + one paragraph). Unraid runs it through real Markdown for the entire Plugins description—keep it tiny. This file is the full documentation.
