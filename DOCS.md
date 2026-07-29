@@ -343,6 +343,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 - Config is stored under `/boot/config/plugins/StorageGuard/`  
 - A small script on Unraid’s main page loads config + live free space and paints the **Free** usage bars (array totals row; pool **Data Partition** free—not “Pool of N devices”, not Internal Boot)  
 - Alerts are evaluated on a timer and use Unraid’s normal notify system  
+- **Paint and alerts only run when storage is fully up:** Unraid `fsState=Started`, `mdState=STARTED` (when set), and **not** Maintenance. Array stopped / starting / stopping / maintenance does **not** treat missing mounts as 0 free  
 
 Hard-refresh the **main page** after install or update if styles look stale.
 

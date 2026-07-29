@@ -42,9 +42,12 @@ function sg_get_array_free_tb() {
 
 function sg_get_pool_free_tb($pool) {
     $mount = "/mnt/" . $pool;
-    if (!is_dir($mount)) return 0.0;
+    // Missing mount = unknown, not 0 free (0 would false-trigger critical/warning)
+    if (!is_dir($mount)) return null;
     $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mount) . " 2>/dev/null | tail -1");
+    if ($out === null || trim((string)$out) === '') return null;
     $bytes = (float)trim((string)$out);
+    if ($bytes < 0) return null;
     return $bytes / 1e12;
 }
 
@@ -222,6 +225,19 @@ function sg_pool_thresholds($cfg, $safe, $pname = null) {
 }
 
 $sent = [];
+
+// Array stopped / maintenance: do not evaluate free space (mounts gone or not meaningful)
+$storage_online = function_exists('sg_storage_online') ? sg_storage_online() : true;
+if (!$storage_online) {
+    echo json_encode([
+        'sent' => false,
+        'reason' => 'storage offline (array stopped, starting/stopping, or maintenance)',
+        'alerts' => [],
+        'storage_online' => false,
+    ]);
+    exit;
+}
+
 $array_present = function_exists('sg_array_present') ? sg_array_present() : false;
 $array_free = $array_present ? sg_get_array_free_tb() : null;
 
@@ -298,6 +314,7 @@ foreach ($cfg as $k => $v) {
     if (!$p_warn_on && !$p_crit_on) continue;
 
     $pool_free = sg_get_pool_free_tb($pname);
+    if ($pool_free === null) continue; // pool not mounted / free unknown
     $th = sg_pool_thresholds($cfg, $safe, $pname);
     $level = sg_level($pool_free, $th['warn'], $th['crit']);
     if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
@@ -327,6 +344,7 @@ foreach ($cfg as $k => $v) {
 echo json_encode([
     'sent' => !empty($sent),
     'alerts' => $sent,
+    'storage_online' => true,
     'array_present' => $array_present,
     'array_free_tb' => ($array_free !== null) ? round($array_free, 3) : null,
 ]);

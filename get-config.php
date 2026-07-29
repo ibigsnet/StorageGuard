@@ -70,10 +70,12 @@ function sg_largest_data_disk_tb() {
 }
 
 $array_present = function_exists('sg_array_present') ? sg_array_present() : (sg_largest_data_disk_tb() > 0);
+$storage_online = function_exists('sg_storage_online') ? sg_storage_online() : true;
 
 // Prefer array-only mount; do not treat pools-only /mnt/user as the array
+// Only sample free space when Unraid storage is fully started (not stopped/maintenance)
 $array_free = null;
-if ($array_present) {
+if ($storage_online && $array_present) {
   $array_free = sg_free_tb_mount('/mnt/user0');
   if ($array_free === null || $array_free <= 0) {
     $array_free = sg_free_tb_mount('/mnt/user');
@@ -99,13 +101,14 @@ $pool_coloring = ($cfg['pool_coloring'] ?? 'no') === 'yes';
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';
 $array_style = sg_style($cfg, 'array_color_style');
 
-// No array: keep cfg values in payload but do not paint / treat as active
-$array_enabled = $array_present && $array_coloring;
+// No array / storage offline: keep cfg values but do not paint / treat as active
+$array_enabled = $storage_online && $array_present && $array_coloring;
 $status = [
+  'storage_online' => $storage_online,
   'array' => [
     'present' => $array_present,
     'enabled' => $array_enabled,
-    'free_tb' => ($array_present && $array_free !== null) ? round($array_free, 3) : null,
+    'free_tb' => ($array_enabled && $array_free !== null) ? round($array_free, 3) : null,
     'warn_tb' => round($arr_warn, 3),
     'crit_tb' => round($arr_crit, 3),
     'level'   => $array_enabled ? sg_level($array_free, $arr_warn, $arr_crit) : 'ok',
@@ -142,7 +145,7 @@ foreach (array_keys($pool_names) as $pname) {
     $list = array_map('trim', explode(',', $pools_to_color));
     $include = in_array($pname, $list, true) || in_array($safe, $list, true);
   }
-  $enabled = $pool_coloring && $include;
+  $enabled = $storage_online && $pool_coloring && $include;
   $p_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
   if ($p_custom) {
     $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? '');
@@ -152,20 +155,21 @@ foreach (array_keys($pool_names) as $pname) {
     $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
   }
   // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
-  $profile = sg_pool_btrfs_profile($pname);
+  $profile = $storage_online ? sg_pool_btrfs_profile($pname) : '';
   $p_class = sg_pool_profile_class($profile);
   if (!$p_custom && sg_pool_ignore_disk_size_thresholds($p_class)) {
     $warn = 0.0;
     $crit = 0.0;
   }
-  $free = sg_free_tb_mount('/mnt/' . $pname);
-  $math = function_exists('sg_pool_math_package') ? sg_pool_math_package($pname, $profile) : null;
+  $free = $storage_online ? sg_free_tb_mount('/mnt/' . $pname) : null;
+  $math = ($storage_online && function_exists('sg_pool_math_package'))
+    ? sg_pool_math_package($pname, $profile) : null;
   $pool_status[$pname] = [
     'enabled' => $enabled,
-    'free_tb' => $free !== null ? round($free, 3) : null,
+    'free_tb' => ($free !== null) ? round($free, 3) : null,
     'warn_tb' => round($warn, 3),
     'crit_tb' => round($crit, 3),
-    'level'   => $enabled ? sg_level($free, $warn, $crit) : 'ok',
+    'level'   => ($enabled && $free !== null) ? sg_level($free, $warn, $crit) : 'ok',
     'style'   => sg_style($cfg, "pool_{$safe}_color_style"),
     'profile' => $profile,
     'math'    => $math,

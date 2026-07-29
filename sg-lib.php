@@ -54,6 +54,25 @@ function sg_array_present() {
     return !empty(sg_array_data_disks());
 }
 
+/**
+ * True when Unraid storage is fully up for free-space monitoring.
+ * Requires fsState=Started, mdState=STARTED (when set), and not Maintenance.
+ * When stopped / starting / stopping / maintenance, mounts are missing or
+ * meaningless — free space must not be treated as 0B for alerts or paint.
+ */
+function sg_storage_online() {
+    $var_file = '/var/local/emhttp/var.ini';
+    if (!is_file($var_file)) return false;
+    $var = @parse_ini_file($var_file) ?: [];
+    $fs = trim((string)($var['fsState'] ?? ''));
+    if (strcasecmp($fs, 'Started') !== 0) return false;
+    $md = trim((string)($var['mdState'] ?? ''));
+    if ($md !== '' && strcasecmp($md, 'STARTED') !== 0) return false;
+    $mode = trim((string)($var['startMode'] ?? 'Normal'));
+    if ($mode !== '' && strcasecmp($mode, 'Maintenance') === 0) return false;
+    return true;
+}
+
 function sg_disks_matching_threshold($label, $tb) {
     $label = trim((string)$label);
     $tb = (float)$tb;
