@@ -7,7 +7,8 @@
 | Track | URL |
 |-------|-----|
 | **Latest (`main`)** | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg` |
-| **Stable rollback** (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |
+| **Stable rollback** (`2026.07.10bt`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
+| Older stable (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |
 
 Must be the **raw** URL ending in `.plg` (not a GitHub repo or blob page). After install, hard-refresh the browser. If Unraid reports **same version**, you are already on that build.
 
@@ -19,9 +20,10 @@ When we call a build **stable**, we also pin a **Git tag** so you can reinstall 
 
 | Tag | Plugin version | Notes |
 |-----|----------------|--------|
-| [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Last known-good host build before BTRFS capacity-math work. Solid+Pulse over native free fill; RAID1 ignores disk-size evacuate thresholds; label cleanup. |
+| [`stable-recommended-2026.07.10bt`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10bt) | `2026.07.10bt` | Last known-good host build from the 2026.07.10 line (through calm RAID5/6 doc pointers). Full BTRFS capacity math + Suggest (including RAID1), Settings Appearance polish, array alerts with `diskN \| sdx (size)`, multi-stream speed notes. Prefer this over `ar` for rollback of that era. |
+| [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Earlier baseline: Solid+Pulse over native free fill; RAID1 ignores disk-size evacuate thresholds; label cleanup. Pre–BTRFS capacity-math work. |
 
-Asset downloads for the stable tag are locked to commit `731bc29` (same tree as the working host build), not live `main`.
+Asset downloads for **`2026.07.10bt`** are locked to commit `8fcb806` (tag tip `4619c07` only rewrites the plg pin). Asset downloads for **`2026.07.10ar`** are locked to commit `731bc29`.
 
 ### Roll back from a newer plugin version
 
@@ -40,4 +42,4 @@ Asset downloads for the stable tag are locked to commit `731bc29` (same tree as 
 
 ## Next major line of work
 
-After `stable-recommended-2026.07.10ar`: **BTRFS pool capacity math** (usable $U$, free headroom $\Delta$ after single-disk loss, suggested warn/crit, bus-ceiling speed notes for profile comparison, Settings “Suggest”). See [docs/math/](docs/math/README.md).
+After `stable-recommended-2026.07.10bt`: **array-online gate** (no alerts/paint when array stopped or in maintenance; calendar version `2026.07.29+` on `main`). Earlier line after `ar` was BTRFS pool capacity math — that work shipped through `bt`.
