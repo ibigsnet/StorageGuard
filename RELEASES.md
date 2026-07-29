@@ -2,7 +2,9 @@
 
 ## Install / update (Unraid web UI)
 
-**Plugins → Install Plugin** → paste the raw `.plg` URL → **Install**.
+**Recommended:** **Apps** (Community Applications) → search **Storage Guard** → **Install** / **Update**.
+
+**Manual / rollback:** **Plugins → Install Plugin** → paste a raw `.plg` URL → **Install**.
 
 | Track | URL |
 |-------|-----|
@@ -10,9 +12,9 @@
 | **Stable rollback** (`2026.07.10bt`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
 | Older stable (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |
 
-Must be the **raw** URL ending in `.plg` (not a GitHub repo or blob page). After install, hard-refresh the browser. If Unraid reports **same version**, you are already on that build.
+Manual installs must use the **raw** URL ending in `.plg` (not a GitHub repo or blob page). After install, hard-refresh the browser. If Unraid reports **same version**, you are already on that build.
 
-Unraid plugin updates use **string version** (`YYYY.MM.DD…`) via `strcmp`. Normal day-to-day installs track **`main`**.
+Unraid plugin updates use **string version** (`YYYY.MM.DD…`) via `strcmp`. Normal day-to-day installs track **`main`** (including via CA).
 
 ## Stable baselines (rollback targets)
 
