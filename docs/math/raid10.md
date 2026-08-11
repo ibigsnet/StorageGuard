@@ -15,7 +15,7 @@ On BTRFS, **RAID10** means:
 
 Chunks (~1 GiB block groups) pick devices independently. With many disks, different chunks use different device sets. That is why BTRFS can use **odd device counts** (e.g. 3 or 5) and mixed sizes more flexibly than traditional RAID10.
 
-Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrfs.html#profiles) — RAID10: 2 copies, striping, ~50% space, min 2 devices (kernel ≥ 5.15; older guidance often said 4).
+Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrfs.html#profiles) — RAID10: 2 copies, striping, ~50% space, min 2 devices (**Linux kernel** ≥ 5.15 for that profile rule — not Unraid product 5.15; older guidance often said 4).
 
 ### Redundancy
 
