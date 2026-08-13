@@ -18,11 +18,11 @@
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
   never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
-<!ENTITY version "2026.08.14aa">
+<!ENTITY version "2026.08.14ab">
 <!ENTITY launch "Settings/StorageGuard">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
-<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable">
+<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
 ]>
@@ -41,6 +41,10 @@
 <CHANGES>
 ###&version;
 - Support link points at Unraid forum thread (topic 199796); project remains GitHub.
+
+###2026.08.14ab
+- **Lab channel:** On branch `main`, PluginURL + raw FILE sources point at `main` (lab uninstall/reinstall testing).
+- Branch `stable` remains the CA/production pin (see RELEASE-CHANNEL.md). Ship by merging to stable and rewriting entities to stable.
 
 ###2026.08.14aa
 - **License:** GNU GPLv3 or later (copyright ibigs, LLC; Author: RifleJock). MIT retired for new releases.
@@ -418,7 +422,7 @@ done
 
 JS="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"
 if [ ! -s "$JS" ] || ! grep -q 'data-sg-outline\|sg-outline\|color_style' "$JS" 2>/dev/null; then
-  RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable"
+  RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
   echo "StorageGuard: refreshing assets (stale or missing)..."
   for f in storageguard-color.js storageguard.css get-config.php check-alerts.php sg-lib.php sg-pool-math.php StorageGuard.page; do
     curl -fsSL "${RAW}/${f}?v=${VER}&t=$(date +%s)" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
