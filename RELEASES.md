@@ -9,6 +9,7 @@
 | Track | URL |
 |-------|-----|
 | **Latest (`main`)** | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg` |
+| **Recommended freeze** (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.29aa/storageguard.plg` |
 | **Stable rollback** (`2026.07.10bt`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
 | Older stable (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |
 
@@ -22,6 +23,7 @@ When we call a build **stable**, we also pin a **Git tag** so you can reinstall 
 
 | Tag | Plugin version | Notes |
 |-----|----------------|--------|
+| [`stable-recommended-2026.07.29aa`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.29aa) | `2026.07.29aa` | **Current recommended freeze** (fleet pin with TBN / Fabric Routing / NBD 2026.08.13 line). |
 | [`stable-recommended-2026.07.10bt`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10bt) | `2026.07.10bt` | Last known-good host build from the 2026.07.10 line (through calm RAID5/6 doc pointers). Full BTRFS capacity math + Suggest (including RAID1), Settings Appearance polish, array alerts with `diskN \| sdx (size)`, multi-stream speed notes. Prefer this over `ar` for rollback of that era. |
 | [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Earlier baseline: Solid+Pulse over native free fill; RAID1 ignores disk-size evacuate thresholds; label cleanup. Pre–BTRFS capacity-math work. |
 
