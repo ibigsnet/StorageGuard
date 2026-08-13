@@ -8,7 +8,7 @@
 
 | Track | URL |
 |-------|-----|
-| **Latest (`main`)** | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg` |
+| **Latest (`main`)** | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg` |
 | **Recommended freeze** (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.29aa/storageguard.plg` |
 | **Stable rollback** (`2026.07.10bt`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
 | Older stable (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |

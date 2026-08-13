@@ -5,7 +5,7 @@ How free-space thresholds, free-bar coloring on Unraid’s **main page**, and al
 **Install (recommended):** Apps (Community Applications) → search **Storage Guard** → Install.  
 
 **Manual install:** Plugins → Install Plugin →  
-`https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg`
+`https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg`
 
 **Support:** [Unraid forum — Storage Guard](https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/)  
 **Source:** [github.com/ibigsnet/StorageGuard](https://github.com/ibigsnet/StorageGuard)  
