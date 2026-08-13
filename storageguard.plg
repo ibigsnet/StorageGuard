@@ -6,7 +6,7 @@
   Versioning — Unraid plugin updates use strcmp() (lexicographic), NOT version_compare.
   No hyphens. Bump only this entity; asset ?v= uses it.
 
-  Rules (ibigsnet fleet — StorageGuard / Thunderbolt Net / UnraidFRR / NBD Export):
+  Rules (ibigsnet fleet — StorageGuard / Thunderbolt Net / FabricRouting / NBD Export):
     YYYY.MM.DD       first release that calendar day
     YYYY.MM.DDaa     2nd same day, then ab, ac, ... az, ba, bb, ...
   Two-letter only after the bare date — never single a–z
@@ -16,7 +16,7 @@
   after z (update would not be offered).
 
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
-  never deep-link /Settings/ThunderboltNet or /Settings/UnraidFRR.
+  never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
 <!ENTITY version "2026.07.29aa">
 <!ENTITY launch "Settings/StorageGuard">
