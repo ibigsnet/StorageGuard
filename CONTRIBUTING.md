@@ -11,6 +11,5 @@ By contributing, you agree that your contributions are licensed under the **GNU 
 
 ## Versioning
 
-Version date = **lab host wall clock** (America/Chicago), not UTC. See RELEASES.md for full rules.
+See [RELEASES.md](RELEASES.md) (`YYYY.MM.DD` + two-letter suffixes, Unraid `strcmp`).
 
-Unraid plugin versions use `YYYY.MM.DD` then two-letter suffixes (`aa`, `ab`, …) because Unraid compares with `strcmp`. Never single-letter suffixes on new work.
