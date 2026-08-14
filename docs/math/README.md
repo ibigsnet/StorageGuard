@@ -66,16 +66,20 @@ $$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 $$
 
-First-order **product planning rule** (equal disks: Critical = $\Delta$, Warning = $2\Delta$):
+First-order **suggested free floors** (user may assign either way; see [threshold-guide.md](threshold-guide.md)):
 
 $$
-\mathrm{Critical} = \max_i \Delta_{\mathrm{fit}}(i)
+\mathrm{Suggested\ Warning} = \max_i \Delta_{\mathrm{fit}}(i)
+\quad\text{(typically largest-member loss)}
 $$
 $$
-\mathrm{Warning} = 2 \times \max_i \Delta_{\mathrm{fit}}(i)
+\mathrm{Suggested\ Critical} = \min_i \Delta_{\mathrm{fit}}(i)
+\quad\text{(typically smallest-member loss)}
 $$
 
-Full walkthroughs: [scenarios.md](scenarios.md) (includes **6×2 TB RAID1** → usable **6 TB**, fit **1 T**, comfort **2 T**).
+Equal disks ⇒ one shared free floor. **2-disk RAID1** ⇒ $\Delta \approx 0$ (no soft floor). **3×8 TB RAID1** ⇒ $U=12$, after loss $U=8$, $\Delta=4$ TB.
+
+Full walkthroughs: [scenarios.md](scenarios.md), [raid1.md](raid1.md) (6×2 TB and 3×8 TB examples).
 
 ### Speeds (comparison only)
 

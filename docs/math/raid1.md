@@ -63,23 +63,42 @@ Pool: **six 2 TB members**, data profile RAID1.
 | Healthy usable $U$ | $12/2$ | **6 TB** |
 | After losing one 2 TB disk | five members left → $10/2$ | **5 TB** usable |
 | Fit free $\Delta_{\mathrm{fit}}$ | $6 - 5$ | **1 TB** |
-| Planning Critical / Warning | $\Delta$ / $2\Delta$ | **1 T** / **2 T** |
+| Suggested Warning / Critical (equal disks) | $\max\Delta$ / $\min\Delta$ | **1 T** / **1 T** (one floor) |
 
 Same pool, different free levels **before** the disk fails (`Used ≈ 6 TB − Free`):
 
-| Free now (on 6 TB usable) | Used now | After the 2 TB disk dies | Fit on 5 TB usable? | Rebalance room? |
-|---------------------------|----------|--------------------------|---------------------|-----------------|
-| 1 T | 5 TB | ~0 free left | Barely | Essentially none |
-| 2 T | 4 TB | ~1 T free left | Yes | Some |
-| 0 | 6 TB | used 6 TB > 5 TB | **No** | N/A |
+| Free now (on 6 TB usable) | Used now | After the 2 TB disk dies | Fit on 5 TB usable? |
+|---------------------------|----------|--------------------------|---------------------|
+| 1 T | 5 TB | ~0 free left | Barely |
+| 2 T | 4 TB | ~1 T free left | Yes |
+| 0 | 6 TB | used 6 TB > 5 TB | **No** |
 
-Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
+### Worked example: 3 × 8 TB RAID1 (three-way)
+
+| Step | Calculation | Result |
+|------|-------------|--------|
+| Raw | $3 \times 8$ | 24 TB |
+| Healthy usable $U$ | $24/2$ | **12 TB** |
+| After one loss | two members left → $16/2$ | **8 TB** usable |
+| $\Delta_{\mathrm{fit}}$ | $12 - 8$ | **4 TB** |
+| Suggested Warning / Critical | equal members | **4 T** / **4 T** |
+
+Free **≥ ~4 TB** before the loss ⇒ used data still fits on the remaining two-disk RAID1. Data usually stays **online** the whole time; the pool’s usable capacity just shrinks.
+
+### 2-disk RAID1 (contrast)
+
+| Layout | Healthy $U$ | After one loss | $\Delta_{\mathrm{fit}}$ | Suggest apply? |
+|--------|---------------|----------------|---------------------------|----------------|
+| 2 × 8 TB | 8 TB | remaining disk ≈ **8 TB** (full copy on survivor) | **≈ 0** | **No** soft floor |
+
+Longer walkthroughs: [scenarios.md](scenarios.md), [threshold-guide.md](threshold-guide.md).
 
 ### Other layouts (same formulas)
 
-| Layout | Healthy $U$ | After one equal loss | $\Delta_{\mathrm{fit}}$ | Critical / Warning |
-|--------|---------------|----------------------|---------------------------|--------------------|
-| 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 4 T |
+| Layout | Healthy $U$ | After one equal loss | $\Delta_{\mathrm{fit}}$ | Suggested W / C |
+|--------|---------------|----------------------|---------------------------|-----------------|
+| 3 × 8 TB | 12 TB | 8 TB | 4 TB | 4 T / 4 T |
+| 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 2 T |
 | 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB worst / ~2 TB mild | warn 4 T / crit 2 T |
 
 ### Speeds (best-case multi-stream ceiling)
@@ -101,13 +120,11 @@ These multi-stream figures are **upper bounds** for comparing profiles — cachi
 
 | Behavior | Detail |
 |----------|--------|
-| **Suggest free thresholds** | **Yes** for RAID1 / RAID1c3 / RAID1c4 |
-| Warning | $\max\Delta_{\mathrm{fit}}$ — fit after **largest** member loss |
-| Critical | $\min\Delta_{\mathrm{fit}}$ — fit after **smallest** member loss |
-| Paint / alerts | Capacity-fit automatic (equal disks ⇒ one floor, shows critical) |
-| Custom free | Overrides capacity-fit; Suggest writes Custom values |
-| Settings tables | Usable now, largest/smallest loss Δ, per-member loss rows |
-| Alerts | Mirror-class wording: data usually online; free ≠ “evacuate failed disk” |
+| **Suggest free thresholds** | **Yes** when $\Delta > 0$ (e.g. **3+** equal disks); **not** for typical 2-disk RAID1 ($\Delta \approx 0$) |
+| Recommended Warning / Critical | $\max\Delta$ / $\min\Delta$ (equal disks ⇒ one free floor) |
+| User free amounts | Fully free (Custom); disk-size evacuate floors ignored for paint |
+| Paint / alerts | Soft capacity-fit only if $\Delta > 0$ and Custom empty; else your numbers |
+| Alerts | Mirror wording: data usually online; free ≠ “evacuate failed disk” |
 
 Not array-style “leave free ≥ full disk size.”  
 Crossing Critical means capacity risk after a loss, not “RAID1 stopped working.”
