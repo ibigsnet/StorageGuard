@@ -19,7 +19,7 @@
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
   never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
-<!ENTITY version "2026.08.14ab">
+<!ENTITY version "2026.08.14ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -41,9 +41,12 @@
 
 <CHANGES>
 ###&version;
-- Support link points at Unraid forum thread (topic 199796); project remains GitHub.
+- **Fix:** pools-only / no array — product Default and first open no longer enable Array coloring
+  or Array Warning alerts; Array UI stays hidden (Show hidden items…). default.cfg documents
+  machine-aware defaults; sg-update.php sets array_coloring / alerts from live disks.ini.
 
 ###2026.08.14ab
+- Support link points at Unraid forum thread (topic 199796); project remains GitHub.
 - **Lab channel:** On branch `main`, PluginURL + raw FILE sources point at `main` (lab uninstall/reinstall testing).
 - Branch `stable` remains the CA/production pin (see RELEASE-CHANNEL.md). Ship by merging to stable and rewriting entities to stable.
 

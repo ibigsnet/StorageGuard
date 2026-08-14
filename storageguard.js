@@ -404,14 +404,20 @@ function initStorageGuardUI() {
       var el = document.getElementById(id);
       if (el) el.value = value;
     }
+    var formEl = document.getElementById('storageguard-form');
     function setCheckbox(name, on) {
-      var boxes = form.querySelectorAll('input[type="checkbox"][name="' + name + '"]');
+      if (!formEl) return;
+      var boxes = formEl.querySelectorAll('input[type="checkbox"][name="' + name + '"]');
       boxes.forEach(function (cb) { cb.checked = !!on; });
     }
 
+    // data-sg-has-array from Settings page (0 = pools-only / no array data disks)
+    var hasArray = formEl && formEl.getAttribute('data-sg-has-array') === '1';
+
     setSelect('outline_pulse', 'no');
     setSelect('outline_show_ok', 'no');
-    setSelect('array_coloring', 'yes');
+    // Array paint/alerts only default on when array data disks exist
+    setSelect('array_coloring', hasArray ? 'yes' : 'no');
     setSelect('array_color_style', 'outline');
     setSelect('array_use_custom', 'no');
     setInput('array_warning_custom', '');
@@ -419,13 +425,11 @@ function initStorageGuardUI() {
 
     var arrWarn = document.getElementById('array_warning');
     var defWarn = arrWarn ? (arrWarn.getAttribute('data-sg-default-warn') || '') : '';
-    setSelect('array_warning', defWarn);
+    // no array → defWarn is empty; keep thresholds None
+    setSelect('array_warning', hasArray ? defWarn : '');
     setSelect('array_critical', '');
 
-
-    var arrWarnCb = form.querySelector('input[type="checkbox"][name="alerts_array_warning"]');
-    if (arrWarnCb && !arrWarnCb.disabled) setCheckbox('alerts_array_warning', true);
-    else setCheckbox('alerts_array_warning', false);
+    setCheckbox('alerts_array_warning', hasArray);
     setCheckbox('alerts_array_critical', false);
 
 
@@ -437,7 +441,7 @@ function initStorageGuardUI() {
     poolCbs.forEach(function (cb) { cb.checked = true; });
     updatePoolsHidden();
 
-    form.querySelectorAll('.pool-use-custom').forEach(function (sel) {
+    if (formEl) formEl.querySelectorAll('.pool-use-custom').forEach(function (sel) {
       var safe = sel.getAttribute('data-pool-safe');
       if (!safe) return;
       sel.value = 'no';

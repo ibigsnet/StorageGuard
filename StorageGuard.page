@@ -231,7 +231,13 @@ if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
     $array_critical = '';
 }
 
-$array_coloring = $cfg['array_coloring'] ?? 'yes';
+// Array coloring: product default Yes only when array data disks exist.
+// Pools-only / no-array first open → No (section is hidden; paint inactive).
+if ($sg_defaults_ok && isset($cfg['array_coloring'])) {
+    $array_coloring = (($cfg['array_coloring'] ?? '') === 'yes') ? 'yes' : 'no';
+} else {
+    $array_coloring = $has_array_disks ? 'yes' : 'no';
+}
 $pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'no';
 $array_color_style = sg_resolve_style($cfg, 'array_color_style');
 $outline_pulse = (($cfg['outline_pulse'] ?? 'no') === 'yes') ? 'yes' : 'no';
@@ -252,9 +258,11 @@ if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $alerts_array_critical = 'no';
 }
 
-if (!$has_array_disks) {
-    $alerts_array_warning = ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) ? $cfg['alerts_array_warning'] : 'no';
-    $alerts_array_critical = ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) ? $cfg['alerts_array_critical'] : 'no';
+// No array: never seed array alerts on (even if an old cfg had them checked).
+// After user Applies with sg_defaults=1 they can still opt in via Show hidden items.
+if (!$has_array_disks && !$sg_defaults_ok) {
+    $alerts_array_warning = 'no';
+    $alerts_array_critical = 'no';
 }
 
 $pool_alert_cfg = [];
@@ -281,7 +289,7 @@ foreach ($pool_names as $p) {
 }
 ?>
 
-<form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form">
+<form markdown="1" method="POST" action="/update.php" target="progressFrame" id="storageguard-form" data-sg-has-array="<?= $has_array_disks ? '1' : '0' ?>">
 <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
 <input type="hidden" name="#include" value="plugins/StorageGuard/sg-update.php">
 <input type="hidden" name="pools_to_color" id="pools_to_color" value="<?=htmlspecialchars($pools_to_color)?>">

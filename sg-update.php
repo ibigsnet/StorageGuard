@@ -60,18 +60,21 @@ if (!is_array($default)) {
     $default = [];
 }
 
+// Array product defaults depend on whether data disks exist (pools-only hosts hide Array UI).
+$has_array = ($largest_warn !== '');
 $default['array_warning'] = $largest_warn;
 $default['array_critical'] = '';
 $default['array_use_custom'] = 'no';
 $default['array_warning_custom'] = '';
 $default['array_critical_custom'] = '';
 $default['array_color_style'] = 'outline';
-$default['array_coloring'] = 'yes';
+// Yes only when array data disks exist — no-array / cache-only → No (inactive paint)
+$default['array_coloring'] = $has_array ? 'yes' : 'no';
 $default['outline_pulse'] = 'no';
 $default['outline_show_ok'] = 'no';
 $default['pool_coloring'] = 'no';
 $default['pools_to_color'] = 'all';
-$default['alerts_array_warning'] = $largest_warn !== '' ? 'yes' : 'no';
+$default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
 $default['alerts_array_critical'] = 'no';
 $default['sg_defaults'] = '';
 
