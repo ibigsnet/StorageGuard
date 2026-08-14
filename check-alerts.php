@@ -205,23 +205,39 @@ function sg_pool_thresholds($cfg, $safe, $pname = null) {
             'custom' => true,
         ];
     }
-    $th = [
+    $pool = $pname !== null ? $pname : $safe;
+    // Capacity-fit (RAID1 / RAID10 / RAID5–6): warn = largest-loss Δ, crit = smallest-loss Δ
+    if (function_exists('sg_pool_math_package')) {
+        $profile = function_exists('sg_pool_btrfs_profile') ? sg_pool_btrfs_profile($pool) : '';
+        $pkg = sg_pool_math_package($pool, $profile);
+        $sug = is_array($pkg) ? ($pkg['suggest'] ?? null) : null;
+        if (is_array($sug) && !empty($sug['apply'])) {
+            $w = (float)($sug['warn_tb'] ?? 0);
+            $c = (float)($sug['crit_tb'] ?? 0);
+            $fmt = function ($tb) {
+                if ($tb <= 0) return '';
+                if ($tb >= 1.0) return rtrim(rtrim(number_format($tb, 1, '.', ''), '0'), '.') . 'T';
+                $g = $tb * 1000.0;
+                return rtrim(rtrim(number_format($g, 0, '.', ''), '0'), '.') . 'G';
+            };
+            return [
+                'warn' => $w,
+                'crit' => $c,
+                'warn_label' => $fmt($w),
+                'crit_label' => $fmt($c),
+                'custom' => false,
+                'capacity_fit' => true,
+            ];
+        }
+    }
+    // single / RAID0 / unknown: optional disk-size policy from cfg
+    return [
         'warn' => sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? ''),
         'crit' => sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? ''),
         'warn_label' => $cfg["pool_{$safe}_warning"] ?? '',
         'crit_label' => $cfg["pool_{$safe}_critical"] ?? '',
         'custom' => false,
     ];
-    // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
-    $pool = $pname !== null ? $pname : $safe;
-    $class = sg_pool_profile_class(sg_pool_btrfs_profile($pool));
-    if (sg_pool_ignore_disk_size_thresholds($class)) {
-        $th['warn'] = 0.0;
-        $th['crit'] = 0.0;
-        $th['warn_label'] = '';
-        $th['crit_label'] = '';
-    }
-    return $th;
 }
 
 $sent = [];

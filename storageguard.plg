@@ -19,7 +19,7 @@
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
   never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
-<!ENTITY version "2026.08.14ac">
+<!ENTITY version "2026.08.14ad">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -41,6 +41,12 @@
 
 <CHANGES>
 ###&version;
+- **Pool free thresholds (capacity-fit):** Warning = free needed so data still fits after
+  <em>largest</em> member loss; Critical = after <em>smallest</em> member loss (equal disks share
+  one floor). Paint/alerts use this for RAID1/1cN/RAID10/RAID5/6 unless Custom. Drops 2× rebalance pad.
+- Docs: scenarios, RAID1, RAID10, math README updated.
+
+###2026.08.14ac
 - **Fix:** pools-only / no array — product Default and first open no longer enable Array coloring
   or Array Warning alerts; Array UI stays hidden (Show hidden items…). default.cfg documents
   machine-aware defaults; sg-update.php sets array_coloring / alerts from live disks.ini.

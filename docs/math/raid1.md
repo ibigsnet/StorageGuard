@@ -80,7 +80,7 @@ Longer walkthrough of this same layout: [scenarios.md](scenarios.md).
 | Layout | Healthy $U$ | After one equal loss | $\Delta_{\mathrm{fit}}$ | Critical / Warning |
 |--------|---------------|----------------------|---------------------------|--------------------|
 | 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 4 T |
-| 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB | 4 T / 8 T |
+| 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB worst / ~2 TB mild | warn 4 T / crit 2 T |
 
 ### Speeds (best-case multi-stream ceiling)
 
@@ -102,11 +102,11 @@ These multi-stream figures are **upper bounds** for comparing profiles — cachi
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **Yes** for RAID1 / RAID1c3 / RAID1c4 |
-| Critical | $\max\Delta_{\mathrm{fit}}$ — capacity still **fits** after worst one-disk loss |
-| Warning | $2\times\max\Delta_{\mathrm{fit}}$ — fit + rebalance comfort |
-| Disk-size dropdowns | **Ignored** for paint/alerts (array evacuate model is wrong) |
-| Custom free | Still works; Suggest writes Custom values |
-| Settings tables | Usable now, fit free, rebalance comfort, per-member loss rows |
+| Warning | $\max\Delta_{\mathrm{fit}}$ — fit after **largest** member loss |
+| Critical | $\min\Delta_{\mathrm{fit}}$ — fit after **smallest** member loss |
+| Paint / alerts | Capacity-fit automatic (equal disks ⇒ one floor, shows critical) |
+| Custom free | Overrides capacity-fit; Suggest writes Custom values |
+| Settings tables | Usable now, largest/smallest loss Δ, per-member loss rows |
 | Alerts | Mirror-class wording: data usually online; free ≠ “evacuate failed disk” |
 
 Not array-style “leave free ≥ full disk size.”  

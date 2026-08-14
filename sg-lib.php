@@ -193,14 +193,14 @@ function sg_pool_profile_class($profile) {
 }
 
 /**
- * Disk-size thresholds model array-style "evacuate room" (largest member free).
- * On mirrored pools (RAID1/1cN/dup) that model does not apply: a single disk
- * failure usually leaves a full copy, so free space is not required to move
- * data off the failed disk. Ignore disk-size dropdown values for paint/alerts;
- * custom free-space values still apply as capacity policy.
+ * Disk-size dropdown = array-style "evacuate largest member" free.
+ * For BTRFS mirror / RAID10 / parity, paint and alerts use capacity-fit Δ instead
+ * (see sg_pool_threshold_suggestions) — not this evacuate model.
+ * Kept for callers that still branch on disk-size UI semantics.
  */
 function sg_pool_ignore_disk_size_thresholds($class) {
-    return $class === 'mirror';
+    // Capacity-fit profiles: disk-size dropdown is not the paint source
+    return in_array($class, ['mirror', 'striped_mirror', 'parity'], true);
 }
 
 function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class) {

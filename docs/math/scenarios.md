@@ -7,12 +7,11 @@ Same formulas as [README.md](README.md). Abstract layouts only (not a real serve
 
 ## Math & concepts
 
-### Two different free numbers
+### Capacity-fit free after one disk $i$
 
 | Name | Question | If free is too low… |
 |------|----------|---------------------|
-| **Fit free** $\Delta_{\mathrm{fit}}$ | After the worst single disk loss, **does used data still fit** on remaining usable capacity while **staying on the same profile**? | Used data is larger than post-loss $U$. Free cannot invent capacity. |
-| **Rebalance free** (planning) | After that loss, is there **working room** to restore multi-copy/parity placement — remove/rebalance, replace+restripe, or convert — without sitting at 100% full? | Data may still *fit* and stay online, but recovery actions are tight. |
+| **Fit free** $\Delta_{\mathrm{fit}}(i)$ | After losing member $i$, **does used data still fit** on remaining usable capacity while **staying on the same profile**? | Used data is larger than post-loss $U$. Free cannot invent capacity. |
 
 ### Formulas (same-profile, one disk $i$)
 
@@ -26,17 +25,22 @@ $$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 $$
 
-Planning rule used later by the product:
+Product paint / alert rule (pools, capacity-fit profiles):
 
 $$
-\mathrm{Critical} = \max_i \Delta_{\mathrm{fit}}(i), \qquad
-\mathrm{Warning} = 2 \times \max_i \Delta_{\mathrm{fit}}(i)
+\mathrm{Warning} = \max_i \Delta_{\mathrm{fit}}(i)
+\quad\text{(typically lose the \emph{largest} member)}
+$$
+$$
+\mathrm{Critical} = \min_i \Delta_{\mathrm{fit}}(i)
+\quad\text{(typically lose the \emph{smallest} member)}
 $$
 
 **Used ↔ free:** $\mathrm{Used} \approx U_{\mathrm{full}} - \mathrm{Free}$.  
 If free $\ge \Delta_{\mathrm{fit}}(i)$ before losing disk $i$, then $\mathrm{Used} \le U_{\mathrm{after}}(i)$.
 
-Why $2\Delta$ for comfort? After a loss, free left is roughly $\mathrm{free}_{\mathrm{before}} - \Delta_{\mathrm{fit}}$. Keeping extra free ≈ $\Delta_{\mathrm{fit}}$ after the drop leaves rewrite room instead of landing at zero free the moment the disk dies. **Estimate**, not a kernel guarantee.
+Equal-size members ⇒ $\max\Delta=\min\Delta$ ⇒ one shared free floor (UI shows **critical** when free is at or below that floor).  
+Unequal members ⇒ **warning** when free is only enough for a mild (small-disk) loss but not the worst (large-disk) loss; **critical** when free is below even the mildest single-disk $\Delta$.
 
 ### Options after a single disk loss (redundant profiles)
 
@@ -88,11 +92,11 @@ So on this 6 TB-usable pool, you need at least **1 TB free** before the fail
 | **3 TB** | 3 TB | free ~2 TB | Yes | **More comfortable** |
 | **0 TB** | 6 TB | used 6 TB > 5 TB usable | **No** | N/A |
 
-Planning numbers for **this 6 × 2 TB layout only**: Critical **1 T**, Warning **2 T** ($2\Delta$).
+Planning numbers for **this 6 × 2 TB layout only** (all members equal): Warning = Critical = **1 T** ($\Delta$ for any one loss).
 
 Crossing Critical does not mean “RAID1 dies.” It means that if a disk fails now, used may already exceed post-loss usable capacity.
 
-Free is not array-style full-disk evacuate headroom. A second copy already exists on another device; free is capacity fit plus working room for rebalance/remove/convert.
+Free is not array-style full-disk evacuate headroom. A second copy already exists on another device; free is capacity-fit headroom after usable shrinks.
 
 ---
 
@@ -102,8 +106,10 @@ Free is not array-style full-disk evacuate headroom. A second copy already exist
 |--|--|
 | Usable | $16/2 =$ **8 TB** |
 | After one loss | $12/2 =$ **6 TB** |
-| $\Delta_{\mathrm{fit}}$ | **2 TB** |
-| Critical / Warning (planning) | **2 T** / **4 T** |
+| $\Delta_{\mathrm{fit}}$ (any one 4 TB loss) | **2 TB** |
+| Warning / Critical (equal disks) | **2 T** / **2 T** |
+
+With **~2.8 TB free** on this layout, used still fits after one loss → **OK** (not warning).
 
 ---
 
@@ -112,10 +118,10 @@ Free is not array-style full-disk evacuate headroom. A second copy already exist
 | Loss | $U_{\mathrm{after}}$ | $\Delta_{\mathrm{fit}}$ |
 |------|------------------------|---------------------------|
 | Healthy $U=16$ TB | — | — |
-| Worst: lose 8 TB | 12 TB | **4 TB** |
-| Mild: lose 4 TB | 14 TB | **2 TB** |
+| Largest: lose 8 TB | 12 TB | **4 TB** |
+| Smallest: lose 4 TB | 14 TB | **2 TB** |
 
-Planning: Critical **4 T** ($\max\Delta$), Warning **8 T** ($2\times\max\Delta$).
+Planning: **Warning 4 T** (largest-loss $\Delta$), **Critical 2 T** (smallest-loss $\Delta$).
 
 ---
 
@@ -139,6 +145,6 @@ Planning: Critical **4 T** ($\max\Delta$), Warning **8 T** ($2\times\max\Del
 | Alert text | Profile-class wording (mirror / RAID10 / parity / none) |
 
 Code: `sg_pool_threshold_suggestions` in `sg-pool-math.php`  
-(`crit = max Δ`, `warn = 2 × max Δ`, `apply` for mirror / RAID10 / RAID5/6).
+(`warn = max Δ` largest-loss, `crit = min Δ` smallest-loss; `apply` for mirror / RAID10 / RAID5/6).
 
 Index: [README.md](README.md).

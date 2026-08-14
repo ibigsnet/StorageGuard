@@ -48,7 +48,7 @@ $$
 \Delta_{\mathrm{fit}}(i) = U(\mathrm{RAID10}, \text{all}) - U(\mathrm{RAID10}, \text{without } i)
 $$
 
-Planning: Critical = $\max_i\Delta_{\mathrm{fit}}$, Warning = $2\times\max_i\Delta_{\mathrm{fit}}$  
+Planning: Warning = $\max_i\Delta_{\mathrm{fit}}$ (largest-member loss), Critical = $\min_i\Delta_{\mathrm{fit}}$ (smallest-member loss)  
 (see [scenarios.md](scenarios.md)). Not “evacuate one full disk of unique data.”
 
 ### Example A — 4 × 4 TB
@@ -59,7 +59,7 @@ Planning: Critical = $\max_i\Delta_{\mathrm{fit}}$, Warning = $2\times\max_i\Del
 | After one loss (3 × 4 TB) | $12/2 = 6$ TB |
 | $\Delta_{\mathrm{fit}}$ | **2 TB** |
 
-Planning: Critical **2 T**, Warning **4 T**. Three devices remain; replace optional for capacity/redundancy, not for “having any data left.”
+Planning: Warning = Critical = **2 T** (equal disks). Three devices remain; replace optional for capacity/redundancy, not for “having any data left.”
 
 ### Example B — 3 × 4 TB (odd count)
 
@@ -79,7 +79,7 @@ Still online with two devices if used ≤ 4 TB.
 | Lose one **8 TB** | 12 TB | **4 TB** (worst) |
 | Lose one **4 TB** | 14 TB | **2 TB** (mild) |
 
-Planning: Critical **4 T**, Warning **8 T**.
+Planning: **Warning 4 T** (largest-loss Δ), **Critical 2 T** (smallest-loss Δ).
 
 ### Profile conversion (education)
 
@@ -108,9 +108,10 @@ See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid doe
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **Yes** |
-| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
+| Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
+| Paint / alerts | Use capacity-fit automatically (Custom overrides) |
 | Settings tables | Per-member loss Δ, usable after loss, profile comparison |
-| Alerts | RAID10 / striped-mirror wording: data usually online; free = fit + recovery wiggle room |
+| Alerts | RAID10 / striped-mirror wording: data usually online; free = capacity-fit after usable shrinks |
 | Not claimed | Forced immediate replace |
 
 Code: class `striped_mirror` in `sg_pool_threshold_suggestions`.

@@ -115,26 +115,28 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 
 Everything below is **plugin behavior**: Settings, paint, alerts, and code.
 
-## Suggest free thresholds
+## Capacity-fit free thresholds (paint / alerts / Suggest)
 
 For profiles where one disk loss can keep data online but **shrinks** usable capacity:
 
 | Level | Rule | User meaning |
 |-------|------|--------------|
-| **Critical** | $\max_i \Delta_{\mathrm{fit}}(i)$ | Capacity **fit** after worst one-disk loss |
-| **Warning** | $2 \times \max_i \Delta_{\mathrm{fit}}(i)$ | Fit + first-order **rebalance comfort** |
+| **Warning** | $\max_i \Delta_{\mathrm{fit}}(i)$ | Free too low for **largest**-member loss (used may not fit) |
+| **Critical** | $\min_i \Delta_{\mathrm{fit}}(i)$ | Free too low for **smallest**-member loss (used may not fit even in the mildest one-disk case) |
 
-| Class | Profiles | Suggest button? |
-|-------|----------|-----------------|
-| mirror | RAID1, RAID1c3, RAID1c4 | **Yes** |
-| striped_mirror | RAID10 | **Yes** |
-| parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md) + Unraid/BTRFS profile docs) |
-| none | single, RAID0 | **No** — Custom only |
+Equal disks ⇒ max = min ⇒ one free floor (paint shows **critical** at that floor).
 
-- Suggest fills **Custom** free Warning/Critical; user clicks **Apply** to save.  
-- RAID5/6: capacity math still applies; read Unraid pool docs and BTRFS RAID56 notes for how those profiles behave on your system.
-- **Disk-size** dropdowns on **mirror** pools are **ignored** for paint/alerts (array evacuate semantics are wrong).  
-- Per-pool tables in Advanced pools: usable now, fit free, rebalance comfort, per-member loss, profile comparison.
+| Class | Profiles | Capacity-fit paint? |
+|-------|----------|---------------------|
+| mirror | RAID1, RAID1c3, RAID1c4 | **Yes** (automatic) |
+| striped_mirror | RAID10 | **Yes** (automatic) |
+| parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md) + Unraid/BTRFS docs) |
+| none | single, RAID0 | **No** — Custom / disk-size policy only |
+
+- Paint and alerts use capacity-fit **unless** the pool is on **Custom** free.  
+- Suggest fills **Custom** Warning/Critical with the same numbers; **Apply** to save.  
+- RAID5/6: capacity math still applies; read Unraid pool docs and BTRFS RAID56 notes for profile behavior.  
+- Per-pool tables: usable now, largest/smallest loss Δ, per-member loss, profile comparison.
 
 ## Where it shows up
 

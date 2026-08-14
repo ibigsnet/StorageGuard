@@ -153,9 +153,12 @@ function sg_capacity_delta_tb($profile_or_key, $sizes_tb, $i) {
 /**
  * Per-disk and warn/crit free suggestions for staying on the same profile after one loss.
  *
- * Product rule (docs/math/scenarios.md):
- *   Critical = max(Δ_fit)  — capacity still fits after worst single-disk loss
- *   Warning  = 2 × max(Δ_fit) — fit + first-order rebalance comfort
+ * Product rule (docs/math/scenarios.md) — capacity-fit after one disk, no 2× rebalance pad:
+ *   Warning  = max_i Δ_fit(i)  — free ≤ this ⇒ used may not fit after losing the *largest* member
+ *   Critical = min_i Δ_fit(i)  — free ≤ this ⇒ used may not fit after losing the *smallest* member
+ *
+ * Equal-size members ⇒ max=min ⇒ warn and crit share one free floor (paint shows critical).
+ * Unequal members ⇒ yellow between min and max Δ; red at or below min Δ.
  *
  * Applies to mirror (RAID1/1c3/1c4), striped_mirror (RAID10), and parity (RAID5/6).
  * Does not apply to single/RAID0 (no recovery model) or unknown.
@@ -164,6 +167,7 @@ function sg_capacity_delta_tb($profile_or_key, $sizes_tb, $i) {
  * @return array{
  *   profile_key:string, class:string, usable_tb:float,
  *   warn_tb:float, crit_tb:float, fit_free_tb:float, rebalance_free_tb:float,
+ *   largest_loss_delta_tb:float, smallest_loss_delta_tb:float,
  *   apply:bool, rule:string,
  *   losses: list<array{size_tb:float, usable_after_tb:float, delta_tb:float}>
  * }
@@ -194,8 +198,8 @@ function sg_pool_threshold_suggestions($profile, $sizes_tb) {
         $deltas[] = $delta;
     }
 
-    $max_delta = !empty($deltas) ? max($deltas) : 0.0;
-    $min_delta = !empty($deltas) ? min($deltas) : 0.0;
+    $max_delta = !empty($deltas) ? max($deltas) : 0.0; // typically largest-member loss
+    $min_delta = !empty($deltas) ? min($deltas) : 0.0; // typically smallest-member loss
     // Suggest for multi-device profiles where one loss shrinks U but data can remain online
     $apply = (
         $n >= 2
@@ -204,9 +208,9 @@ function sg_pool_threshold_suggestions($profile, $sizes_tb) {
         && $class !== 'none'
         && in_array($class, ['mirror', 'striped_mirror', 'parity'], true)
     );
-    // Warning free amount > Critical free amount (alert earlier as free shrinks)
-    $crit = $max_delta;
-    $warn = 2.0 * $max_delta;
+    // Warn earlier (larger free floor): largest-loss Δ. Crit later/severe: smallest-loss Δ.
+    $warn = $max_delta;
+    $crit = $min_delta;
 
     return [
         'profile_key' => $key,
@@ -214,11 +218,14 @@ function sg_pool_threshold_suggestions($profile, $sizes_tb) {
         'usable_tb' => round($u0, 3),
         'warn_tb' => $apply ? round($warn, 3) : 0.0,
         'crit_tb' => $apply ? round($crit, 3) : 0.0,
+        // Legacy keys: fit = worst (largest) loss; "rebalance" name kept for API but = same as warn now
         'fit_free_tb' => round($max_delta, 3),
-        'rebalance_free_tb' => round(2.0 * $max_delta, 3),
+        'rebalance_free_tb' => round($max_delta, 3),
+        'largest_loss_delta_tb' => round($max_delta, 3),
+        'smallest_loss_delta_tb' => round($min_delta, 3),
         'mildest_delta_tb' => round($min_delta, 3),
         'apply' => $apply,
-        'rule' => 'crit=max_fit_delta; warn=2*max_fit_delta',
+        'rule' => 'warn=max_fit_delta(largest_loss); crit=min_fit_delta(smallest_loss)',
         'losses' => $losses,
     ];
 }

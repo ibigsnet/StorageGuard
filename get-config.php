@@ -147,23 +147,29 @@ foreach (array_keys($pool_names) as $pname) {
   }
   $enabled = $storage_online && $pool_coloring && $include;
   $p_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
-  if ($p_custom) {
-    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? '');
-    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical_custom"] ?? '');
-  } else {
-    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pname}_warning"] ?? '');
-    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
-  }
-  // RAID1/mirror: disk-size dropdown is evacuate-room semantics — do not apply
   $profile = $storage_online ? sg_pool_btrfs_profile($pname) : '';
   $p_class = sg_pool_profile_class($profile);
-  if (!$p_custom && sg_pool_ignore_disk_size_thresholds($p_class)) {
-    $warn = 0.0;
-    $crit = 0.0;
-  }
   $free = $storage_online ? sg_free_tb_mount('/mnt/' . $pname) : null;
   $math = ($storage_online && function_exists('sg_pool_math_package'))
     ? sg_pool_math_package($pname, $profile) : null;
+  $sug = (is_array($math) && isset($math['suggest']) && is_array($math['suggest']))
+    ? $math['suggest'] : null;
+  $capacity_apply = is_array($sug) && !empty($sug['apply']);
+
+  if ($p_custom) {
+    // User free-space policy (TB labels)
+    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? '');
+    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical_custom"] ?? '');
+  } elseif ($capacity_apply) {
+    // Universal capacity-fit: warn = largest-disk-loss Δ, crit = smallest-disk-loss Δ
+    // (not array-style disk-size evacuate; not 2× rebalance pad)
+    $warn = (float)($sug['warn_tb'] ?? 0);
+    $crit = (float)($sug['crit_tb'] ?? 0);
+  } else {
+    // single / RAID0 / unknown: optional disk-size policy from cfg
+    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pname}_warning"] ?? '');
+    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
+  }
   $pool_status[$pname] = [
     'enabled' => $enabled,
     'free_tb' => ($free !== null) ? round($free, 3) : null,
