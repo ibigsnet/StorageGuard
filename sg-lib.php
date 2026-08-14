@@ -193,14 +193,103 @@ function sg_pool_profile_class($profile) {
 }
 
 /**
- * Disk-size dropdown = array-style "evacuate largest member" free.
- * For BTRFS mirror / RAID10 / parity, paint and alerts use capacity-fit Δ instead
- * (see sg_pool_threshold_suggestions) — not this evacuate model.
- * Kept for callers that still branch on disk-size UI semantics.
+ * Disk-size dropdown = array-style "evacuate largest member" free (optional policy).
+ * Capacity-fit Δ values are suggestions only unless the user saves them (Custom / Suggest).
  */
 function sg_pool_ignore_disk_size_thresholds($class) {
-    // Capacity-fit profiles: disk-size dropdown is not the paint source
-    return in_array($class, ['mirror', 'striped_mirror', 'parity'], true);
+    return false; // never auto-suppress user-configured free thresholds
+}
+
+/**
+ * Format TB for labels (e.g. 1.99 → "2T", 0.18 → "180G").
+ */
+function sg_format_tb_short($tb) {
+    $tb = (float)$tb;
+    if ($tb <= 0) return '';
+    if ($tb >= 1.0) {
+        return rtrim(rtrim(number_format($tb, 2, '.', ''), '0'), '.') . 'T';
+    }
+    $g = $tb * 1000.0;
+    return rtrim(rtrim(number_format($g, 0, '.', ''), '0'), '.') . 'G';
+}
+
+/** Parse free threshold strings like 3.6T / 500G to TB (decimal SI-style /1000). */
+function sg_lib_parse_to_tb($str) {
+    if ($str === null || $str === '') return 0.0;
+    if (!preg_match('/([0-9]*\.?[0-9]+)\s*([TGMKtgmk]?)/', (string)$str, $m)) return 0.0;
+    $num = (float)$m[1];
+    $u = strtoupper($m[2] ?: 'T');
+    if ($u === 'T') return $num;
+    if ($u === 'G') return $num / 1000.0;
+    if ($u === 'M') return $num / 1e6;
+    if ($u === 'K') return $num / 1e9;
+    return $num;
+}
+
+/**
+ * Resolve pool free thresholds for paint/alerts.
+ * User values always win. Empty thresholds may soft-default to capacity-fit *suggestions*
+ * (recommended: larger free floor = Warning, smaller = Critical) — user may reverse or
+ * pick any free amounts via Custom / disk-size.
+ *
+ * Severity paint rule (sg_level): lower free amount = more severe (critical), higher free = warning,
+ * regardless of form field order. Prefer Warning free ≥ Critical free as amounts of free space.
+ *
+ * @return array{warn:float,crit:float,warn_label:string,crit_label:string,custom:bool,source:string,suggest?:array|null}
+ */
+function sg_pool_resolve_thresholds($cfg, $safe, $pname = null) {
+    $pool = $pname !== null ? $pname : $safe;
+    $use_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
+    $sug = null;
+    if (function_exists('sg_pool_math_package')) {
+        $profile = function_exists('sg_pool_btrfs_profile') ? sg_pool_btrfs_profile($pool) : '';
+        $pkg = @sg_pool_math_package($pool, $profile);
+        $sug = (is_array($pkg) && isset($pkg['suggest']) && is_array($pkg['suggest'])) ? $pkg['suggest'] : null;
+    }
+
+    if ($use_custom) {
+        $w = sg_lib_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? '');
+        $c = sg_lib_parse_to_tb($cfg["pool_{$safe}_critical_custom"] ?? '');
+        return [
+            'warn' => $w,
+            'crit' => $c,
+            'warn_label' => (string)($cfg["pool_{$safe}_warning_custom"] ?? ''),
+            'crit_label' => (string)($cfg["pool_{$safe}_critical_custom"] ?? ''),
+            'custom' => true,
+            'source' => 'custom',
+            'suggest' => $sug,
+        ];
+    }
+
+    $w = sg_lib_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pool}_warning"] ?? '');
+    $c = sg_lib_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pool}_critical"] ?? '');
+    $wl = (string)($cfg["pool_{$safe}_warning"] ?? '');
+    $cl = (string)($cfg["pool_{$safe}_critical"] ?? '');
+
+    // Soft default only when both empty and math applies
+    if ($w <= 0 && $c <= 0 && is_array($sug) && !empty($sug['apply'])) {
+        $w = (float)($sug['warn_tb'] ?? 0);
+        $c = (float)($sug['crit_tb'] ?? 0);
+        return [
+            'warn' => $w,
+            'crit' => $c,
+            'warn_label' => sg_format_tb_short($w),
+            'crit_label' => sg_format_tb_short($c),
+            'custom' => false,
+            'source' => 'capacity_suggest_default',
+            'suggest' => $sug,
+        ];
+    }
+
+    return [
+        'warn' => $w,
+        'crit' => $c,
+        'warn_label' => $wl,
+        'crit_label' => $cl,
+        'custom' => false,
+        'source' => ($w > 0 || $c > 0) ? 'disk_size' : 'none',
+        'suggest' => $sug,
+    ];
 }
 
 function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class) {
@@ -211,35 +300,59 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
     $thresh_h = $label !== '' ? $label : sg_human_free($tb);
     $level = $is_crit ? 'critical' : 'warning';
     $prof = $profile !== '' ? $profile : 'unknown';
+    $w = (float)($th['warn'] ?? 0);
+    $c = (float)($th['crit'] ?? 0);
+    $mild = max($w, $c);
+    $severe = min(array_filter([$w, $c], function ($x) { return $x > 0; }) ?: [0]);
+    if ($w > 0 && $c > 0) {
+        $severe = min($w, $c);
+        $mild = max($w, $c);
+    }
 
     $line1 = "Pool '{$pname}' free space is {$free_h}, at or below your {$level} free-space threshold of {$thresh_h}.";
     $line1 .= " Layout: {$prof}.";
+    $line1 .= " Warning/Critical here mean free-space severity (yellow vs red), not which disk already failed.";
+
+    $sug = $th['suggest'] ?? null;
+    $guide = '';
+    if (is_array($sug) && !empty($sug['apply'])) {
+        $lg = sg_format_tb_short((float)($sug['largest_loss_delta_tb'] ?? $sug['warn_tb'] ?? 0));
+        $sm = sg_format_tb_short((float)($sug['smallest_loss_delta_tb'] ?? $sug['crit_tb'] ?? 0));
+        if ($lg !== '' && $sm !== '') {
+            $guide = " Capacity-fit guide (optional): ~{$lg} free so used data still fits after losing the largest member; ~{$sm} free after losing the smallest. You can map either number to Warning or Critical (or use your own free amounts).";
+            if ($lg === $sm) {
+                $guide = " Capacity-fit guide (optional): members are equal size — about {$lg} free so used data still fits after any one member loss.";
+            }
+        }
+    }
 
     switch ($class) {
         case 'mirror':
-            $line2 = $is_crit
-                ? "On BTRFS RAID1/RAID1cN, each chunk has multiple copies on different devices—a single disk loss usually still leaves data online. Free space is not 'evacuate the failed disk' headroom (unlike the array); it matters for capacity after the loss, optional remove/rebalance, replace, or profile convert."
-                : "On BTRFS RAID1/RAID1cN, losing one disk usually still leaves your data on the remaining copy/copies—you typically do not need free space to 'move data off' the failed disk the way you do on the array. Free still matters so used data fits at the reduced usable capacity, and for optional remove/rebalance, replace, or profile changes.";
+            $line2 = "On BTRFS RAID1/RAID1cN, a single disk loss usually leaves data online (extra copies). Free space is about whether used data still fits after usable capacity shrinks — not Unraid-array “evacuate this disk onto free space.”";
             break;
         case 'parity':
-            $line2 = $is_crit
-                ? "On BTRFS RAID5/RAID6, data can survive a limited number of failures while degraded. Free space this low may block remove/rebalance or replace recovery, or leave used data larger than post-loss usable capacity. See Unraid pool docs and BTRFS RAID56 notes for profile behavior."
-                : "On BTRFS RAID5/RAID6, free space is capacity + recovery headroom: after a loss, used data must still fit, and replace/remove/rebalance often needs room. Closer to the array's 'room to recover' idea than RAID1. See Unraid pool docs and BTRFS RAID56 notes for profile behavior.";
+            $line2 = "On BTRFS RAID5/RAID6, free space is capacity after a loss plus room for replace/remove/rebalance. See Unraid pool docs and BTRFS RAID56 notes for profile behavior.";
             break;
         case 'striped_mirror':
-            $line2 = $is_crit
-                ? "On BTRFS RAID10 (two copies + striping, not fixed mirror pairs), a single disk loss usually leaves data available. Free space this low may mean used data no longer fits after capacity drops, or block remove-to-remaining-disks / rebalance / convert without adding a drive."
-                : "On BTRFS RAID10, one disk loss usually leaves data online; you are not forced to replace immediately if remaining disks can hold the data. Free space is wiggle room so used data still fits after the capacity drop, and so optional remove/rebalance or profile convert can succeed.";
+            $line2 = "On BTRFS RAID10 (two copies + striping), one disk loss usually leaves data online. Free space is whether used data still fits after usable capacity drops, and whether remove/rebalance/convert has room.";
             break;
         case 'none':
-            $line2 = "This pool has little or no redundancy (single/RAID0). Free-space thresholds here are capacity policy only: a disk failure risks data—there is no parity-style evacuate-to-siblings story.";
+            $line2 = "This pool has little or no redundancy (single/RAID0). Free thresholds are capacity policy only; a disk failure risks data.";
             break;
         default:
-            $line2 = $is_crit
-                ? "Free space is critically low for this pool's free-space threshold. Check the pool's filesystem/profile on Main for what a disk failure would mean."
-                : "Free space is at or below your warning threshold for this pool. Check the pool profile on Settings/Main for failure implications.";
+            $line2 = "Check the pool profile on Main/Settings for what a disk failure would mean on this layout.";
             break;
     }
 
-    return $line1 . ' ' . $line2;
+    if ($is_crit) {
+        $line3 = " Critical free means free is at or below your more severe free floor"
+            . ($severe > 0 ? ' (' . sg_human_free($severe) . ')' : '')
+            . " — used data may not fit after a capacity-shrinking member loss if you stay this full.";
+    } else {
+        $line3 = " Warning free means free is at or below your milder free floor"
+            . ($mild > 0 ? ' (' . sg_human_free($mild) . ')' : '')
+            . " — still time to free space or adjust thresholds before the more severe floor.";
+    }
+
+    return $line1 . ' ' . $line2 . $guide . $line3;
 }

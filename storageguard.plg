@@ -19,7 +19,7 @@
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
   never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
-<!ENTITY version "2026.08.14ad">
+<!ENTITY version "2026.08.14ae">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -41,6 +41,12 @@
 
 <CHANGES>
 ###&version;
+- **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
+  to largest/smallest disk. Saved Custom or disk-size values win; empty soft-defaults to capacity-fit
+  suggestions. Suggest recommends largest-loss Δ → Warning, smallest-loss Δ → Critical (user may reverse).
+- Clearer pool notification text; guide + alternate scenarios: docs/math/threshold-guide.md.
+
+###2026.08.14ad
 - **Pool free thresholds (capacity-fit):** Warning = free needed so data still fits after
   <em>largest</em> member loss; Critical = after <em>smallest</em> member loss (equal disks share
   one floor). Paint/alerts use this for RAID1/1cN/RAID10/RAID5/6 unless Custom. Drops 2× rebalance pad.

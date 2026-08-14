@@ -146,30 +146,15 @@ foreach (array_keys($pool_names) as $pname) {
     $include = in_array($pname, $list, true) || in_array($safe, $list, true);
   }
   $enabled = $storage_online && $pool_coloring && $include;
-  $p_custom = ($cfg["pool_{$safe}_use_custom"] ?? 'no') === 'yes';
   $profile = $storage_online ? sg_pool_btrfs_profile($pname) : '';
-  $p_class = sg_pool_profile_class($profile);
   $free = $storage_online ? sg_free_tb_mount('/mnt/' . $pname) : null;
   $math = ($storage_online && function_exists('sg_pool_math_package'))
     ? sg_pool_math_package($pname, $profile) : null;
-  $sug = (is_array($math) && isset($math['suggest']) && is_array($math['suggest']))
-    ? $math['suggest'] : null;
-  $capacity_apply = is_array($sug) && !empty($sug['apply']);
-
-  if ($p_custom) {
-    // User free-space policy (TB labels)
-    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning_custom"] ?? '');
-    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical_custom"] ?? '');
-  } elseif ($capacity_apply) {
-    // Universal capacity-fit: warn = largest-disk-loss Δ, crit = smallest-disk-loss Δ
-    // (not array-style disk-size evacuate; not 2× rebalance pad)
-    $warn = (float)($sug['warn_tb'] ?? 0);
-    $crit = (float)($sug['crit_tb'] ?? 0);
-  } else {
-    // single / RAID0 / unknown: optional disk-size policy from cfg
-    $warn = sg_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pname}_warning"] ?? '');
-    $crit = sg_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pname}_critical"] ?? '');
-  }
+  $th = function_exists('sg_pool_resolve_thresholds')
+    ? sg_pool_resolve_thresholds($cfg, $safe, $pname)
+    : ['warn' => 0.0, 'crit' => 0.0, 'source' => 'none'];
+  $warn = (float)($th['warn'] ?? 0);
+  $crit = (float)($th['crit'] ?? 0);
   $pool_status[$pname] = [
     'enabled' => $enabled,
     'free_tb' => ($free !== null) ? round($free, 3) : null,
@@ -178,6 +163,7 @@ foreach (array_keys($pool_names) as $pname) {
     'level'   => ($enabled && $free !== null) ? sg_level($free, $warn, $crit) : 'ok',
     'style'   => sg_style($cfg, "pool_{$safe}_color_style"),
     'profile' => $profile,
+    'threshold_source' => $th['source'] ?? 'none',
     'math'    => $math,
   ];
 }

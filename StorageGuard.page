@@ -567,7 +567,7 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 
 ### Pools <span style="color:#ff9800;font-weight:600;">(WIP)</span> — free-space thresholds
 
-> Defaults: pool alerts **off**. **Paint/alerts** on RAID1 / RAID1cN / RAID10 / RAID5 / RAID6 use **capacity-fit** free (not array-style disk evacuate): **Warning** = free needed so data still fits after losing the **largest** member; **Critical** = free needed after losing the **smallest** member. Equal disks ⇒ one shared floor (shows critical). **Custom** free still overrides. Not for single/RAID0. Pool **coloring** is under Appearance (shown while this section is open).
+> Defaults: pool alerts **off**. **Warning / Critical** are free-space severity (yellow / red), not “which disk failed.” You set free amounts freely (disk-size or **Custom**). **Suggest free thresholds** recommends capacity-fit numbers (typically larger free → Warning, smaller → Critical); you may reverse or invent your own. Empty thresholds soft-default to that suggestion until you save values. Guide: docs/math/threshold-guide.md. Pool **coloring** is under Appearance.
 
 Each pool has its own Warning / Critical free amounts (for **Alerts** and optional coloring).
 
@@ -612,7 +612,7 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
 
 **<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
 <?php if ($p_raid1): ?>
-> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has **two / three / four** copies — **not** one copy per disk. Example: 6×2 TB RAID1 ≈ **6 TB** usable (two copies), not 2 TB. A single disk loss usually leaves data online; usable capacity still drops. Paint/alerts use **capacity-fit** free (largest-loss Warning / smallest-loss Critical), not disk-size evacuate. **Custom** overrides.
+> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has **two / three / four** copies — **not** one copy per disk. Example: 6×2 TB RAID1 ≈ **6 TB** usable (two copies), not 2 TB. A single disk loss usually leaves data online; usable capacity still drops. Use **Suggest** for capacity-fit free floors, or set any free amounts you want.
 <?php elseif ($p_raid0 || $p_single): ?>
 > **<?= $p_raid0 ? 'RAID0' : 'Single' ?> profile:** little or no redundancy. Free thresholds here are capacity policy only (not array-style evacuate room). **Suggest free thresholds** is not offered — use **Custom values** if you want alerts.
 <?php endif; ?>
@@ -665,10 +665,10 @@ _(<?=htmlspecialchars($p)?> Critical (custom))_:
 <div class="sg-pool-math" markdown="1" id="pool-<?=htmlspecialchars($safe)?>-math" data-pool-safe="<?=htmlspecialchars($safe)?>">
 <?php if ($sug && !empty($sug['apply']) && $warn_lbl !== ''): ?>
 : <button type="button" class="sg-suggest-pool" data-pool-safe="<?=htmlspecialchars($safe)?>" data-warn="<?=htmlspecialchars($warn_lbl)?>" data-crit="<?=htmlspecialchars($crit_lbl)?>">Suggest free thresholds</button>
-  <span class="sg-math-inline-hint">Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <strong><?=htmlspecialchars(sg_format_tb_label($sug['usable_tb'] ?? 0))?></strong>). Warning = fit after <em>largest</em> member loss; Critical = fit after <em>smallest</em> member loss. Sets Custom; Apply to save (or leave Disk sizes — paint already uses this math).</span>
+  <span class="sg-math-inline-hint">Suggested free: Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <strong><?=htmlspecialchars(sg_format_tb_label($sug['usable_tb'] ?? 0))?></strong>). Recommended mapping: Warning ≈ largest-loss Δ, Critical ≈ smallest-loss Δ — change freely. Sets <strong>Custom</strong>; Apply to save. See docs/math/threshold-guide.md.</span>
 
 <blockquote class="inline_help">
-BTRFS capacity math (not array “evacuate a whole disk”). <strong>Critical</strong> = max free needed so used data still fits after the worst single member loss while staying on this profile. <strong>Warning</strong> = 2× Critical (planning room so you are less likely to be full when removing/rebalancing). Applies to <strong>RAID1 / RAID1c3 / RAID1c4</strong>, <strong>RAID10</strong>, <strong>RAID5</strong>, <strong>RAID6</strong>. Not single/RAID0. Estimates ignore metadata. See docs/math/scenarios.md.
+BTRFS capacity-fit math (not array “evacuate a whole disk”). <strong>Suggest</strong> recommends free floors so used data still fits after one member loss (largest-loss Δ / smallest-loss Δ). Warning/Critical are severity labels for free space — assign either amount to either field (prefer Warning free ≥ Critical free). Applies to RAID1/1cN, RAID10, RAID5/6. See docs/math/threshold-guide.md and scenarios.md.
 <?php
   $pc_lower = strtolower((string)$current_profile);
   if (strpos($pc_lower, 'raid5') !== false || strpos($pc_lower, 'raid6') !== false):

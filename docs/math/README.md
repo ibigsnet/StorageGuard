@@ -115,28 +115,30 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 
 Everything below is **plugin behavior**: Settings, paint, alerts, and code.
 
-## Capacity-fit free thresholds (paint / alerts / Suggest)
+## Capacity-fit free thresholds (Suggest + optional default)
 
 For profiles where one disk loss can keep data online but **shrinks** usable capacity:
 
-| Level | Rule | User meaning |
-|-------|------|--------------|
-| **Warning** | $\max_i \Delta_{\mathrm{fit}}(i)$ | Free too low for **largest**-member loss (used may not fit) |
-| **Critical** | $\min_i \Delta_{\mathrm{fit}}(i)$ | Free too low for **smallest**-member loss (used may not fit even in the mildest one-disk case) |
+| Suggested free floor | Rule | Planning meaning |
+|----------------------|------|------------------|
+| Recommended **Warning** | $\max_i \Delta_{\mathrm{fit}}(i)$ | Free needed so used data still fits after **largest**-member loss |
+| Recommended **Critical** | $\min_i \Delta_{\mathrm{fit}}(i)$ | Free needed after **smallest**-member loss |
 
-Equal disks ⇒ max = min ⇒ one free floor (paint shows **critical** at that floor).
+**Warning / Critical in the UI** = free-space severity (yellow / red), not fixed to largest/smallest.  
+You may assign either $\Delta$ (or any free amount) to either field. Paint ranks by free amount: **lower free floor = more severe**.
 
-| Class | Profiles | Capacity-fit paint? |
-|-------|----------|---------------------|
-| mirror | RAID1, RAID1c3, RAID1c4 | **Yes** (automatic) |
-| striped_mirror | RAID10 | **Yes** (automatic) |
-| parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md) + Unraid/BTRFS docs) |
-| none | single, RAID0 | **No** — Custom / disk-size policy only |
+Equal disks ⇒ max = min ⇒ one shared free floor.
 
-- Paint and alerts use capacity-fit **unless** the pool is on **Custom** free.  
-- Suggest fills **Custom** Warning/Critical with the same numbers; **Apply** to save.  
-- RAID5/6: capacity math still applies; read Unraid pool docs and BTRFS RAID56 notes for profile behavior.  
-- Per-pool tables: usable now, largest/smallest loss Δ, per-member loss, profile comparison.
+| Class | Profiles | Suggest? |
+|-------|----------|----------|
+| mirror | RAID1, RAID1c3, RAID1c4 | **Yes** |
+| striped_mirror | RAID10 | **Yes** |
+| parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md)) |
+| none | single, RAID0 | **No** — Custom / disk-size only |
+
+- **Your saved free amounts always win** (Custom or disk-size).  
+- If both empty and math applies, paint/alerts soft-default to the recommendation until you save values.  
+- Full guide + “what if I don’t follow it?”: **[threshold-guide.md](threshold-guide.md)**.
 
 ## Where it shows up
 
@@ -156,6 +158,7 @@ Equal disks ⇒ max = min ⇒ one free floor (paint shows **critical** at that f
 | Doc | Focus |
 |-----|--------|
 | This file | Index + global math + Storage Guard product map |
-| [scenarios.md](scenarios.md) | Fit vs rebalance language + worked examples |
+| [threshold-guide.md](threshold-guide.md) | **How to set Warning/Critical**, notifications, follow or break the guide |
+| [scenarios.md](scenarios.md) | Fit math + worked examples |
 | [unraid-io.md](unraid-io.md) | How Unraid/BTRFS pool reads and writes actually behave |
 | Profile `*.md` | Per-profile math, then Storage Guard section |
