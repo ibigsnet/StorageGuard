@@ -43,7 +43,7 @@
 ###&version;
 - **Fix:** 2-disk RAID1 capacity after one loss uses full remaining disk (Δ≈0) — no false “need half free.”
 - Disk-size pool floors ignored again on RAID1/RAID10/RAID5–6 (evacuate model); Custom free is explicit.
-  Soft capacity-fit only when Δ&gt;0. Explains NIROG flash with Warning=7.3T and blank Critical.
+  Soft capacity-fit only when Δ&gt;0 (avoids false Warning when Critical is unset).
 
 ###2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
