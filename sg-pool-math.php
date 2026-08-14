@@ -109,15 +109,20 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
         case 'raid0':
             return $sum;
         case 'raid1':
-            // BTRFS RAID1: exactly two copies on different devices (any N). ≈ half raw.
+            // BTRFS RAID1: two copies on different devices. ≈ half raw when N≥2.
+            // One remaining device is effectively single (full sum) — not sum/2.
+            // (2-disk mirror after one loss: data still fits if used ≤ remaining disk size.)
+            if ($n < 2) return $sum;
             return $sum / 2.0;
         case 'raid1c3':
+            if ($n < 3) return $sum / max(1, $n); // degraded short of 3 copies
             return $sum / 3.0;
         case 'raid1c4':
+            if ($n < 4) return $sum / max(1, min(3, $n));
             return $sum / 4.0;
         case 'raid10':
             // BTRFS RAID10: two copies + striping (not fixed mirror pairs). ≈ half raw.
-            if ($n < 2) return 0.0;
+            if ($n < 2) return $sum; // single remaining device
             return $sum / 2.0;
         case 'raid5':
             // One parity: classic sum − largest (equal disks: (n−1)×S).

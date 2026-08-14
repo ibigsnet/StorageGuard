@@ -193,11 +193,14 @@ function sg_pool_profile_class($profile) {
 }
 
 /**
- * Disk-size dropdown = array-style "evacuate largest member" free (optional policy).
- * Capacity-fit Δ values are suggestions only unless the user saves them (Custom / Suggest).
+ * Disk-size dropdown = array-style "evacuate largest member" free.
+ * On BTRFS mirror / RAID10 / parity that model is wrong for capacity-fit (and for
+ * 2-disk RAID1, Δ_fit is often 0 — data already has a full copy on the survivor).
+ * Disk-size values are ignored for paint/alerts on those profiles unless the user
+ * switches to Custom free (explicit policy).
  */
 function sg_pool_ignore_disk_size_thresholds($class) {
-    return false; // never auto-suppress user-configured free thresholds
+    return in_array($class, ['mirror', 'striped_mirror', 'parity'], true);
 }
 
 /**
@@ -266,7 +269,19 @@ function sg_pool_resolve_thresholds($cfg, $safe, $pname = null) {
     $wl = (string)($cfg["pool_{$safe}_warning"] ?? '');
     $cl = (string)($cfg["pool_{$safe}_critical"] ?? '');
 
-    // Soft default only when both empty and math applies
+    $class = is_array($sug) ? (string)($sug['class'] ?? '') : '';
+    if ($class === '' && function_exists('sg_pool_btrfs_profile') && function_exists('sg_pool_profile_class')) {
+        $class = sg_pool_profile_class(sg_pool_btrfs_profile($pool));
+    }
+    // Evacuate-style disk-size floors are not used for capacity-fit profiles (Custom only).
+    if (sg_pool_ignore_disk_size_thresholds($class)) {
+        $w = 0.0;
+        $c = 0.0;
+        $wl = '';
+        $cl = '';
+    }
+
+    // Soft default only when nothing configured and capacity math has a real Δ (>0)
     if ($w <= 0 && $c <= 0 && is_array($sug) && !empty($sug['apply'])) {
         $w = (float)($sug['warn_tb'] ?? 0);
         $c = (float)($sug['crit_tb'] ?? 0);

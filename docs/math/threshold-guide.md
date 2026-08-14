@@ -53,9 +53,14 @@ $$
 
 **Suggest free thresholds** fills **Custom** with that pair. You can reverse, change, or ignore it.
 
-### Soft default when both thresholds are empty
+### Soft default / disk-size on RAID1–RAID10–RAID5/6
 
-If both free thresholds are empty and capacity math applies, paint/alerts use the **recommended pair** until you save your own values. As soon as you set disk-size or Custom free, **your numbers win**.
+- **Disk-size** dropdown floors (e.g. Warning = `7.3T` one full member) are **ignored** for paint/alerts on RAID1 / RAID10 / RAID5–6 — that is array-style “evacuate a disk,” not capacity-fit.  
+- **Custom free** always wins (your explicit policy).  
+- If nothing is in Custom and capacity math finds **Δ > 0**, paint soft-defaults to the recommended pair.  
+- **2-disk RAID1:** after one loss the survivor still holds a full copy of used data (if used ≤ remaining disk size) → **Δ ≈ 0** → **no** soft free floor from capacity-fit alone. A flashing bar with only a disk-size Warning set was the evacuate model — clear it or use Custom if you want a free floor.
+
+**Blank Critical does not disable Warning.** A Warning free of `7.3T` with Critical empty still paints warning whenever free ≤ 7.3T.
 
 ---
 
