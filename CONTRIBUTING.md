@@ -12,9 +12,3 @@ By contributing, you agree that your contributions are licensed under the **GNU 
 ## Versioning
 
 See [RELEASES.md](RELEASES.md) (`YYYY.MM.DD` + two-letter suffixes, Unraid `strcmp`).
-
-
-## Public docs vs private notes
-
-- **GitHub** — product docs only (no lab hostnames, no session/agent diaries).
-- **Local** — `.grok-notes/` (gitignored) for lab notes and assistant scratch work.
