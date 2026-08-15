@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.15ad">
+<!ENTITY version "2026.08.15ae">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,7 +26,7 @@
 
 <CHANGES>
 ###&version;
-- Install/remove cleanup: canonical paths; leave .plg file to Unraid.
+- Fix: do not wipe Unraid /tmp/plugins working copy during install prepare.
 
 ###2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
@@ -66,7 +66,7 @@
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: preparing..."
-rm -f /tmp/plugins/storageguard.plg /tmp/plugins/storageguard.txt 2>/dev/null || true
+# Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 mkdir -p /boot/config/plugins/StorageGuard
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
@@ -130,7 +130,7 @@ for p in /var/log/packages/StorageGuard-*; do
 done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -f /boot/config/plugins/StorageGuard/*.txz 2>/dev/null || true
-rm -f /tmp/plugins/storageguard.plg /tmp/plugins/storageguard.txt 2>/dev/null || true
+# Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 echo "StorageGuard: removed (flash config kept under /boot/config/plugins/StorageGuard if present)."
 ]]></INLINE>
 </FILE>
