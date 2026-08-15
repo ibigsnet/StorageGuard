@@ -59,6 +59,8 @@
 - **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
 - CA templates and install URLs follow `stable` for store users.
 
+### Older releases
+- Full changelog (all versions): https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
 </CHANGES>
 
 <FILE Run="/bin/bash">
