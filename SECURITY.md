@@ -28,5 +28,6 @@ Lab / development: branch **`main`**.
 
 ## Contact
 
-- Support: Unraid forum thread on the plugin’s Apps card  
-- Project: https://github.com/ibigsnet/StorageGuard  
+- **Support (forum):** https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/  
+- **Project:** https://github.com/ibigsnet/StorageGuard  
+

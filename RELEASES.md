@@ -52,6 +52,7 @@ Changelog bullets ship on the **Plugins** page and optionally as [GitHub Release
 
 | | |
 |--|--|
+| **Forum support** | https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/ |
 | **GitHub** | https://github.com/ibigsnet/StorageGuard |
 | **Releases** | https://github.com/ibigsnet/StorageGuard/releases |
-| **Docs** | [DOCS.md](DOCS.md) (if present) · README |
+| **Docs** | [DOCS.md](DOCS.md) |
