@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.15ab">
+<!ENTITY version "2026.08.15ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,8 +26,7 @@
 
 <CHANGES>
 ###&version;
-- Install: single runtime <code>.txz</code> (docs on GitHub only).
-- Plugins changelog shows recent entries; full history linked below.
+- Cleaner install/remove scripts (canonical paths only).
 
 ###2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
@@ -66,7 +65,8 @@
 
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-echo "StorageGuard: preparing package install..."
+echo "StorageGuard: preparing..."
+rm -f /tmp/plugins/storageguard.plg /tmp/plugins/storageguard.txt 2>/dev/null || true
 mkdir -p /boot/config/plugins/StorageGuard
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
@@ -80,7 +80,6 @@ echo "StorageGuard: ready."
 
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-
 echo "StorageGuard: finishing install..."
 VER=""
 for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard.plg; do
@@ -91,7 +90,8 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
 done
 [ -z "$VER" ] && VER="unknown"
 mkdir -p /boot/config/plugins/StorageGuard
-if [ ! -f /boot/config/plugins/StorageGuard/StorageGuard.cfg ] && [ -f /usr/local/emhttp/plugins/StorageGuard/default.cfg ]; then
+if [ ! -f /boot/config/plugins/StorageGuard/StorageGuard.cfg ] \
+   && [ -f /usr/local/emhttp/plugins/StorageGuard/default.cfg ]; then
   cp -a /usr/local/emhttp/plugins/StorageGuard/default.cfg /boot/config/plugins/StorageGuard/StorageGuard.cfg
 fi
 for f in \
@@ -109,13 +109,11 @@ if [ -f "$HI" ]; then
   echo "StorageGuard: injected into HeadInlineJS"
 fi
 echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
-
 ]]></INLINE>
 </FILE>
 
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
-
 echo "StorageGuard: removing..."
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
@@ -126,16 +124,15 @@ do
   [ -f "$f" ] || continue
   sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
 done
-removepkg StorageGuard 2>/dev/null || true
 for p in /var/log/packages/StorageGuard-*; do
   [ -e "$p" ] || continue
   removepkg "$(basename "$p")" 2>/dev/null || true
 done
-rm -rf /usr/local/emhttp/plugins/StorageGuard /usr/local/emhttp/plugins/storageguard
+rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -f /boot/config/plugins/StorageGuard/*.txz 2>/dev/null || true
 rm -f /boot/config/plugins/storageguard.plg 2>/dev/null || true
+rm -f /tmp/plugins/storageguard.plg /tmp/plugins/storageguard.txt 2>/dev/null || true
 echo "StorageGuard: removed (flash config kept under /boot/config/plugins/StorageGuard if present)."
-
 ]]></INLINE>
 </FILE>
 
