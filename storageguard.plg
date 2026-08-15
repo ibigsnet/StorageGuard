@@ -19,13 +19,15 @@
   UI (network plugins): Network Settings siblings via ibigsGotoNetTab(Title) —
   never deep-link /Settings/ThunderboltNet or /Settings/FabricRouting.
 -->
-<!ENTITY version "2026.08.14af">
+<!ENTITY version "2026.08.15aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
 <!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
+<!ENTITY pkg "StorageGuard-&version;-x86_64-1">
+<!ENTITY pkgfile "&pkg;.txz">
 ]>
 
 <PLUGIN name="&name;"
@@ -41,6 +43,7 @@
 
 <CHANGES>
 ###&version;
+- <strong>Install:</strong> single runtime <code>.txz</code> package (faster updates; docs on GitHub).
 - **Fix:** 2-disk RAID1 capacity after one loss uses full remaining disk (Δ≈0) — no false “need half free.”
 - Disk-size pool floors ignored again on RAID1/RAID10/RAID5–6 (evacuate model); Custom free is explicit.
   Soft capacity-fit only when Δ&gt;0 (avoids false Warning when Critical is unset).
@@ -340,68 +343,26 @@
 - Initial public development series (array/pool thresholds, alerts, Plugins metadata).
 </CHANGES>
 
-<!-- Ensure directories exist -->
+<!-- Payload: archive/&pkgfile; (one download). -->
+
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-echo "StorageGuard: preparing directories..."
-rm -rf /usr/local/emhttp/plugins/StorageGuard
-mkdir -p /usr/local/emhttp/plugins/StorageGuard
+echo "StorageGuard: preparing package install..."
 mkdir -p /boot/config/plugins/StorageGuard
-echo "StorageGuard: directories ready."
+rm -rf /usr/local/emhttp/plugins/StorageGuard
+rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
+echo "StorageGuard: ready."
 ]]></INLINE>
 </FILE>
 
-<!-- Plugin UI + assets -->
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page">
-<URL>&raw;/StorageGuard.page?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg">
-<URL>&raw;/default.cfg?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
-<URL>&raw;/sg-update.php?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
-<URL>&raw;/storageguard.js?v=&version;</URL>
-</FILE>
-<!--
-  Plugins page: Markdown(file_get_contents(README.md)) for the whole description.
-  Keep this to **Name** + one short paragraph (LXC / UD / Dynamix style).
-  INLINE so install never depends on a stale GitHub raw CDN README.
-  Repo README.md matches; full docs are DOCS.md.
--->
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/README.md">
-<INLINE>
-<![CDATA[
-**Storage Guard**
-
-Free-space thresholds for your array and pools. Colors free bars on Main (and optional Unraid alerts) so you know before a drive fails whether you still have room to move data or rebalance.
-]]>
-</INLINE>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
-<URL>&raw;/storageguard.css?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js">
-<URL>&raw;/storageguard-color.js?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/get-config.php">
-<URL>&raw;/get-config.php?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/check-alerts.php">
-<URL>&raw;/check-alerts.php?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
-<URL>&raw;/sg-lib.php?v=&version;</URL>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
-<URL>&raw;/sg-pool-math.php?v=&version;</URL>
+<FILE Name="/boot/config/plugins/StorageGuard/&pkgfile;" Run="upgradepkg --install-new --reinstall">
+<URL>&raw;/archive/&pkgfile;?v=&version;</URL>
 </FILE>
 
-<!-- Inject coloring: Unraid 7 loads HeadInlineJS.php -->
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-echo "StorageGuard: injecting Main-tab color CSS/JS into page layout..."
+
+echo "StorageGuard: finishing install..."
 VER=""
 for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard.plg; do
   if [ -f "$candidate" ]; then
@@ -409,9 +370,11 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
     [ -n "$VER" ] && break
   fi
 done
-[ -z "$VER" ] && VER="2026.07.29"
-echo "StorageGuard: asset version tag $VER"
-
+[ -z "$VER" ] && VER="unknown"
+mkdir -p /boot/config/plugins/StorageGuard
+if [ ! -f /boot/config/plugins/StorageGuard/StorageGuard.cfg ] && [ -f /usr/local/emhttp/plugins/StorageGuard/default.cfg ]; then
+  cp -a /usr/local/emhttp/plugins/StorageGuard/default.cfg /boot/config/plugins/StorageGuard/StorageGuard.cfg
+fi
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
   /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
@@ -421,44 +384,20 @@ do
   [ -f "$f" ] || continue
   sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
 done
-
 HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
 if [ -f "$HI" ]; then
   printf '\n<!-- Storage Guard -->\n<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER" "$VER" >> "$HI"
-  echo "StorageGuard: injected into $HI"
-else
-  echo "StorageGuard: WARNING - HeadInlineJS.php not found; coloring may not load"
+  echo "StorageGuard: injected into HeadInlineJS"
 fi
+echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 
-for f in \
-  /usr/local/emhttp/webGui/include/HeadInclude.php \
-  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
-do
-  if [ -f "$f" ] && [ "$(wc -c < "$f")" -lt 500 ]; then
-    if ! grep -q '<?php\|<script\|function ' "$f" 2>/dev/null || grep -q storageguard "$f" 2>/dev/null; then
-      : > "$f"
-    fi
-  fi
-done
-
-JS="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js"
-if [ ! -s "$JS" ] || ! grep -q 'data-sg-outline\|sg-outline\|color_style' "$JS" 2>/dev/null; then
-  RAW="https://raw.githubusercontent.com/ibigsnet/StorageGuard/main"
-  echo "StorageGuard: refreshing assets (stale or missing)..."
-  for f in storageguard-color.js storageguard.css get-config.php check-alerts.php sg-lib.php sg-pool-math.php StorageGuard.page; do
-    curl -fsSL "${RAW}/${f}?v=${VER}&t=$(date +%s)" -o "/usr/local/emhttp/plugins/StorageGuard/${f}" 2>/dev/null || true
-  done
-fi
-
-echo "StorageGuard: install complete. Hard-refresh Main to see coloring."
-ls -la /usr/local/emhttp/plugins/StorageGuard/ || true
 ]]></INLINE>
 </FILE>
 
-<!-- ONLY on plugin remove -->
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
-echo "StorageGuard: removing plugin..."
+
+echo "StorageGuard: removing..."
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
   /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
@@ -468,9 +407,16 @@ do
   [ -f "$f" ] || continue
   sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
 done
-rm -rf /usr/local/emhttp/plugins/StorageGuard
-rm -rf /usr/local/emhttp/plugins/storageguard
-echo "StorageGuard: removed."
+removepkg StorageGuard 2>/dev/null || true
+for p in /var/log/packages/StorageGuard-*; do
+  [ -e "$p" ] || continue
+  removepkg "$(basename "$p")" 2>/dev/null || true
+done
+rm -rf /usr/local/emhttp/plugins/StorageGuard /usr/local/emhttp/plugins/storageguard
+rm -f /boot/config/plugins/StorageGuard/*.txz 2>/dev/null || true
+rm -f /boot/config/plugins/storageguard.plg 2>/dev/null || true
+echo "StorageGuard: removed (flash config kept under /boot/config/plugins/StorageGuard if present)."
+
 ]]></INLINE>
 </FILE>
 
