@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.15ac">
+<!ENTITY version "2026.08.15ad">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,7 +26,7 @@
 
 <CHANGES>
 ###&version;
-- Cleaner install/remove scripts (canonical paths only).
+- Install/remove cleanup: canonical paths; leave .plg file to Unraid.
 
 ###2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
@@ -130,7 +130,6 @@ for p in /var/log/packages/StorageGuard-*; do
 done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 rm -f /boot/config/plugins/StorageGuard/*.txz 2>/dev/null || true
-rm -f /boot/config/plugins/storageguard.plg 2>/dev/null || true
 rm -f /tmp/plugins/storageguard.plg /tmp/plugins/storageguard.txt 2>/dev/null || true
 echo "StorageGuard: removed (flash config kept under /boot/config/plugins/StorageGuard if present)."
 ]]></INLINE>
