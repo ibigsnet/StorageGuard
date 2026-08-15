@@ -1,6 +1,3 @@
-## 2026.08.15af
-- Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
-
 # Changelog — StorageGuard
 
 User-facing history for this plugin. The `.plg` file (Community Applications / Plugins page) shows only the **most recent releases**; this file is the complete record.
@@ -8,6 +5,9 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 **Install channels:** production/CA uses branch `stable`; lab uses `main`. See [RELEASES.md](RELEASES.md).
 
 ---
+
+###2026.08.15af
+- Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
 
 ###2026.08.15ab
 - Changelog: Plugins page shows recent entries only; full history on GitHub <code>CHANGELOG.md</code>.
