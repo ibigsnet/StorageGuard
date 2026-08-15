@@ -1,61 +1,57 @@
-# Storage Guard releases
+# Storage Guard — install & releases
 
-## Install / update (Unraid web UI)
+## Install
 
-**Recommended:** **Apps** (Community Applications) → search **Storage Guard** → **Install** / **Update**.
+### Community Applications (recommended)
 
-**Manual / rollback:** **Plugins → Install Plugin** → paste a raw `.plg` URL → **Install**.
+1. Unraid **Apps** → search **Storage Guard**
+2. **Install** or **Update**
+3. Hard-refresh the browser
 
-| Track | URL |
-|-------|-----|
-| **Latest (`main`)** | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg` |
-| **Recommended freeze** (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.29aa/storageguard.plg` |
-| **Stable rollback** (`2026.07.10bt`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
-| Older stable (`2026.07.10ar`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10ar/storageguard.plg` |
+CA is fed from [unraid-templates](https://github.com/ibigsnet/unraid-templates). Updates may lag a short time after a GitHub push.
 
-Manual installs must use the **raw** URL ending in `.plg` (not a GitHub repo or blob page). After install, hard-refresh the browser. If Unraid reports **same version**, you are already on that build.
+### Manual install (raw plugin URL)
 
-## Version strings
+**Plugins → Install Plugin** → paste a **raw** URL ending in `.plg`:
 
-Unraid plugin updates use lexicographic `strcmp()` (not PHP `version_compare`).
+| Channel | Use when | URL |
+|---------|----------|-----|
+| **Production (`stable`)** | Normal install / CA channel | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg` |
+| **Lab (`main`)** | Newest development tree | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg` |
+| **Recommended freeze** | Known-good pin (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.29aa/storageguard.plg` |
+| **Older rollback** (`2026.07.10bt`) | Earlier known-good line | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
+| **Pinned version** | Fixed tag | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/vVERSION/storageguard.plg` |
 
-| Form | Meaning |
-|------|---------|
-| `YYYY.MM.DD` | First ship that calendar day (lab wall clock) |
-| `YYYY.MM.DDaa` | Further ships same day (`ab` … `az`, `ba`, …) |
+- **`stable`** — what CA installs; production updates.
+- **`main`** — lab only; can be ahead of CA.
+- **Tags / freezes** — exact trees that never change.
 
-- No hyphens. After the bare date, **two-letter** suffixes only (never single `a`–`z`).
-- Bump only `<!ENTITY version "…">` in the `.plg`; assets use `?v=&version;`.
-- Add a `###&version;` entry under `<CHANGES>` in the same ship.
-- Versions only move forward for existing installs (`strcmp`); do not rewind a mistaken future date.
+### Recommended freezes
 
-## Stable baselines (rollback targets)
+| Tag | Version | Notes |
+|-----|---------|--------|
+| [`stable-recommended-2026.07.29aa`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.29aa) | `2026.07.29aa` | Current recommended freeze |
+| [`stable-recommended-2026.07.10bt`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10bt) | `2026.07.10bt` | Earlier known-good (BTRFS capacity math line) |
+| [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Earlier baseline |
 
-When we call a build **stable**, we also pin a **Git tag** so you can reinstall that exact code later without pulling newer assets from `main`.
+### Roll back
 
-| Tag | Plugin version | Notes |
-|-----|----------------|--------|
-| [`stable-recommended-2026.07.29aa`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.29aa) | `2026.07.29aa` | **Current recommended freeze** (fleet pin with TBN / Fabric Routing / NBD 2026.08.13 line). |
-| [`stable-recommended-2026.07.10bt`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10bt) | `2026.07.10bt` | Last known-good host build from the 2026.07.10 line (through calm RAID5/6 doc pointers). Full BTRFS capacity math + Suggest (including RAID1), Settings Appearance polish, array alerts with `diskN \| sdx (size)`, multi-stream speed notes. Prefer this over `ar` for rollback of that era. |
-| [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Earlier baseline: Solid+Pulse over native free fill; RAID1 ignores disk-size evacuate thresholds; label cleanup. Pre–BTRFS capacity-math work. |
+Paste a freeze or `vVERSION` raw `.plg` URL under **Plugins → Install Plugin**, then hard-refresh. If Unraid reports **same version**, you are already on that build.
 
-Asset downloads for **`2026.07.10bt`** are locked to commit `8fcb806` (tag tip `4619c07` only rewrites the plg pin). Asset downloads for **`2026.07.10ar`** are locked to commit `731bc29`.
+---
 
-### Roll back from a newer plugin version
+## Version numbers
 
-1. Paste the **stable** URL above into **Plugins → Install Plugin**.  
-2. Hard-refresh the browser.  
-3. Optional confirm on the host:  
-   `grep 'ENTITY version' /boot/config/plugins/storageguard.plg`
+Plugin versions look like `2026.08.14af` (date + two-letter suffix). Unraid compares them as plain strings for “update available.”
 
-## How we mark a stable
+Changelog bullets ship on the **Plugins** page and optionally as [GitHub Releases](https://github.com/ibigsnet/StorageGuard/releases).
 
-1. Hosts verified on a specific plugin version.  
-2. Git commit of that tree noted.  
-3. Annotated tag `stable-recommended-<version>` (and optional branch `release/stable-recommended-<version>`).  
-4. Plugin `raw` entity for that tag points at the **commit SHA** (or tag) so FILE URLs cannot drift to newer `main`.  
-5. Row added to this file.
+---
 
-## Next major line of work
+## Links
 
-After `stable-recommended-2026.07.10bt`: **array-online gate** (no alerts/paint when array stopped or in maintenance; calendar version `2026.07.29+` on `main`). Earlier line after `ar` was BTRFS pool capacity math — that work shipped through `bt`.
+| | |
+|--|--|
+| **GitHub** | https://github.com/ibigsnet/StorageGuard |
+| **Releases** | https://github.com/ibigsnet/StorageGuard/releases |
+| **Docs** | [DOCS.md](DOCS.md) (if present) · README |
