@@ -1,14 +1,22 @@
-# Contributing
+# Contributing to Storage Guard
 
-## License
+Thanks for helping improve free-space thresholds and Main free-bar UX on Unraid.
 
-By contributing, you agree that your contributions are licensed under the **GNU GPLv3 or later** (same as this project). Copyright for the project is held by **ibigs, LLC**.
+## Guidelines
+
+1. Prefer clear, user-facing Settings and Main-page behavior.  
+2. Document math changes under [docs/math/](docs/math/) when thresholds or capacity formulas change.  
+3. Test on real arrays/pools when changing paint or alert paths.  
 
 ## Branches
 
-- `main` — development
-- `stable` — production / Community Applications only (maintainers merge ships here)
+| Branch | Role |
+|--------|------|
+| `main` | Development |
+| `stable` | Production / Community Applications |
 
-## Versioning
+Install channels: [RELEASES.md](RELEASES.md).
 
-See [RELEASES.md](RELEASES.md) (`YYYY.MM.DD` + two-letter suffixes, Unraid `strcmp`).
+## License
+
+By contributing, you agree that your contributions are licensed under the **GNU GPLv3 or later**. Copyright for the project is held by **ibigs, LLC**.
