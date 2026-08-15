@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.15ae">
+<!ENTITY version "2026.08.15af">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,6 +26,10 @@
 
 <CHANGES>
 ###&version;
+- **Uninstall:** remove all plugin-owned flash config and runtime scratch (clean reinstall).
+- Wipe StorageGuard.cfg and /tmp/storageguard_alerts on remove.
+
+###2026.08.15ae
 - Fix: do not wipe Unraid /tmp/plugins working copy during install prepare.
 
 ###2026.08.14ae
@@ -55,12 +59,6 @@
 - **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
 - CA templates and install URLs follow `stable` for store users.
 
-###2026.07.29
-- Alerts/paint only when array is fully started (not stopped, starting/stopping, or maintenance). Missing mounts are not 0 free.
-- Version day rolled to calendar date (was incorrectly still on 2026.07.10 letter suffixes).
-
-### Older releases
-- Full changelog (all versions): https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
 </CHANGES>
 
 <FILE Run="/bin/bash">
@@ -129,9 +127,13 @@ for p in /var/log/packages/StorageGuard-*; do
   removepkg "$(basename "$p")" 2>/dev/null || true
 done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
-rm -f /boot/config/plugins/StorageGuard/*.txz 2>/dev/null || true
+# Flash config + runtime scratch (full uninstall — reinstall starts clean)
+rm -rf /boot/config/plugins/StorageGuard
+rm -rf /tmp/storageguard_alerts
+rm -f /tmp/plugins/storageguard.txt 2>/dev/null || true
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
-echo "StorageGuard: removed (flash config kept under /boot/config/plugins/StorageGuard if present)."
+# Note: do not touch /boot/config/plugins-removed/ (Unraid-owned)
+echo "StorageGuard: removed."
 ]]></INLINE>
 </FILE>
 
