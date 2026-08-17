@@ -1,3 +1,7 @@
+## 2026.08.17aa
+
+- **Audit harden:** stock HeadInline inject uses `StorageGuard-inject` markers only (fixed emhttp paths — never walks shares/folders named Storage Guard); one-time stock backup; SECURITY.md matches full flash wipe; docs/stock-ui-inject.md.
+
 # Changelog — StorageGuard
 
 User-facing history for this plugin. The `.plg` file (Community Applications / Plugins page) shows only the **most recent releases**; this file is the complete record.

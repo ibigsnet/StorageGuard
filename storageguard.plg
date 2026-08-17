@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.16ac">
+<!ENTITY version "2026.08.17aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,6 +26,11 @@
 
 <CHANGES>
 ###&version;
+- <strong>Stock UI inject harden:</strong> only edits fixed Unraid HeadInlineJS paths (never walks
+  the array or folders named “Storage Guard”). Marker-only strip; one-time stock backup on flash;
+  uninstall removes the marker block only. SECURITY.md matches full flash wipe.
+
+###2026.08.16ac
 - <strong>Install/upgrade:</strong> always removepkg prior StorageGuard-* packages and wipe
   emhttp plugin dir before the new .txz (no mixed leftover files after versioned updates).
 
@@ -119,19 +124,44 @@ if [ ! -f /boot/config/plugins/StorageGuard/StorageGuard.cfg ] \
    && [ -f /usr/local/emhttp/plugins/StorageGuard/default.cfg ]; then
   cp -a /usr/local/emhttp/plugins/StorageGuard/default.cfg /boot/config/plugins/StorageGuard/StorageGuard.cfg
 fi
+# Main free-bar CSS/JS: ONLY these Unraid layout files (absolute paths).
+# Never walks /mnt, shares, or any folder named "Storage Guard".
+# Marker-only strip (no broad "Storage Guard" text match).
+SG_MARKER='StorageGuard-inject'
+SG_BACKUP=/boot/config/plugins/StorageGuard/stock-backup
+mkdir -p "$SG_BACKUP"
+sg_strip_inject() {
+  local f="$1"
+  [ -f "$f" ] || return 0
+  # Drop our marker block + legacy inject lines (plugin asset paths only)
+  sed -i \
+    -e "/${SG_MARKER}/d" \
+    -e '/storageguard-color\.js/d' \
+    -e '/storageguard\.css/d' \
+    -e '/plugins\/StorageGuard\/storageguard/d' \
+    "$f" 2>/dev/null || true
+}
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/webGui/include/HeadInclude.php \
-  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
+  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php
 do
   [ -f "$f" ] || continue
-  sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
+  base=$(basename "$f")
+  if [ ! -f "$SG_BACKUP/$base.stock" ]; then
+    cp -a "$f" "$SG_BACKUP/$base.stock"
+    echo "StorageGuard: backed up stock $base"
+  fi
+  sg_strip_inject "$f"
 done
 HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
 if [ -f "$HI" ]; then
-  printf '\n<!-- Storage Guard -->\n<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER" "$VER" >> "$HI"
-  echo "StorageGuard: injected into HeadInlineJS"
+  {
+    printf '\n<!-- %s begin -->\n' "$SG_MARKER"
+    printf '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n' "$VER"
+    printf '<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER"
+    printf '<!-- %s end -->\n' "$SG_MARKER"
+  } >> "$HI"
+  echo "StorageGuard: injected into HeadInlineJS (marker ${SG_MARKER})"
 fi
 echo "StorageGuard: packages now: $(ls /var/log/packages/StorageGuard-* 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ')"
 echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
@@ -141,6 +171,8 @@ echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 echo "StorageGuard: removing..."
+# Strip inject from fixed layout paths only — never array/share paths
+SG_MARKER='StorageGuard-inject'
 for f in \
   /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
   /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
@@ -148,19 +180,25 @@ for f in \
   /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
 do
   [ -f "$f" ] || continue
-  sed -i '/storageguard-color\.js/d;/storageguard\.css/d;/Storage Guard/d' "$f" 2>/dev/null || true
+  sed -i \
+    -e "/${SG_MARKER}/d" \
+    -e '/storageguard-color\.js/d' \
+    -e '/storageguard\.css/d' \
+    -e '/plugins\/StorageGuard\/storageguard/d' \
+    "$f" 2>/dev/null || true
 done
 for p in /var/log/packages/StorageGuard-*; do
   [ -e "$p" ] || continue
   removepkg "$(basename "$p")" 2>/dev/null || true
 done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
-# Flash config + runtime scratch (full uninstall — reinstall starts clean)
+# Full uninstall: flash config + stock backups + runtime scratch (clean reinstall)
 rm -rf /boot/config/plugins/StorageGuard
 rm -rf /tmp/storageguard_alerts
 rm -f /tmp/plugins/storageguard.txt 2>/dev/null || true
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 # Note: do not touch /boot/config/plugins-removed/ (Unraid-owned)
+# Note: does not touch user shares, /mnt, or folders named "Storage Guard"
 echo "StorageGuard: removed."
 ]]></INLINE>
 </FILE>
