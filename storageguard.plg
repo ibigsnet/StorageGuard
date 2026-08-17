@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17aa">
+<!ENTITY version "2026.08.17ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,60 +26,27 @@
 
 <CHANGES>
 ###&version;
-- <strong>Stock UI inject harden:</strong> only edits fixed Unraid HeadInlineJS paths (never walks
-  the array or folders named “Storage Guard”). Marker-only strip; one-time stock backup on flash;
-  uninstall removes the marker block only. SECURITY.md matches full flash wipe.
+- <strong>Plugins UI:</strong> trim embedded CHANGES list (Unraid lists every <code>###</code> as a
+  release). Full history remains in CHANGELOG.md. CA/PluginURL use GitHub <code>main</code>.
+
+###2026.08.17aa
+- <strong>Stock UI inject harden:</strong> fixed HeadInlineJS paths only (never walks shares named
+  “Storage Guard”); marker-only strip; stock backup; SECURITY matches full flash wipe.
 
 ###2026.08.16ac
-- <strong>Install/upgrade:</strong> always removepkg prior StorageGuard-* packages and wipe
-  emhttp plugin dir before the new .txz (no mixed leftover files after versioned updates).
+- Clean package replace on every upgrade (removepkg + wipe emhttp before .txz).
 
 ###2026.08.16ab
-- <strong>Array defaults:</strong> Warning = largest data disk, Critical = smallest data disk;
-  Array Warning <em>and</em> Critical alerts on (new install / Default / first open). Saved configs
-  unchanged until Default or re-Apply.
+- Array defaults: Warning = largest data disk, Critical = smallest; both array alerts on for new installs.
 
 ###2026.08.16aa
-- <strong>Capacity labels = Unraid Main (decimal SI):</strong> disk-size dropdowns show e.g.
-  <strong>25.9T</strong> like Main Size, not binary TiB as 23.6T. Legacy binary labels remap when
-  they still match a live disk.
+- Capacity labels match Unraid Main (decimal SI, e.g. 25.9T).
 
 ###2026.08.15af
-- **Uninstall:** remove all plugin-owned flash config and runtime scratch (clean reinstall).
-- Wipe StorageGuard.cfg and /tmp/storageguard_alerts on remove.
-
-###2026.08.15ae
-- Fix: do not wipe Unraid /tmp/plugins working copy during install prepare.
-
-###2026.08.14ae
-- **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
-  to largest/smallest disk. Saved Custom or disk-size values win; empty soft-defaults to capacity-fit
-  suggestions. Suggest recommends largest-loss Δ → Warning, smallest-loss Δ → Critical (user may reverse).
-- Clearer pool notification text; guide + alternate scenarios: docs/math/threshold-guide.md.
-
-###2026.08.14ad
-- **Pool free thresholds (capacity-fit):** Warning = free needed so data still fits after
-  <em>largest</em> member loss; Critical = after <em>smallest</em> member loss (equal disks share
-  one floor). Paint/alerts use this for RAID1/1cN/RAID10/RAID5/6 unless Custom. Drops 2× rebalance pad.
-- Docs: scenarios, RAID1, RAID10, math README updated.
-
-###2026.08.14ac
-- **Fix:** pools-only / no array — product Default and first open no longer enable Array coloring
-  or Array Warning alerts; Array UI stays hidden (Show hidden items…). default.cfg documents
-  machine-aware defaults; sg-update.php sets array_coloring / alerts from live disks.ini.
-
-###2026.08.14ab
-- Support link points at Unraid forum thread (topic 199796); project remains GitHub.
-- **Lab channel:** On branch `main`, PluginURL + raw FILE sources point at `main` (lab uninstall/reinstall testing).
-- Branch `stable` remains the CA/production pin Production channel is branch `stable` (CA PluginURL).
-
-###2026.08.14aa
-- **License:** GNU GPLv3 or later (copyright ibigs, LLC; Author: RifleJock). MIT retired for new releases.
-- **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
-- CA templates and install URLs follow `stable` for store users.
+- Full uninstall wipe of plugin flash config and alert scratch.
 
 ### Older releases
-- Full changelog (all versions): https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
+- Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
 </CHANGES>
 
 <FILE Run="/bin/bash">
