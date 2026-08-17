@@ -520,8 +520,9 @@
       .then(function (data) {
         if (!data || !data._status) return;
         var opts = {
-          pulse: (data.outline_pulse === 'yes'),
-          showOk: (data.outline_show_ok === 'yes')
+          // Product default Yes when key missing (legacy cfg without these keys)
+          pulse: (data.outline_pulse !== 'no'),
+          showOk: (data.outline_show_ok !== 'no')
         };
         data._status._opts = opts;
         log('status', data._status, opts);

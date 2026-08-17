@@ -148,7 +148,7 @@ Planning: **Warning 4 T** (largest-loss $\Delta$), **Critical 2 T** (smalles
 
 | Concept | In the plugin |
 |---------|----------------|
-| $\Delta_{\mathrm{fit}}$, Critical / Warning rule | **Suggest free thresholds** on Advanced pools |
+| $\Delta_{\mathrm{fit}}$, Critical / Warning rule | **Suggest free thresholds** under Settings → **Show Cache** |
 | Per-disk loss rows | Settings table under each pool |
 | Other profiles on same disks | Profile comparison table |
 | Mirror disk-size dropdowns | **Ignored** for paint/alerts (evacuate model wrong) |

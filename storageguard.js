@@ -305,25 +305,40 @@ function initStorageGuardUI() {
   updateOrderNote();
 
 
-  // No array: hide Array thresholds / alerts row / Array coloring until "Show hidden items"
-  // Exposed so Default can re-collapse (clears localStorage preference).
+  // Array: visible when data disks exist; if none, hidden until "Show Array" (localStorage).
   var setArrayHiddenOpen = null;
-  (function wireArrayHiddenToggle() {
-    var btn = document.getElementById('sg-toggle-array-hidden');
-    if (!btn) return;
+  (function wireArrayToggle() {
+    var form = document.getElementById('storageguard-form');
+    var hasArray = form && form.getAttribute('data-sg-has-array') === '1';
+    var btn = document.getElementById('sg-toggle-array');
     var block = document.getElementById('sg-array-block');
     var appear = document.getElementById('sg-array-appearance');
     var hint = document.getElementById('sg-array-hidden-hint');
-    var key = 'sg_show_array_hidden';
+    var key = 'sg_show_array';
+    // migrate old key
+    try {
+      if (localStorage.getItem(key) === null && localStorage.getItem('sg_show_array_hidden') === '1') {
+        localStorage.setItem(key, '1');
+      }
+    } catch (e) { /* ignore */ }
+
     function setOpen(open) {
+      if (hasArray) {
+        // Always show when array is present
+        open = true;
+        if (btn) btn.style.display = 'none';
+        if (hint) hint.style.display = 'none';
+      }
       if (block) block.style.display = open ? '' : 'none';
       if (appear) appear.style.display = open ? '' : 'none';
       document.querySelectorAll('.sg-array-alert-row').forEach(function (tr) {
         tr.style.display = open ? '' : 'none';
       });
-      btn.textContent = open ? 'Hide array settings' : 'Show hidden items…';
-      if (hint) hint.style.display = open ? 'none' : 'inline';
-      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) { /* ignore */ }
+      if (btn) btn.textContent = open ? 'Hide Array' : 'Show Array';
+      if (hint && !hasArray) hint.style.display = open ? 'none' : 'inline';
+      if (!hasArray) {
+        try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
+      }
       if (open) {
         updateArrayCustom();
         var ac = document.getElementById('array_coloring');
@@ -335,8 +350,13 @@ function initStorageGuardUI() {
       }
     }
     setArrayHiddenOpen = setOpen;
+    if (hasArray) {
+      setOpen(true);
+      return;
+    }
+    if (!btn) return;
     var saved = false;
-    try { saved = localStorage.getItem(key) === '1'; } catch (e) { /* ignore */ }
+    try { saved = localStorage.getItem(key) === '1'; } catch (e3) { /* ignore */ }
     setOpen(saved);
     btn.addEventListener('click', function () {
       var open = !block || block.style.display === 'none';
@@ -344,24 +364,28 @@ function initStorageGuardUI() {
     });
   })();
 
-  (function wirePoolsWipToggle() {
-    var btn = document.getElementById('sg-toggle-pools-wip');
-    var panel = document.getElementById('sg-pools-wip');
+  // Cache / pools: hidden by default; Show Cache remembers (localStorage).
+  (function wireCacheToggle() {
+    var btn = document.getElementById('sg-toggle-cache');
+    var panel = document.getElementById('sg-cache-panel');
     var poolAppear = document.getElementById('sg-pool-appearance');
-    var hint = document.getElementById('sg-pools-wip-hint');
+    var hint = document.getElementById('sg-cache-hidden-hint');
     if (!btn || !panel) return;
-    var key = 'sg_show_pools_wip';
+    var key = 'sg_show_cache';
+    try {
+      if (localStorage.getItem(key) === null && localStorage.getItem('sg_show_pools_wip') === '1') {
+        localStorage.setItem(key, '1');
+      }
+    } catch (e) { /* ignore */ }
     function setOpen(open) {
       panel.style.display = open ? '' : 'none';
       if (poolAppear) poolAppear.style.display = open ? '' : 'none';
       document.querySelectorAll('.sg-pool-alert-row').forEach(function (tr) {
         tr.style.display = open ? '' : 'none';
       });
-      btn.textContent = open
-        ? 'Hide advanced pools (WIP)'
-        : 'Show advanced pools (WIP)…';
-      if (hint) hint.style.display = open ? 'none' : '';
-      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {  }
+      btn.textContent = open ? 'Hide Cache' : 'Show Cache';
+      if (hint) hint.style.display = open ? 'none' : 'inline';
+      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
       if (open) {
         document.querySelectorAll('.pool-use-custom').forEach(function (s) {
           var safe = s.getAttribute('data-pool-safe');
@@ -376,14 +400,13 @@ function initStorageGuardUI() {
       }
     }
     var saved = false;
-    try { saved = localStorage.getItem(key) === '1'; } catch (e) {  }
+    try { saved = localStorage.getItem(key) === '1'; } catch (e3) { /* ignore */ }
     setOpen(saved);
     btn.addEventListener('click', function () {
       var open = panel.style.display === 'none';
       setOpen(open);
     });
   })();
-
 
   function resetFormToProductDefaults() {
     function setSelect(id, value) {
@@ -414,9 +437,9 @@ function initStorageGuardUI() {
     // data-sg-has-array from Settings page (0 = pools-only / no array data disks)
     var hasArray = formEl && formEl.getAttribute('data-sg-has-array') === '1';
 
-    setSelect('outline_pulse', 'no');
-    setSelect('outline_show_ok', 'no');
-    // Array paint/alerts only default on when array data disks exist
+    // Product defaults: outline + green OK + pulse; pool paint on; array paint/alerts when array exists
+    setSelect('outline_pulse', 'yes');
+    setSelect('outline_show_ok', 'yes');
     setSelect('array_coloring', hasArray ? 'yes' : 'no');
     setSelect('array_color_style', 'outline');
     setSelect('array_use_custom', 'no');
@@ -436,8 +459,7 @@ function initStorageGuardUI() {
     setCheckbox('alerts_array_warning', hasArray);
     setCheckbox('alerts_array_critical', hasArray);
 
-
-    setSelect('pool_coloring', 'no');
+    setSelect('pool_coloring', 'yes');
     if (poolAll) {
       poolAll.checked = true;
       poolAll.indeterminate = false;

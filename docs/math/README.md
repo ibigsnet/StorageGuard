@@ -148,7 +148,7 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 
 | Surface | Role |
 |---------|------|
-| Settings → Advanced pools | Suggest button, loss table, alternate-profile table |
+| Settings → Show Cache (pools) | Suggest button, loss table, alternate-profile table |
 | Unraid main-page free bars (array / pool) | Paint from configured free thresholds |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
 | `get-config` → `_status.pools.*.math` | Machine-readable package for UI |

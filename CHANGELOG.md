@@ -1,3 +1,10 @@
+## 2026.08.17ac
+
+- **Product defaults:** Outline style; green outline when OK; pulse on warn/crit; pool free-bar coloring **on** (all pools); array alerts on when array present; cache/pool alerts remain off.
+- **Settings UI:** **Show Array** / **Show Cache** (cache hidden by default; both remember open state). Array auto-shown when data disks exist; auto-hidden when not.
+- **Capacity labels = Unraid Main:** prefer `fsSize` / BTRFS used+free (Main Size column), format with `my_scale` decimals=-1 (e.g. **25.9T** not blunt **26T**).
+- Docs: remove WIP framing for pools/cache; align defaults and Show Cache wording. plg CHANGES kept short.
+
 ## 2026.08.17ab
 
 - Trim plg CHANGES for Plugins/CA UI (every ### is a listed release). Channel: main.

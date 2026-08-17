@@ -29,21 +29,23 @@ if (!function_exists('sg_update_format_size')) {
         if (function_exists('sg_format_size_kb')) {
             return sg_format_size_kb($kb);
         }
-        // SI fallback (decimal TB/GB) — same as Unraid Main, not binary TiB
+        // Fallback: Main Size column rules (my_scale kilo=1000, decimals=-1)
         if (!$kb || $kb <= 0) return '0';
-        $bytes = (float)$kb * 1024.0;
-        if ($bytes >= 1e12) {
-            $val = round($bytes / 1e12, 1);
-            return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+        $value = (float)$kb * 1024.0;
+        $kilo = 1000.0;
+        $units = ['', 'K', 'M', 'G', 'T', 'P'];
+        $base = $value > 0 ? (int)floor(log($value, $kilo)) : 0;
+        if ($base > 5) $base = 5;
+        if ($base < 0) $base = 0;
+        $value /= pow($kilo, $base);
+        if ($value >= 100 || ((int)round($value * 10) % 10) === 0) $decimals = 0;
+        else $decimals = 1;
+        if (round($value, -1) == 1000 && $base < 5) { $value = 1; $base++; $decimals = 0; }
+        $formatted = number_format($value, $decimals, '.', '');
+        if (strpos($formatted, '.') !== false) {
+            $formatted = rtrim(rtrim($formatted, '0'), '.');
         }
-        if ($bytes >= 1e9) {
-            $val = round($bytes / 1e9, 1);
-            return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
-        }
-        if ($bytes >= 1e6) {
-            return (string)round($bytes / 1e6) . 'M';
-        }
-        return (string)round($bytes / 1e3) . 'K';
+        return $units[$base] === '' ? $formatted : ($formatted . $units[$base]);
     }
 }
 
@@ -59,7 +61,7 @@ if (is_file($disks_ini)) {
         $name = $d['name'] ?? $key;
         $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
         if (!$is_data) continue;
-        $sz = isset($d['size']) ? (int)$d['size'] : 0;
+        $sz = function_exists('sg_disk_capacity_kb') ? sg_disk_capacity_kb($d) : (isset($d['size']) ? (int)$d['size'] : 0);
         if ($sz > 0) $raw[] = $sz;
     }
     if (!empty($raw)) {
@@ -84,9 +86,10 @@ $default['array_critical_custom'] = '';
 $default['array_color_style'] = 'outline';
 // Yes only when array data disks exist — no-array / cache-only → No (inactive paint)
 $default['array_coloring'] = $has_array ? 'yes' : 'no';
-$default['outline_pulse'] = 'no';
-$default['outline_show_ok'] = 'no';
-$default['pool_coloring'] = 'no';
+$default['outline_pulse'] = 'yes';
+$default['outline_show_ok'] = 'yes';
+// Pool free-bar paint on by default (all pools); pool *alerts* stay off below
+$default['pool_coloring'] = 'yes';
 $default['pools_to_color'] = 'all';
 $default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
 $default['alerts_array_critical'] = $has_array ? 'yes' : 'no';

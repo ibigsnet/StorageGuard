@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17ab">
+<!ENTITY version "2026.08.17ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,12 +26,16 @@
 
 <CHANGES>
 ###&version;
-- <strong>Plugins UI:</strong> trim embedded CHANGES list (Unraid lists every <code>###</code> as a
-  release). Full history remains in CHANGELOG.md. CA/PluginURL use GitHub <code>main</code>.
+- <strong>Defaults:</strong> Outline; green OK; pulse warn/crit; pool free-bar coloring on; array
+  alerts on when array present; cache/pool alerts stay off. <strong>Show Array / Show Cache</strong>
+  (cache hidden by default; remembered). Capacity labels match Main Size (<code>fsSize</code> +
+  my_scale decimals). Docs: no WIP for pools.
+
+###2026.08.17ab
+- Plugins UI: trim embedded CHANGES list (every <code>###</code> is a release). Full history in CHANGELOG.md.
 
 ###2026.08.17aa
-- <strong>Stock UI inject harden:</strong> fixed HeadInlineJS paths only (never walks shares named
-  “Storage Guard”); marker-only strip; stock backup; SECURITY matches full flash wipe.
+- Stock UI inject harden: fixed HeadInlineJS paths only; marker-only strip; stock backup.
 
 ###2026.08.16ac
 - Clean package replace on every upgrade (removepkg + wipe emhttp before .txz).

@@ -134,4 +134,4 @@ Array defaults: Warning = largest **data** disk free, Critical = smallest **data
 | [scenarios.md](scenarios.md) | Fit math + worked examples |
 | [raid10.md](raid10.md) / [raid1.md](raid1.md) | Profile notes + product behavior |
 | [README.md](README.md) | Index of math docs |
-| Settings → Storage Guard → Advanced pools | Suggest button + per-pool loss table |
+| Settings → Storage Guard → **Show Cache** | Suggest button + per-pool loss table |

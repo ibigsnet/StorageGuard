@@ -22,9 +22,9 @@ function sg_pool_member_sizes_tb($pool) {
         if (strpos($status, '_NP') !== false) continue;
         $prefix = preg_replace('/\d+$/', '', $key);
         if ($prefix !== $pool) continue;
-        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        $kb = function_exists('sg_disk_capacity_kb') ? sg_disk_capacity_kb($d) : (isset($d['size']) ? (int)$d['size'] : 0);
         if ($kb <= 0) continue;
-        // Unraid size is KiB; present as decimal TB for human pool math
+        // Main-aligned capacity (KiB) → decimal TB for pool math
         $out[] = ($kb * 1024.0) / 1e12;
     }
     rsort($out, SORT_NUMERIC);

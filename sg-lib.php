@@ -1,30 +1,86 @@
 <?php
 
 /**
- * Format disks.ini size (KiB) like Unraid Main — decimal SI, not binary TiB/GiB.
+ * Disk capacity in KiB for labels/thresholds — same source Unraid Main prefers.
  *
- * Unraid stores size in KiB (1024-byte units) but Main displays advertised capacity
- * with powers of 1000 (e.g. ~25.9T for a marketed 26TB drive, not ~23.6T).
- * Free-space math and threshold parse already use SI; labels must match.
+ * Main Size column uses effective_fs_size (fsSize, or used+free on BTRFS) when mounted.
+ * Falls back to disks.ini size, then sectors×sector_size.
+ *
+ * @param array $d one disks.ini section
+ * @return int KiB (0 if unknown)
+ */
+function sg_disk_capacity_kb($d) {
+    if (!is_array($d)) {
+        return 0;
+    }
+    $fsType = str_replace('luks:', '', (string)($d['fsType'] ?? ''));
+    $fsSize = isset($d['fsSize']) ? (int)$d['fsSize'] : 0;
+    $used = isset($d['fsUsed']) && is_numeric($d['fsUsed']) ? (int)$d['fsUsed'] : null;
+    $free = isset($d['fsFree']) && is_numeric($d['fsFree']) ? (int)$d['fsFree'] : null;
+    // Match Unraid effective_fs_size(): BTRFS → used+free when both present
+    if (strcasecmp($fsType, 'btrfs') === 0 && $used !== null && $free !== null) {
+        $eff = $used + $free;
+        if ($eff > 0) {
+            return $eff;
+        }
+    }
+    if ($fsSize > 0) {
+        return $fsSize;
+    }
+    $size = isset($d['size']) ? (int)$d['size'] : 0;
+    if ($size > 0) {
+        return $size;
+    }
+    $sectors = isset($d['sectors']) ? (float)$d['sectors'] : 0.0;
+    $secSz = isset($d['sector_size']) ? (float)$d['sector_size'] : 0.0;
+    if ($sectors > 0 && $secSz > 0) {
+        return (int)floor(($sectors * $secSz) / 1024.0);
+    }
+    return 0;
+}
+
+/**
+ * Format capacity KiB like Unraid Main Size (Helpers.php my_scale, kilo=1000, decimals=-1).
+ *
+ * Main calls: my_scale($fsSize * 1024, $unit, -1) → SI powers of 1000 with:
+ *   decimals=-1 → 0 decimals if ≥100 or value is whole to 1 place; else 1 decimal.
+ * Short suffix for dropdowns: 25.9T / 500G (Main shows "25.9 TB").
  */
 function sg_format_size_kb($kb) {
-    if (!$kb || $kb <= 0) return '0';
-    $bytes = (float)$kb * 1024.0;
-    if ($bytes >= 1e12) {
-        $val = round($bytes / 1e12, 1);
-        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+    if (!$kb || $kb <= 0) {
+        return '0';
     }
-    if ($bytes >= 1e9) {
-        $val = round($bytes / 1e9, 1);
-        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
+    $value = (float)$kb * 1024.0; // bytes
+    $kilo = 1000.0;
+    $units = ['', 'K', 'M', 'G', 'T', 'P', 'E'];
+    $base = $value > 0 ? (int)floor(log($value, $kilo)) : 0;
+    $max = count($units) - 1;
+    if ($base > $max) {
+        $base = $max;
     }
-    if ($bytes >= 1e6) {
-        return (string)round($bytes / 1e6) . 'M';
+    if ($base < 0) {
+        $base = 0;
     }
-    if ($bytes >= 1e3) {
-        return (string)round($bytes / 1e3) . 'K';
+    $value /= pow($kilo, $base);
+    // my_scale($bytes, $unit, -1): special decimals mode used by Main Size column
+    if ($value >= 100 || ((int)round($value * 10) % 10) === 0) {
+        $decimals = 0;
+    } else {
+        $decimals = 1;
     }
-    return (string)max(0, (int)round($bytes)) . 'B';
+    // Auto-scale unit bump when value rounds to 1000 at this unit (my_scale scale<0 path)
+    if (round($value, -1) == 1000 && $base < $max) {
+        $value = 1;
+        $base++;
+        $decimals = 0;
+    }
+    $formatted = number_format($value, $decimals, '.', '');
+    // Drop trailing zeros after decimal for cleaner dropdown labels (25.0 → 25)
+    if (strpos($formatted, '.') !== false) {
+        $formatted = rtrim(rtrim($formatted, '0'), '.');
+    }
+    $unit = $units[$base];
+    return $unit === '' ? $formatted : ($formatted . $unit);
 }
 
 /**
@@ -87,7 +143,7 @@ function sg_migrate_disk_size_label($label, $size_kbs) {
     return $label;
 }
 
-/** @return int[] data-disk sizes from disks.ini (KiB) */
+/** @return int[] data-disk sizes from disks.ini (KiB; Main-aligned capacity) */
 function sg_array_data_disk_size_kbs() {
     $disks_ini = '/var/local/emhttp/disks.ini';
     if (!is_file($disks_ini)) {
@@ -105,7 +161,7 @@ function sg_array_data_disk_size_kbs() {
         if (!$is_data) {
             continue;
         }
-        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        $kb = sg_disk_capacity_kb($d);
         if ($kb > 0) {
             $out[] = $kb;
         }
@@ -113,7 +169,7 @@ function sg_array_data_disk_size_kbs() {
     return $out;
 }
 
-/** @return int[] pool member sizes from disks.ini (KiB) for a pool name (e.g. cache) */
+/** @return int[] pool member sizes from disks.ini (KiB; Main-aligned capacity) for a pool name */
 function sg_pool_member_size_kbs($pool) {
     $pool = preg_replace('/\d+$/', '', (string)$pool);
     if ($pool === '') {
@@ -140,7 +196,7 @@ function sg_pool_member_size_kbs($pool) {
         if ($prefix !== $pool) {
             continue;
         }
-        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        $kb = sg_disk_capacity_kb($d);
         if ($kb > 0) {
             $out[] = $kb;
         }
@@ -211,7 +267,7 @@ function sg_array_data_disks() {
         $name = $d['name'] ?? $key;
         $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
         if (!$is_data) continue;
-        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        $kb = sg_disk_capacity_kb($d);
         if ($kb <= 0) continue;
         // Unraid disks.ini "device" is the kernel id (sda, nvme0n1, …), not /dev/…
         $dev = trim((string)($d['device'] ?? ''));
