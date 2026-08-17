@@ -1,3 +1,10 @@
+## 2026.08.17af
+
+- **Settings page cleanup:** remove long inline tips next to Show Array/Show Cache (they shifted
+  buttons and broke form layout). Pools-only: Array stays **hidden** until Show Array; no
+  “no disks — inactive” / essay paragraphs in the form. Tips belong in DOCS.md.
+- Retains ae: empty pool thresholds = None; pulse default No.
+
 ## 2026.08.17ae
 
 - **Fix yellow cache/pool bars on fresh install:** empty pool thresholds no longer soft-default to

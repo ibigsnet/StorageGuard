@@ -120,7 +120,7 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 ## Cache / pool thresholds
 
-Pool (cache) UI is **hidden by default** — open **Show Cache** on Settings (choice is remembered in the browser). Array UI is shown when array data disks exist; if there is no array, use **Show Array** to edit saved array settings.
+Pool (cache) UI is **hidden by default** — open **Show Cache** on Settings (choice is remembered in the browser). Array UI is shown when array data disks exist. On **pools-only** servers (no array data disks), Array settings stay hidden until **Show Array**; values still save but do nothing until an array exists. Array Warning/Critical disk-size defaults apply only when data disks are present.
 
 **Supported:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), free-bar coloring on Main, and alerts.  
 **Profile-aware:** alert wording by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts (use Custom / Suggest).  

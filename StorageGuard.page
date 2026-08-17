@@ -265,7 +265,7 @@ if ($sg_defaults_ok && isset($cfg['array_coloring'])) {
 } else {
     $array_coloring = $has_array_disks ? 'yes' : 'no';
 }
-// First open / missing keys: product defaults (pool paint on; green OK + pulse on)
+// First open / missing keys: product defaults (pool paint on; green OK; pulse off)
 $pool_coloring = $cfg['pool_coloring'] ?? $cfg['cache_coloring'] ?? 'yes';
 if ($pool_coloring !== 'yes') {
     $pool_coloring = 'no';
@@ -330,29 +330,20 @@ foreach ($pool_names as $p) {
 <p class="sg-page-lead">Preview mode — example sizes only (no live disks.ini).</p>
 <?php endif; ?>
 
-<p class="sg-page-lead">Thresholds drive Alerts and optional free-bar coloring. Prefer Critical free amount smaller than Warning.</p>
-
 <div id="sg-order-note" class="sg-order-note" style="display:none" role="status"></div>
 
-<p class="sg-section-toggles" style="margin:0.5em 0 0.75em;">
+<p class="sg-section-toggles">
 <?php if (!$has_array_disks): ?>
   <button type="button" id="sg-toggle-array" class="sg-advanced-btn">Show Array</button>
-  <span id="sg-array-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.5em;margin-right:1em;">No array data disks — Array settings hidden (saved config kept).</span>
 <?php endif; ?>
   <button type="button" id="sg-toggle-cache" class="sg-advanced-btn">Show Cache</button>
-  <span id="sg-cache-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.5em;">Pool / cache thresholds &amp; paint (hidden by default).</span>
 </p>
 
 <?php
-// Single open tag — do not split <div> across if/else with a blank line + markdown
-// blockquote after it. On pools-only hosts that pattern made Unraid’s page Markdown
-// exit HTML mode and show the raw div tag as text (CA install on Holo).
+// One open tag (pools-only starts hidden). Keep markup minimal for Unraid Markdown.
 $sg_array_style = $has_array_disks ? '' : ' style="display:none"';
 ?>
 <div id="sg-array-block" class="sg-array-block"<?= $sg_array_style ?> markdown="1">
-<?php if (!$has_array_disks): ?>
-<p class="sg-page-lead"><strong>No array detected.</strong> Array settings below do <strong>nothing</strong> until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here (Show Array).</p>
-<?php endif; ?>
 
 ### Array
 
@@ -421,7 +412,7 @@ Unraid notifications when free space crosses a threshold. **Independent of color
 </thead>
 <tbody>
 <tr class="sg-array-alert-row"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
-  <td style="padding:6px 12px 6px 0;">Array<?= $has_array_disks ? '' : ' <span style="color:#888;font-size:0.85em;">(no disks — inactive)</span>' ?></td>
+  <td style="padding:6px 12px 6px 0;">Array</td>
   <td style="padding:6px 12px; text-align:center;">
     <input type="hidden" name="alerts_array_warning" value="no">
     <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?>>
@@ -459,8 +450,6 @@ Uses free-space thresholds from Array and (when Cache is shown) Pools. Default: 
 
 ### Appearance
 
-All free-bar **paint** options live here. Global pulse/green apply only where a target has coloring enabled. Pool paint options appear when <strong>Show Cache</strong> is open (same toggle as pool alert rows).
-
 <div id="sg-show-ok-row" markdown="1">
 
 _(Color outlines green when OK/Normal)_:
@@ -470,8 +459,7 @@ _(Color outlines green when OK/Normal)_:
   </select>
 
 <blockquote class="inline_help">
-When free space is still <strong>above</strong> all thresholds, draw a static <strong>green outline</strong> so “still OK / Normal” is visible on Main.<br>
-<strong>Outline style only</strong> — Solid has no healthy/OK paint. Never pulses. <strong>On by default</strong>. Only where coloring is enabled and Highlight style is Outline. Hidden when nothing uses Outline.
+Static green outline when free is still above thresholds. Outline style only. Default Yes.
 </blockquote>
 
 </div>
@@ -483,21 +471,13 @@ _(Pulse free-bar colors on warn/crit)_:
   </select>
 
 <blockquote class="inline_help">
-When <strong>Yes</strong>, gently pulse yellow/red on free bars at <strong>Warning</strong> or <strong>Critical</strong> (not OK/Normal) — soft attention, not a strobe.<br>
-• <strong>Outline</strong> style → pulses the border only<br>
-• <strong>Solid</strong> style → pulses the free fill (Unraid greenbar shows between pulses)<br>
-Applies only where coloring is enabled. Does <strong>not</strong> pulse green / OK. <strong>On by default</strong> (turn off if you prefer static color).
+Gently pulse yellow/red at Warning/Critical. Does not pulse OK. Default No.
 </blockquote>
 
 <div class="sg-appearance-targets">
 
-<?php /* Title/lead outside markdown so form dl rows parse cleanly (same for Array + Pool). */ ?>
 <div id="sg-array-appearance" class="sg-appearance-sub"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
 <div class="sg-appearance-sub-title">Array coloring</div>
-<p class="sg-appearance-sub-lead">Optional. Paint the array free bar on Main using the Array thresholds above.</p>
-<?php if (!$has_array_disks): ?>
-<p class="sg-appearance-sub-lead">Inactive until array data disks are present (settings still save).</p>
-<?php endif; ?>
 
 <div class="sg-appearance-fields" markdown="1">
 
@@ -532,7 +512,6 @@ Pulse and green-outline-when-OK (above) apply when Array coloring is Yes.
 
 <div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
 <div class="sg-appearance-sub-title">Pool coloring</div>
-<p class="sg-appearance-sub-lead">Optional. Paint pool free bars on Main using each pool’s free-space thresholds (set under <strong>Show Cache</strong>). Multiple pools can be colored at once; only <strong>checked</strong> pools are painted.</p>
 
 <div class="sg-appearance-fields" markdown="1">
 
@@ -543,8 +522,7 @@ _(Pool coloring)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Yes</strong> = color free bars on Main for the pools checked below (default for new installs).<br>
-<strong>No</strong> = leave all pool free bars alone. Pool thresholds still apply to Alerts if enabled.
+<strong>Yes</strong> = color free bars on Main for checked pools (default). Thresholds under Show Cache. Alerts stay separate.
 </blockquote>
 
 <div id="pool-color-options" class="sg-details sg-color-options" markdown="1">
@@ -600,9 +578,7 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 
 ### Cache / pools — free-space thresholds
 
-> Defaults: pool/cache alerts **off**; free-bar **coloring** can still paint pools when Appearance → Pool coloring is Yes (green when OK if that option is on). **Warning / Critical** are free-space severity (yellow / red), not “which disk failed.” Empty thresholds = **None** (no yellow/red until you set values or click **Suggest free thresholds**). Suggest fills Custom from capacity-fit math; you may reverse or invent your own. Guide: docs/math/threshold-guide.md. Pool **coloring** is under Appearance (visible when Cache is shown).
-
-Each pool has its own Warning / Critical free amounts (for **Alerts** and optional coloring).
+Empty Warning/Critical = None. Use **Suggest free thresholds** for capacity-fit values when you want them.
 
 <?php foreach ($pool_names as $p):
   $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);

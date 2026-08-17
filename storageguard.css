@@ -263,3 +263,14 @@ td[data-sg-outline="critical"].sg-pulse .usage-disk {
     animation: none !important;
   }
 }
+
+.sg-section-toggles {
+  margin: 0.35em 0 0.85em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+}
+.sg-section-toggles .sg-advanced-btn {
+  margin: 0;
+}

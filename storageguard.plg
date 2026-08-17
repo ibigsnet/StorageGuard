@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17ae">
+<!ENTITY version "2026.08.17af">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,22 +26,21 @@
 
 <CHANGES>
 ###&version;
-- <strong>Fix:</strong> empty pool/cache thresholds no longer auto-apply capacity-fit paint
-  (was yellow on healthy RAID1/10 pools). Empty = None until you set values or Suggest.
-- Pulse free-bar default <strong>No</strong> (opt-in). Green-when-OK stays Yes.
-- Pools-only Settings raw-div fix remains from 2026.08.17ad.
+- Settings UI cleanup: remove inline tip prose that broke form layout; quiet Show Array / Show Cache
+  buttons; Array hidden by default on pools-only hosts.
+- Keep capacity-fit paint fix and pulse default No from 2026.08.17ae.
+
+###2026.08.17ae
+- Empty pool thresholds = None (no auto yellow). Pulse default No.
 
 ###2026.08.17ad
-- Fix pools-only Settings: no raw array-block div text (Markdown HTML block break).
+- Fix pools-only Settings raw array-block div text.
 
 ###2026.08.17ac
-- Defaults: Outline; green OK; pool coloring on; Show Array / Show Cache; Main-aligned sizes.
+- Outline/green OK defaults; Show Array / Show Cache; Main-aligned sizes.
 
 ###2026.08.17ab
-- Plugins UI: trim embedded CHANGES list. Full history in CHANGELOG.md.
-
-###2026.08.17aa
-- Stock UI inject harden: fixed HeadInlineJS paths; marker-only strip; stock backup.
+- Trim plg CHANGES list. Full history in CHANGELOG.md.
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md

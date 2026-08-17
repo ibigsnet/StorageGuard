@@ -305,7 +305,7 @@ function initStorageGuardUI() {
   updateOrderNote();
 
 
-  // Array: visible when data disks exist; if none, hidden until "Show Array" (localStorage).
+  // Array: always visible when data disks exist; otherwise hidden until Show Array.
   var setArrayHiddenOpen = null;
   (function wireArrayToggle() {
     var form = document.getElementById('storageguard-form');
@@ -313,21 +313,12 @@ function initStorageGuardUI() {
     var btn = document.getElementById('sg-toggle-array');
     var block = document.getElementById('sg-array-block');
     var appear = document.getElementById('sg-array-appearance');
-    var hint = document.getElementById('sg-array-hidden-hint');
     var key = 'sg_show_array';
-    // migrate old key
-    try {
-      if (localStorage.getItem(key) === null && localStorage.getItem('sg_show_array_hidden') === '1') {
-        localStorage.setItem(key, '1');
-      }
-    } catch (e) { /* ignore */ }
 
     function setOpen(open) {
       if (hasArray) {
-        // Always show when array is present
         open = true;
         if (btn) btn.style.display = 'none';
-        if (hint) hint.style.display = 'none';
       }
       if (block) block.style.display = open ? '' : 'none';
       if (appear) appear.style.display = open ? '' : 'none';
@@ -335,7 +326,6 @@ function initStorageGuardUI() {
         tr.style.display = open ? '' : 'none';
       });
       if (btn) btn.textContent = open ? 'Hide Array' : 'Show Array';
-      if (hint && !hasArray) hint.style.display = open ? 'none' : 'inline';
       if (!hasArray) {
         try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
       }
@@ -355,6 +345,7 @@ function initStorageGuardUI() {
       return;
     }
     if (!btn) return;
+    // Default hidden on pools-only. Only reopen if user previously chose Show Array.
     var saved = false;
     try { saved = localStorage.getItem(key) === '1'; } catch (e3) { /* ignore */ }
     setOpen(saved);
@@ -364,19 +355,13 @@ function initStorageGuardUI() {
     });
   })();
 
-  // Cache / pools: hidden by default; Show Cache remembers (localStorage).
+  // Cache / pools: hidden by default; Show Cache remembers.
   (function wireCacheToggle() {
     var btn = document.getElementById('sg-toggle-cache');
     var panel = document.getElementById('sg-cache-panel');
     var poolAppear = document.getElementById('sg-pool-appearance');
-    var hint = document.getElementById('sg-cache-hidden-hint');
     if (!btn || !panel) return;
     var key = 'sg_show_cache';
-    try {
-      if (localStorage.getItem(key) === null && localStorage.getItem('sg_show_pools_wip') === '1') {
-        localStorage.setItem(key, '1');
-      }
-    } catch (e) { /* ignore */ }
     function setOpen(open) {
       panel.style.display = open ? '' : 'none';
       if (poolAppear) poolAppear.style.display = open ? '' : 'none';
@@ -384,7 +369,6 @@ function initStorageGuardUI() {
         tr.style.display = open ? '' : 'none';
       });
       btn.textContent = open ? 'Hide Cache' : 'Show Cache';
-      if (hint) hint.style.display = open ? 'none' : 'inline';
       try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
       if (open) {
         document.querySelectorAll('.pool-use-custom').forEach(function (s) {
