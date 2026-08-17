@@ -46,13 +46,13 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | **Array** free-bar coloring (main page) | **Yes** |
 | **Pool** free-bar coloring (main page) | **No** |
 | Array Warning free | Size of **largest array data disk** (machine-specific) |
-| Array Critical free | **None** |
+| Array Critical free | Size of **smallest array data disk** (machine-specific) |
 | Pool Warning / Critical free | **None** (opt-in) |
-| Alerts | **Array Warning only** (array Critical off; all pool alerts off) |
+| Alerts | **Array Warning + Array Critical** (all pool alerts off) |
 | Highlight style | Outline (where applicable) |
 | Pulse / green-when-OK | Off |
 
-Pools are **opt-in** for paint and thresholds: turn on pool coloring and set free thresholds only when you want them. Array paint defaults on with a largest-disk Warning.
+Pools are **opt-in** for paint and thresholds: turn on pool coloring and set free thresholds only when you want them. Array paint defaults on with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
 
 ### Recommended threshold order
 
@@ -88,12 +88,18 @@ Dropdowns list **unique sizes of your array data disks** (parity and pools are n
 
 **Defaults (first use / product Default):**
 
-- Warning → size of your **largest array data disk** (core idea: free space left should still cover losing that disk)  
+- Warning → size of your **largest array data disk** (free should still cover losing that disk)  
+- Critical → size of your **smallest array data disk** (free should still cover losing even a small data disk)  
 - Critical → **None** (you opt in)  
 
-### Why “largest disk” is a useful default
+### Why largest / smallest data disk defaults
 
-If an array data disk fails, you often want enough free space elsewhere to evacuate or reshuffle data. Matching Warning to the largest data disk is a common starting point: below that free space, a full-size failure may leave you short.
+If an array data disk fails, you often want enough **total free** elsewhere to evacuate or reshuffle data.
+
+- **Warning = largest data disk** — below that free space, a full-size failure of your biggest data disk may leave you short.  
+- **Critical = smallest data disk** — below that free space, even losing a small data disk may leave no room to move its data.  
+
+Parity disks are never used for these defaults. Free space is **total array free**, compared to those one-disk-sized floors.
 
 ### Mixed sizes
 

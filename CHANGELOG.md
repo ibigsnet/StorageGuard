@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+###2026.08.16ab
+- **Array defaults:** Warning = largest data disk, **Critical = smallest data disk**; both Array
+  Warning and Array Critical **alerts on** for new installs / Default / unseeded first open.
+  Existing saved configs unchanged until Default or re-Apply.
+
 ###2026.08.16aa
 - **Capacity labels match Unraid Main (decimal SI):** disk-size dropdowns and defaults use powers of
   1000 (e.g. **25.9T**), not binary TiB labeled as T (**23.6T**). Free-space math was already SI;

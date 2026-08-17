@@ -51,25 +51,7 @@ function sg_style($cfg, $key) {
   return ($s === 'solid') ? 'solid' : 'outline';
 }
 
-function sg_largest_data_disk_tb() {
-  $disks_ini = '/var/local/emhttp/disks.ini';
-  if (!file_exists($disks_ini)) return 0.0;
-  $disks = @parse_ini_file($disks_ini, true) ?: [];
-  $max_kb = 0;
-  foreach ($disks as $key => $d) {
-    if (empty($d['device'])) continue;
-    $type = $d['type'] ?? '';
-    $name = $d['name'] ?? $key;
-    $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
-    if (!$is_data) continue;
-    $sz = isset($d['size']) ? (int)$d['size'] : 0;
-    if ($sz > $max_kb) $max_kb = $sz;
-  }
-  if ($max_kb <= 0) return 0.0;
-  return ($max_kb * 1024.0) / 1e12;
-}
-
-$array_present = function_exists('sg_array_present') ? sg_array_present() : (sg_largest_data_disk_tb() > 0);
+$array_present = function_exists('sg_array_present') ? sg_array_present() : (function_exists('sg_largest_data_disk_tb') && sg_largest_data_disk_tb() > 0);
 $storage_online = function_exists('sg_storage_online') ? sg_storage_online() : true;
 
 // Prefer array-only mount; do not treat pools-only /mnt/user as the array
@@ -96,13 +78,17 @@ if ($use_custom) {
     }
     $arr_warn = sg_parse_to_tb($aw);
   } else {
-    $arr_warn = $array_present ? sg_largest_data_disk_tb() : 0.0;
+    $arr_warn = ($array_present && function_exists('sg_largest_data_disk_tb')) ? sg_largest_data_disk_tb() : 0.0;
   }
-  $ac = (string)($cfg['array_critical'] ?? '');
-  if ($ac !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
-    $ac = sg_migrate_disk_size_label($ac, $array_size_kbs);
+  if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
+    $ac = (string)($cfg['array_critical'] ?? '');
+    if ($ac !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
+      $ac = sg_migrate_disk_size_label($ac, $array_size_kbs);
+    }
+    $arr_crit = sg_parse_to_tb($ac);
+  } else {
+    $arr_crit = ($array_present && function_exists('sg_smallest_data_disk_tb')) ? sg_smallest_data_disk_tb() : 0.0;
   }
-  $arr_crit = sg_parse_to_tb($ac);
 }
 
 $array_coloring = ($cfg['array_coloring'] ?? 'yes') === 'yes';

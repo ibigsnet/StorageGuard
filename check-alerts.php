@@ -151,21 +151,6 @@ function sg_flag($cfg, $key) {
     return ($cfg[$key] ?? 'no') === 'yes';
 }
 
-function sg_largest_data_disk_tb() {
-    $max = 0.0;
-    foreach (sg_array_data_disks() as $d) {
-        if ($d['tb'] > $max) $max = $d['tb'];
-    }
-    return $max;
-}
-
-function sg_largest_data_disk_label() {
-    $tb = sg_largest_data_disk_tb();
-    if ($tb <= 0) return '';
-    $val = round($tb, 1);
-    return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
-}
-
 function sg_array_thresholds($cfg) {
     $use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
     if ($use_custom) {
@@ -186,16 +171,22 @@ function sg_array_thresholds($cfg) {
         }
         $warn = sg_parse_to_tb($warn_label);
     } else {
-        $warn_label = sg_largest_data_disk_label();
-        $warn = sg_largest_data_disk_tb();
+        $warn_label = function_exists('sg_largest_data_disk_label') ? sg_largest_data_disk_label() : '';
+        $warn = function_exists('sg_largest_data_disk_tb') ? sg_largest_data_disk_tb() : 0.0;
     }
-    $crit_label = (string)($cfg['array_critical'] ?? '');
-    if ($crit_label !== '' && function_exists('sg_migrate_disk_size_label') && !empty($kbs)) {
-        $crit_label = sg_migrate_disk_size_label($crit_label, $kbs);
+    if ($sg_ok && array_key_exists('array_critical', $cfg)) {
+        $crit_label = (string)($cfg['array_critical'] ?? '');
+        if ($crit_label !== '' && function_exists('sg_migrate_disk_size_label') && !empty($kbs)) {
+            $crit_label = sg_migrate_disk_size_label($crit_label, $kbs);
+        }
+        $crit = sg_parse_to_tb($crit_label);
+    } else {
+        $crit_label = function_exists('sg_smallest_data_disk_label') ? sg_smallest_data_disk_label() : '';
+        $crit = function_exists('sg_smallest_data_disk_tb') ? sg_smallest_data_disk_tb() : 0.0;
     }
     return [
         'warn' => $warn,
-        'crit' => sg_parse_to_tb($crit_label),
+        'crit' => $crit,
         'warn_label' => $warn_label,
         'crit_label' => $crit_label,
         'custom' => false,
@@ -265,7 +256,8 @@ if ($sg_defaults_ok && isset($cfg['alerts_array_critical'])) {
     $array_selected = ($legacy_for === 'all') || in_array('array', array_map('trim', explode(',', $legacy_for)), true);
     $arr_crit_on = $legacy_on && $array_selected && (($cfg['critical_alerts_enabled'] ?? 'yes') === 'yes');
 } else {
-    $arr_crit_on = false;
+    // Unseeded product default: Array Critical alerts on when array data disks exist
+    $arr_crit_on = $array_present;
 }
 
 // Keep saved flags/thresholds in cfg, but do not evaluate without a real array

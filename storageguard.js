@@ -424,13 +424,17 @@ function initStorageGuardUI() {
     setInput('array_critical_custom', '');
 
     var arrWarn = document.getElementById('array_warning');
+    var arrCrit = document.getElementById('array_critical');
     var defWarn = arrWarn ? (arrWarn.getAttribute('data-sg-default-warn') || '') : '';
-    // no array → defWarn is empty; keep thresholds None
+    var defCrit = (arrCrit && arrCrit.getAttribute('data-sg-default-crit'))
+      || (arrWarn && arrWarn.getAttribute('data-sg-default-crit'))
+      || '';
+    // no array → thresholds None; with array → largest warn / smallest crit
     setSelect('array_warning', hasArray ? defWarn : '');
-    setSelect('array_critical', '');
+    setSelect('array_critical', hasArray ? defCrit : '');
 
     setCheckbox('alerts_array_warning', hasArray);
-    setCheckbox('alerts_array_critical', false);
+    setCheckbox('alerts_array_critical', hasArray);
 
 
     setSelect('pool_coloring', 'no');

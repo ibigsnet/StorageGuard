@@ -123,7 +123,7 @@ No capacity-fit suggestion. Free thresholds are policy only (no “still online 
 
 ### H — Array (not a pool)
 
-Array Warning default = largest **data** disk free (evacuate room). Different product story; pool guide does not apply.
+Array defaults: Warning = largest **data** disk free, Critical = smallest **data** disk free (evacuate room). Different product story; pool guide does not apply.
 
 ---
 

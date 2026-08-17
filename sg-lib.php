@@ -154,6 +154,52 @@ function sg_kb_to_tb($kb) {
     return ($kb * 1024.0) / 1e12;
 }
 
+/** Largest array data disk size (decimal TB), or 0. */
+function sg_largest_data_disk_tb() {
+    $max = 0.0;
+    foreach (sg_array_data_disks() as $d) {
+        if (($d['tb'] ?? 0) > $max) {
+            $max = (float)$d['tb'];
+        }
+    }
+    return $max;
+}
+
+/** Smallest array data disk size (decimal TB), or 0. */
+function sg_smallest_data_disk_tb() {
+    $min = 0.0;
+    foreach (sg_array_data_disks() as $d) {
+        $tb = (float)($d['tb'] ?? 0);
+        if ($tb <= 0) {
+            continue;
+        }
+        if ($min <= 0 || $tb < $min) {
+            $min = $tb;
+        }
+    }
+    return $min;
+}
+
+/** SI label for largest data disk (e.g. 18T), or ''. */
+function sg_largest_data_disk_label() {
+    $kbs = sg_array_data_disk_size_kbs();
+    if (empty($kbs)) {
+        return '';
+    }
+    rsort($kbs, SORT_NUMERIC);
+    return sg_format_size_kb($kbs[0]);
+}
+
+/** SI label for smallest data disk (e.g. 4T), or ''. */
+function sg_smallest_data_disk_label() {
+    $kbs = sg_array_data_disk_size_kbs();
+    if (empty($kbs)) {
+        return '';
+    }
+    sort($kbs, SORT_NUMERIC);
+    return sg_format_size_kb($kbs[0]);
+}
+
 function sg_array_data_disks() {
     $disks_ini = '/var/local/emhttp/disks.ini';
     if (!file_exists($disks_ini)) return [];

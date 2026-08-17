@@ -48,6 +48,7 @@ if (!function_exists('sg_update_format_size')) {
 }
 
 $largest_warn = '';
+$smallest_crit = '';
 $disks_ini = '/var/local/emhttp/disks.ini';
 if (is_file($disks_ini)) {
     $disks = @parse_ini_file($disks_ini, true) ?: [];
@@ -64,6 +65,7 @@ if (is_file($disks_ini)) {
     if (!empty($raw)) {
         rsort($raw, SORT_NUMERIC);
         $largest_warn = sg_update_format_size($raw[0]);
+        $smallest_crit = sg_update_format_size($raw[count($raw) - 1]);
     }
 }
 
@@ -72,9 +74,10 @@ if (!is_array($default)) {
 }
 
 // Array product defaults depend on whether data disks exist (pools-only hosts hide Array UI).
+// Warning = largest data disk (evacuate room); Critical = smallest data disk; both alerts on.
 $has_array = ($largest_warn !== '');
 $default['array_warning'] = $largest_warn;
-$default['array_critical'] = '';
+$default['array_critical'] = $smallest_crit;
 $default['array_use_custom'] = 'no';
 $default['array_warning_custom'] = '';
 $default['array_critical_custom'] = '';
@@ -86,7 +89,7 @@ $default['outline_show_ok'] = 'no';
 $default['pool_coloring'] = 'no';
 $default['pools_to_color'] = 'all';
 $default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
-$default['alerts_array_critical'] = 'no';
+$default['alerts_array_critical'] = $has_array ? 'yes' : 'no';
 $default['sg_defaults'] = '';
 
 foreach ($_POST as $key => $value) {
