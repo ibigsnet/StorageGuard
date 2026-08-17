@@ -520,8 +520,8 @@
       .then(function (data) {
         if (!data || !data._status) return;
         var opts = {
-          // Product default Yes when key missing (legacy cfg without these keys)
-          pulse: (data.outline_pulse !== 'no'),
+          // Product default: pulse off unless explicitly yes; green-when-OK on unless no
+          pulse: (data.outline_pulse === 'yes'),
           showOk: (data.outline_show_ok !== 'no')
         };
         data._status._opts = opts;

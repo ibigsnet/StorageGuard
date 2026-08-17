@@ -51,7 +51,7 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | Alerts | **Array Warning + Array Critical** when an array is present; **all pool/cache alerts off** |
 | Highlight style | **Outline** (array and every pool) |
 | Color outlines green when OK/Normal | **Yes** |
-| Pulse free-bar colors on warn/crit | **Yes** |
+| Pulse free-bar colors on warn/crit | **No** (opt-in) |
 | Settings UI | Array shown when array detected (hidden if none — **Show Array** remembers); **Show Cache** hidden by default (choice remembered) |
 
 Pool free-bar **paint** defaults on; pool **thresholds** and **alerts** stay opt-in. Array paint/alerts default on when data disks exist, with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
@@ -219,7 +219,7 @@ Each target (**array**, and every **pool**) has its own style:
 | Option | Default | Applies to | Effect |
 |--------|---------|------------|--------|
 | **Color outlines green when OK/Normal** | **On** | Outline only | Static **green** border when free space is still **above** your thresholds |
-| **Pulse free-bar colors on warn/crit** | **On** | Outline **and** Solid | Soft pulse for Warning/Critical (not a harsh strobe). Outline: border. Solid: free fill. Never pulses healthy/OK. |
+| **Pulse free-bar colors on warn/crit** | **Off** | Outline **and** Solid | Soft pulse for Warning/Critical when enabled (not a harsh strobe). Outline: border. Solid: free fill. Never pulses healthy/OK. |
 
 | Level (Outline) | Look |
 |-----------------|------|
@@ -318,7 +318,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 ### Today
 
 - Paint and thresholds: **raw free space** on `/mnt/{pool}` vs your Warning/Critical values (same comparison style as the array).  
-- Defaults: pool free-bar coloring **on** (all pools); pool thresholds **None**; pool alerts **off**. Settings pool UI is behind **Show Cache** (remembered).  
+- Defaults: pool free-bar coloring **on** (all pools); pool thresholds **None** (no auto capacity-fit paint); pool alerts **off**. Settings pool UI is behind **Show Cache** (remembered).  
 - Notifications: **profile-class wording** so RAID1 is not described like array evacuate.  
 
 - **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom** or **Suggest** for capacity-policy free amounts.  

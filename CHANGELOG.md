@@ -1,3 +1,12 @@
+## 2026.08.17ae
+
+- **Fix yellow cache/pool bars on fresh install:** empty pool thresholds no longer soft-default to
+  capacity-fit Δ for paint/alerts (that set warn ~largest-loss free and painted healthy RAID10
+  yellow). Empty = **None**; use **Suggest** or set thresholds yourself.
+- **Pulse default No** (product Default / default.cfg / JS reset / paint when key missing). Green
+  outline when OK remains Yes.
+- Docs: threshold-guide + math README + Settings help aligned.
+
 ## 2026.08.17ad
 
 - **Fix pools-only Settings page:** no-array branch no longer prints raw

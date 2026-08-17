@@ -437,8 +437,8 @@ function initStorageGuardUI() {
     // data-sg-has-array from Settings page (0 = pools-only / no array data disks)
     var hasArray = formEl && formEl.getAttribute('data-sg-has-array') === '1';
 
-    // Product defaults: outline + green OK + pulse; pool paint on; array paint/alerts when array exists
-    setSelect('outline_pulse', 'yes');
+    // Product defaults: outline + green OK; pulse off; pool paint on; array paint/alerts when array exists
+    setSelect('outline_pulse', 'no');
     setSelect('outline_show_ok', 'yes');
     setSelect('array_coloring', hasArray ? 'yes' : 'no');
     setSelect('array_color_style', 'outline');

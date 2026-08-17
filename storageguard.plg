@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17ad">
+<!ENTITY version "2026.08.17ae">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,25 +26,22 @@
 
 <CHANGES>
 ###&version;
-- <strong>Fix:</strong> pools-only / no-array hosts no longer show raw
-  <code>&lt;div id="sg-array-block" …&gt;</code> as page text. Array block uses one open tag
-  + HTML notice (Unraid Markdown was breaking on blank line + <code>&gt;</code> blockquote).
+- <strong>Fix:</strong> empty pool/cache thresholds no longer auto-apply capacity-fit paint
+  (was yellow on healthy RAID1/10 pools). Empty = None until you set values or Suggest.
+- Pulse free-bar default <strong>No</strong> (opt-in). Green-when-OK stays Yes.
+- Pools-only Settings raw-div fix remains from 2026.08.17ad.
+
+###2026.08.17ad
+- Fix pools-only Settings: no raw array-block div text (Markdown HTML block break).
 
 ###2026.08.17ac
-- Defaults: Outline; green OK; pulse; pool coloring on; array alerts when array present;
-  Show Array / Show Cache; Main-aligned capacity labels.
+- Defaults: Outline; green OK; pool coloring on; Show Array / Show Cache; Main-aligned sizes.
 
 ###2026.08.17ab
 - Plugins UI: trim embedded CHANGES list. Full history in CHANGELOG.md.
 
 ###2026.08.17aa
 - Stock UI inject harden: fixed HeadInlineJS paths; marker-only strip; stock backup.
-
-###2026.08.16ac
-- Clean package replace on every upgrade.
-
-###2026.08.16ab
-- Array defaults: Warning = largest data disk, Critical = smallest; both array alerts on.
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md

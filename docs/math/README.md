@@ -141,7 +141,7 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 | none | single, RAID0 | **No** — Custom / disk-size only |
 
 - **Your saved free amounts always win** (Custom or disk-size).  
-- If both empty and math applies, paint/alerts soft-default to the recommendation until you save values.  
+- Empty thresholds = **None** for paint/alerts. Use **Suggest free thresholds** to fill Custom from the recommendation.  
 - Full guide + “what if I don’t follow it?”: **[threshold-guide.md](threshold-guide.md)**.
 
 ## Where it shows up

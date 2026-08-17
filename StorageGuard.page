@@ -271,7 +271,7 @@ if ($pool_coloring !== 'yes') {
     $pool_coloring = 'no';
 }
 $array_color_style = sg_resolve_style($cfg, 'array_color_style');
-$outline_pulse = (($cfg['outline_pulse'] ?? 'yes') === 'yes') ? 'yes' : 'no';
+$outline_pulse = (($cfg['outline_pulse'] ?? 'no') === 'yes') ? 'yes' : 'no';
 $outline_show_ok = (($cfg['outline_show_ok'] ?? 'yes') === 'yes') ? 'yes' : 'no';
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
@@ -600,7 +600,7 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 
 ### Cache / pools — free-space thresholds
 
-> Defaults: pool/cache alerts **off**; free-bar **coloring** can still paint pools when Appearance → Pool coloring is Yes. **Warning / Critical** are free-space severity (yellow / red), not “which disk failed.” You set free amounts freely (disk-size or **Custom**). **Suggest free thresholds** recommends capacity-fit numbers (typically larger free → Warning, smaller → Critical); you may reverse or invent your own. Empty thresholds soft-default to that suggestion until you save values. Guide: docs/math/threshold-guide.md. Pool **coloring** is under Appearance (visible when Cache is shown).
+> Defaults: pool/cache alerts **off**; free-bar **coloring** can still paint pools when Appearance → Pool coloring is Yes (green when OK if that option is on). **Warning / Critical** are free-space severity (yellow / red), not “which disk failed.” Empty thresholds = **None** (no yellow/red until you set values or click **Suggest free thresholds**). Suggest fills Custom from capacity-fit math; you may reverse or invent your own. Guide: docs/math/threshold-guide.md. Pool **coloring** is under Appearance (visible when Cache is shown).
 
 Each pool has its own Warning / Critical free amounts (for **Alerts** and optional coloring).
 

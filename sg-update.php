@@ -86,7 +86,7 @@ $default['array_critical_custom'] = '';
 $default['array_color_style'] = 'outline';
 // Yes only when array data disks exist — no-array / cache-only → No (inactive paint)
 $default['array_coloring'] = $has_array ? 'yes' : 'no';
-$default['outline_pulse'] = 'yes';
+$default['outline_pulse'] = 'no';
 $default['outline_show_ok'] = 'yes';
 // Pool free-bar paint on by default (all pools); pool *alerts* stay off below
 $default['pool_coloring'] = 'yes';

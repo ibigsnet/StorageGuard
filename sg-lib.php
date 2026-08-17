@@ -465,9 +465,10 @@ function sg_lib_parse_to_tb($str) {
 
 /**
  * Resolve pool free thresholds for paint/alerts.
- * User values always win. Empty thresholds may soft-default to capacity-fit *suggestions*
- * (recommended: larger free floor = Warning, smaller = Critical) — user may reverse or
- * pick any free amounts via Custom / disk-size.
+ *
+ * User values always win. Empty Warning/Critical = **None** (no yellow/red, no soft-default).
+ * Capacity-fit suggestions are offered only via the Settings **Suggest** button / math UI —
+ * never applied automatically on install (that painted healthy pools yellow on RAID1/10).
  *
  * Severity paint rule (sg_level): lower free amount = more severe (critical), higher free = warning,
  * regardless of form field order. Prefer Warning free ≥ Critical free as amounts of free space.
@@ -521,21 +522,7 @@ function sg_pool_resolve_thresholds($cfg, $safe, $pname = null) {
         $cl = '';
     }
 
-    // Soft default only when nothing configured and capacity math has a real Δ (>0)
-    if ($w <= 0 && $c <= 0 && is_array($sug) && !empty($sug['apply'])) {
-        $w = (float)($sug['warn_tb'] ?? 0);
-        $c = (float)($sug['crit_tb'] ?? 0);
-        return [
-            'warn' => $w,
-            'crit' => $c,
-            'warn_label' => sg_format_tb_short($w),
-            'crit_label' => sg_format_tb_short($c),
-            'custom' => false,
-            'source' => 'capacity_suggest_default',
-            'suggest' => $sug,
-        ];
-    }
-
+    // Empty = None. Do not auto-apply capacity-fit Δ for paint/alerts (Suggest button only).
     return [
         'warn' => $w,
         'crit' => $c,
