@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+###2026.08.16ac
+- **Install/upgrade hygiene:** prepare always `removepkg`s every prior `StorageGuard-*` package
+  and wipes the emhttp plugin dir before the new `.txz`. Prevents mixed leftover files across
+  `YYYY.MM.DDxx` package names.
+
 ###2026.08.16ab
 - **Array defaults:** Warning = largest data disk, **Critical = smallest data disk**; both Array
   Warning and Array Critical **alerts on** for new installs / Default / unseeded first open.

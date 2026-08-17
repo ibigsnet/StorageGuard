@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.16ab">
+<!ENTITY version "2026.08.16ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,6 +26,10 @@
 
 <CHANGES>
 ###&version;
+- <strong>Install/upgrade:</strong> always removepkg prior StorageGuard-* packages and wipe
+  emhttp plugin dir before the new .txz (no mixed leftover files after versioned updates).
+
+###2026.08.16ab
 - <strong>Array defaults:</strong> Warning = largest data disk, Critical = smallest data disk;
   Array Warning <em>and</em> Critical alerts on (new install / Default / first open). Saved configs
   unchanged until Default or re-Apply.
@@ -78,7 +82,14 @@
 echo "StorageGuard: preparing..."
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 mkdir -p /boot/config/plugins/StorageGuard
-rm -rf /usr/local/emhttp/plugins/StorageGuard
+# YYYY.MM.DDxx package names: always remove prior installs so upgrades never leave mixed files
+for p in /var/log/packages/StorageGuard-*; do
+  [ -e "$p" ] || continue
+  echo "StorageGuard: removing old package $(basename "$p")"
+  removepkg "$(basename "$p")" 2>/dev/null || true
+done
+rm -rf /usr/local/emhttp/plugins/StorageGuard \
+       /usr/local/emhttp/plugins/storageguard 2>/dev/null || true
 rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
 echo "StorageGuard: ready."
 ]]></INLINE>
@@ -91,6 +102,10 @@ echo "StorageGuard: ready."
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 echo "StorageGuard: finishing install..."
+if [ ! -f /usr/local/emhttp/plugins/StorageGuard/sg-lib.php ]; then
+  echo "StorageGuard: ERROR — package did not install (missing sg-lib.php)"
+  exit 1
+fi
 VER=""
 for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard.plg; do
   if [ -f "$candidate" ]; then
@@ -118,6 +133,7 @@ if [ -f "$HI" ]; then
   printf '\n<!-- Storage Guard -->\n<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER" "$VER" >> "$HI"
   echo "StorageGuard: injected into HeadInlineJS"
 fi
+echo "StorageGuard: packages now: $(ls /var/log/packages/StorageGuard-* 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ')"
 echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 ]]></INLINE>
 </FILE>
