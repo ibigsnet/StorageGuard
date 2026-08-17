@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17af">
+<!ENTITY version "2026.08.17ag">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,9 +26,11 @@
 
 <CHANGES>
 ###&version;
-- Settings UI cleanup: remove inline tip prose that broke form layout; quiet Show Array / Show Cache
-  buttons; Array hidden by default on pools-only hosts.
-- Keep capacity-fit paint fix and pulse default No from 2026.08.17ae.
+- Solid Settings page: Cache thresholds moved up; Pool coloring always visible when pools exist;
+  Array no longer sticky-open; strip Settings essays (math tables stay in docs/).
+
+###2026.08.17af
+- Remove tip prose next to Show Array / Show Cache.
 
 ###2026.08.17ae
 - Empty pool thresholds = None (no auto yellow). Pulse default No.

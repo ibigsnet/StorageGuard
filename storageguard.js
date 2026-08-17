@@ -6,19 +6,38 @@ function initStorageGuardUI() {
 
 
 
-  (function ensureArrayWarningDefault() {
-    var sel = document.getElementById('array_warning');
-    if (!sel || sel.disabled) return;
+  (function ensureArrayThresholdDefaults() {
+    var form = document.getElementById('storageguard-form');
+    if (!form || form.getAttribute('data-sg-has-array') !== '1') return;
     var useCustom = document.getElementById('array_use_custom');
     if (useCustom && useCustom.value === 'yes') return;
 
-    var def = sel.getAttribute('data-sg-default-warn') || '';
-    if (!def) return;
-    if (sel.value === '' || sel.value === null) {
+    function pickDefault(sel, attr) {
+      if (!sel || sel.disabled) return;
+      var def = sel.getAttribute(attr) || '';
+      if (!def) return;
+      if (sel.value !== '' && sel.value !== null) return;
       for (var i = 0; i < sel.options.length; i++) {
         if (sel.options[i].value === def) {
           sel.selectedIndex = i;
           break;
+        }
+      }
+    }
+    var warn = document.getElementById('array_warning');
+    var crit = document.getElementById('array_critical');
+    pickDefault(warn, 'data-sg-default-warn');
+    pickDefault(crit, 'data-sg-default-crit');
+    // Critical may only be stamped on the warning select
+    if (crit && (crit.value === '' || crit.value === null)) {
+      pickDefault(crit, 'data-sg-default-crit');
+      var fallback = warn ? (warn.getAttribute('data-sg-default-crit') || '') : '';
+      if (fallback && (crit.value === '' || crit.value === null)) {
+        for (var j = 0; j < crit.options.length; j++) {
+          if (crit.options[j].value === fallback) {
+            crit.selectedIndex = j;
+            break;
+          }
         }
       }
     }
@@ -305,7 +324,7 @@ function initStorageGuardUI() {
   updateOrderNote();
 
 
-  // Array: always visible when data disks exist; otherwise hidden until Show Array.
+  // Array: visible when data disks exist; pools-only starts hidden (not sticky).
   var setArrayHiddenOpen = null;
   (function wireArrayToggle() {
     var form = document.getElementById('storageguard-form');
@@ -313,7 +332,8 @@ function initStorageGuardUI() {
     var btn = document.getElementById('sg-toggle-array');
     var block = document.getElementById('sg-array-block');
     var appear = document.getElementById('sg-array-appearance');
-    var key = 'sg_show_array';
+    // Drop legacy sticky key so old "Show Array" sessions do not reopen by default.
+    try { localStorage.removeItem('sg_show_array'); } catch (e0) { /* ignore */ }
 
     function setOpen(open) {
       if (hasArray) {
@@ -326,9 +346,6 @@ function initStorageGuardUI() {
         tr.style.display = open ? '' : 'none';
       });
       if (btn) btn.textContent = open ? 'Hide Array' : 'Show Array';
-      if (!hasArray) {
-        try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
-      }
       if (open) {
         updateArrayCustom();
         var ac = document.getElementById('array_coloring');
@@ -345,29 +362,22 @@ function initStorageGuardUI() {
       return;
     }
     if (!btn) return;
-    // Default hidden on pools-only. Only reopen if user previously chose Show Array.
-    var saved = false;
-    try { saved = localStorage.getItem(key) === '1'; } catch (e3) { /* ignore */ }
-    setOpen(saved);
+    setOpen(false);
     btn.addEventListener('click', function () {
       var open = !block || block.style.display === 'none';
       setOpen(open);
     });
   })();
 
-  // Cache / pools: hidden by default; Show Cache remembers.
+  // Cache thresholds: hidden by default; remembers open state.
+  // Pool coloring + pool alert rows stay visible whenever pools exist (not tied to this toggle).
   (function wireCacheToggle() {
     var btn = document.getElementById('sg-toggle-cache');
     var panel = document.getElementById('sg-cache-panel');
-    var poolAppear = document.getElementById('sg-pool-appearance');
     if (!btn || !panel) return;
     var key = 'sg_show_cache';
     function setOpen(open) {
       panel.style.display = open ? '' : 'none';
-      if (poolAppear) poolAppear.style.display = open ? '' : 'none';
-      document.querySelectorAll('.sg-pool-alert-row').forEach(function (tr) {
-        tr.style.display = open ? '' : 'none';
-      });
       btn.textContent = open ? 'Hide Cache' : 'Show Cache';
       try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
       if (open) {
@@ -375,11 +385,6 @@ function initStorageGuardUI() {
           var safe = s.getAttribute('data-pool-safe');
           if (safe) updatePoolCustom(safe);
         });
-        var pc = document.getElementById('pool_coloring');
-        if (pc) {
-          var colorSec = document.getElementById(pc.getAttribute('data-sg-section') || 'pool-color-options');
-          setVisible(colorSec, pc.value === 'yes');
-        }
         updateOrderNote();
       }
     }

@@ -340,14 +340,13 @@ foreach ($pool_names as $p) {
 </p>
 
 <?php
-// One open tag (pools-only starts hidden). Keep markup minimal for Unraid Markdown.
+// Pools-only: Array starts hidden. Single open tag — avoid Markdown HTML-exit pitfalls.
 $sg_array_style = $has_array_disks ? '' : ' style="display:none"';
+$sg_has_pools = !empty($pool_names);
 ?>
 <div id="sg-array-block" class="sg-array-block"<?= $sg_array_style ?> markdown="1">
 
 ### Array
-
-Free-space thresholds for the array. Used by **Alerts** and by **Array coloring** under Appearance.
 
 _(Thresholds from)_:
 : <select name="array_use_custom" id="array_use_custom">
@@ -356,8 +355,8 @@ _(Thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Disk sizes</strong> — pick from your data disks. Default: Warning = largest data disk, Critical = smallest data disk.<br>
-<strong>Custom</strong> — type remaining free space. Decimals and mixed units work, e.g. <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>.
+<strong>Disk sizes</strong> — Warning = largest data disk, Critical = smallest.<br>
+<strong>Custom</strong> — remaining free space (e.g. <code>7.5T</code>, <code>500G</code>).
 </blockquote>
 
 <div id="array-disk-selects" markdown="1">
@@ -373,8 +372,7 @@ _(Critical)_:
   </select>
 
 <blockquote class="inline_help">
-Alert (and optional paint) when remaining free is at or below this amount.<br>
-Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical <code>2T</code>). <strong>None</strong> = that level off.
+Paint/alert when free space is at or below this amount. Prefer Warning &gt; Critical. <strong>None</strong> = off.
 </blockquote>
 
 </div>
@@ -382,24 +380,131 @@ Prefer Warning free amount &gt; Critical (e.g. Warning <code>8T</code>, Critical
 <div id="array-custom-fields" markdown="1" style="display:none">
 
 _(Warning (custom))_:
-: <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
+: <input type="text" name="array_warning_custom" id="array_warning_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="warn" value="<?=htmlspecialchars($array_warning_custom)?>" placeholder="e.g. 7.5T — blank = None">
 
 _(Critical (custom))_:
-: <input type="text" name="array_critical_custom" id="array_critical_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="crit" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T, 500G, 1.2T — blank = None">
+: <input type="text" name="array_critical_custom" id="array_critical_custom" class="sg-thresh" data-sg-pair="array" data-sg-level="crit" value="<?=htmlspecialchars($array_critical_custom)?>" placeholder="e.g. 2T — blank = None">
 
 <blockquote class="inline_help">
-Remaining free space. Examples that work: <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>. Blank = None. Prefer Warning free amount &gt; Critical.
+Remaining free space. Blank = None. Prefer Warning &gt; Critical.
 </blockquote>
 
 </div>
 
 </div><!-- /#sg-array-block -->
 
+<div id="sg-cache-panel" class="sg-cache-panel" style="display:none" markdown="1">
+
+### Cache / pools
+
+<?php foreach ($pool_names as $p):
+  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
+  $w_key = "pool_{$safe}_warning";
+  $c_key = "pool_{$safe}_critical";
+  $use_key = "pool_{$safe}_use_custom";
+  $wc_key = "pool_{$safe}_warning_custom";
+  $cc_key = "pool_{$safe}_critical_custom";
+  $style_key = "pool_{$safe}_color_style";
+  $p_use_custom = $cfg[$use_key] ?? 'no';
+  $p_warn_custom = $cfg[$wc_key] ?? '';
+  $p_crit_custom = $cfg[$cc_key] ?? '';
+  if ($sg_defaults_ok && array_key_exists($w_key, $cfg)) {
+    $w_val = $cfg[$w_key];
+  } else {
+    $w_val = '';
+  }
+  if ($sg_defaults_ok && array_key_exists($c_key, $cfg)) {
+    $c_val = $cfg[$c_key];
+  } else {
+    $c_val = '';
+  }
+  $p_raws = $pools_raw[$p] ?? [];
+  if ($p_use_custom !== 'yes' && function_exists('sg_migrate_disk_size_label') && !empty($p_raws)) {
+    if ($w_val !== '') $w_val = sg_migrate_disk_size_label($w_val, $p_raws);
+    if ($c_val !== '') $c_val = sg_migrate_disk_size_label($c_val, $p_raws);
+  }
+  if ($p_use_custom !== 'yes' && $w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true)) {
+    $w_val = '';
+  }
+  if ($p_use_custom !== 'yes' && $c_val !== '' && !empty($pools[$p]) && !in_array($c_val, $pools[$p], true)) {
+    $c_val = '';
+  }
+  $current_profile = get_btrfs_profile($p);
+  $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
+  $pc = strtolower(trim((string)$current_profile));
+  $p_raid0 = (strpos($pc, 'raid0') !== false);
+  $p_single = (bool)preg_match('/\bsingle\b/', $pc);
+?>
+
+**<?=htmlspecialchars(sg_pool_title($p))?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
+
+_(Thresholds from)_:
+: <select name="<?=$use_key?>" id="<?=$use_key?>" class="pool-use-custom" data-pool-safe="<?=htmlspecialchars($safe)?>">
+  <?=mk_option($p_use_custom, "no", _("Disk sizes"))?>
+  <?=mk_option($p_use_custom, "yes", _("Custom values"))?>
+  </select>
+
+<blockquote class="inline_help">
+Default Warning/Critical = <strong>None</strong>. Disk sizes = pool members. Custom: <code>7.5T</code>, <code>500G</code>, etc.
+</blockquote>
+
+<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
+
+_(Warning)_:
+: <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>">
+  <?=sg_size_options($pools[$p] ?? [], $w_val)?>
+  </select>
+
+_(Critical)_:
+: <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>">
+  <?=sg_size_options($pools[$p] ?? [], $c_val)?>
+  </select>
+
+</div>
+
+<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
+
+_(Warning (custom))_:
+: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 7.5T — blank = None">
+
+_(Critical (custom))_:
+: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G — blank = None">
+
+</div>
+
+<?php
+  $p_math = null;
+  if (function_exists('sg_pool_math_package')) {
+    $p_math = sg_pool_math_package($p, $current_profile);
+  }
+  $sug = is_array($p_math) ? ($p_math['suggest'] ?? null) : null;
+  $warn_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['warn_tb']) : '';
+  $crit_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['crit_tb']) : '';
+?>
+<div class="sg-pool-math" markdown="1" id="pool-<?=htmlspecialchars($safe)?>-math" data-pool-safe="<?=htmlspecialchars($safe)?>">
+<?php if ($sug && !empty($sug['apply']) && $warn_lbl !== ''): ?>
+: <button type="button" class="sg-suggest-pool" data-pool-safe="<?=htmlspecialchars($safe)?>" data-warn="<?=htmlspecialchars($warn_lbl)?>" data-crit="<?=htmlspecialchars($crit_lbl)?>">Suggest free thresholds</button>
+
+<blockquote class="inline_help">
+Fills Custom with capacity-fit free floors (Warning <?=htmlspecialchars($warn_lbl)?><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <?=htmlspecialchars($crit_lbl)?><?php endif; ?>). Apply to save. Details: docs/math/.
+</blockquote>
+<?php elseif ($p_raid0 || $p_single): ?>
+<blockquote class="inline_help">
+No automatic suggestion for <?= $p_raid0 ? 'RAID0' : 'single' ?> — set Custom values if you want alerts.
+</blockquote>
+<?php endif; ?>
+</div>
+
+<?php endforeach; ?>
+<?php if (empty($pool_names)): ?>
+<blockquote class="inline_help">No pools detected.</blockquote>
+<?php endif; ?>
+
+</div><!-- /#sg-cache-panel -->
+
 ---
 
 ### Alerts
-
-Unraid notifications when free space crosses a threshold. **Independent of coloring** — you can alert with Appearance coloring off. Nothing checked = no alerts.
 
 <div style="margin:0.5em 0 1em; overflow-x:auto;">
 <table class="tablesorter" style="width:auto; min-width:280px;">
@@ -423,7 +528,7 @@ Unraid notifications when free space crosses a threshold. **Independent of color
   </td>
 </tr>
 <?php foreach ($pool_alert_cfg as $p => $ac): ?>
-<tr class="sg-pool-alert-row" style="display:none">
+<tr class="sg-pool-alert-row">
   <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars(sg_pool_title($p))?></td>
   <td style="padding:6px 12px; text-align:center;">
     <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
@@ -443,7 +548,7 @@ Unraid notifications when free space crosses a threshold. **Independent of color
 </div>
 
 <blockquote class="inline_help">
-Uses free-space thresholds from Array and (when Cache is shown) Pools. Default: Array Warning and Array Critical on when an array is present. Pool/cache alerts stay off until you enable them. Coloring does not need to be Yes. Array alerts are inactive when no array is present (even if checked).
+Unraid notifications when free space crosses a threshold. Independent of coloring. Nothing checked = no alerts.
 </blockquote>
 
 ---
@@ -488,8 +593,7 @@ _(Array coloring)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Yes</strong> = color the array <strong>Total free</strong> bar on Main (“Array of N devices”).<br>
-<strong>No</strong> = leave that bar alone. Thresholds still apply to Alerts if enabled.
+<strong>Yes</strong> = color the array Total free bar on Main.
 </blockquote>
 
 <div id="array-color-options" class="sg-details sg-color-options" markdown="1">
@@ -501,16 +605,14 @@ _(Highlight style)_:
   </select>
 
 <blockquote class="inline_help">
-• <strong>Outline</strong> (default) — yellow/red <em>border only</em>; Unraid’s free fill stays as-is<br>
-• <strong>Solid</strong> — free <em>fill</em> itself becomes yellow/red<br>
-Pulse and green-outline-when-OK (above) apply when Array coloring is Yes.
+Outline = border only. Solid = recolor free fill.
 </blockquote>
 
 </div>
 </div><!-- /.sg-appearance-fields -->
 </div><!-- /#sg-array-appearance -->
 
-<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance" style="display:none">
+<div id="sg-pool-appearance" class="sg-appearance-sub sg-pool-appearance"<?= $sg_has_pools ? '' : ' style="display:none"' ?>>
 <div class="sg-appearance-sub-title">Pool coloring</div>
 
 <div class="sg-appearance-fields" markdown="1">
@@ -522,7 +624,7 @@ _(Pool coloring)_:
   </select>
 
 <blockquote class="inline_help">
-<strong>Yes</strong> = color free bars on Main for checked pools (default). Thresholds under Show Cache. Alerts stay separate.
+<strong>Yes</strong> = color free bars on Main for checked pools (default).
 </blockquote>
 
 <div id="pool-color-options" class="sg-details sg-color-options" markdown="1">
@@ -536,7 +638,7 @@ _(Pools to color)_:
 ?><label style="margin-right:12px"><input type="checkbox" class="pool-cb" value="<?=htmlspecialchars($p)?>" <?=$checked?>> <?=htmlspecialchars(sg_pool_title($p))?></label><?php endforeach; ?><?php if (empty($pool_names)): ?><span class="hint">(no pools detected)</span><?php endif; ?>
 
 <blockquote class="inline_help">
-Which pools get free-bar paint on Main. Unchecked pools can still have thresholds and Alerts. Each checked pool can use a different style below (e.g. Cache solid, another pool outline).
+Which pools get free-bar paint on Main.
 </blockquote>
 
 </div>
@@ -559,7 +661,7 @@ _(<?=htmlspecialchars($p_title)?>)_:
   </select>
 
 <blockquote class="inline_help">
-Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspecialchars($p_title)?></strong> is checked under Pools to color.
+Outline = border only; Solid = recolor free fill.
 </blockquote>
 
 <?php endforeach; ?>
@@ -571,184 +673,6 @@ Outline = border only; Solid = recolor free fill. Used when <strong><?=htmlspeci
 </div><!-- /#sg-pool-appearance -->
 
 </div><!-- /.sg-appearance-targets -->
-
----
-
-<div id="sg-cache-panel" class="sg-cache-panel" style="display:none" markdown="1">
-
-### Cache / pools — free-space thresholds
-
-Empty Warning/Critical = None. Use **Suggest free thresholds** for capacity-fit values when you want them.
-
-<?php foreach ($pool_names as $p):
-  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
-  $w_key = "pool_{$safe}_warning";
-  $c_key = "pool_{$safe}_critical";
-  $use_key = "pool_{$safe}_use_custom";
-  $wc_key = "pool_{$safe}_warning_custom";
-  $cc_key = "pool_{$safe}_critical_custom";
-  $style_key = "pool_{$safe}_color_style";
-  $def = $pool_defaults[$p] ?? ['warning' => '', 'critical' => ''];
-  $p_use_custom = $cfg[$use_key] ?? 'no';
-  $p_warn_custom = $cfg[$wc_key] ?? '';
-  $p_crit_custom = $cfg[$cc_key] ?? '';
-  $p_style = sg_resolve_style($cfg, $style_key);
-  if ($sg_defaults_ok && array_key_exists($w_key, $cfg)) {
-    $w_val = $cfg[$w_key];
-  } else {
-    $w_val = '';
-  }
-  if ($sg_defaults_ok && array_key_exists($c_key, $cfg)) {
-    $c_val = $cfg[$c_key];
-  } else {
-    $c_val = '';
-  }
-  $p_raws = $pools_raw[$p] ?? [];
-  if ($p_use_custom !== 'yes' && function_exists('sg_migrate_disk_size_label') && !empty($p_raws)) {
-    if ($w_val !== '') $w_val = sg_migrate_disk_size_label($w_val, $p_raws);
-    if ($c_val !== '') $c_val = sg_migrate_disk_size_label($c_val, $p_raws);
-  }
-  if ($p_use_custom !== 'yes' && $w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true)) {
-    $w_val = '';
-  }
-  if ($p_use_custom !== 'yes' && $c_val !== '' && !empty($pools[$p]) && !in_array($c_val, $pools[$p], true)) {
-    $c_val = '';
-  }
-  $current_profile = get_btrfs_profile($p);
-  $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
-  $pc = strtolower(trim((string)$current_profile));
-  // RAID1 family only — not RAID10 (BTRFS RAID10 gets capacity-Δ suggestions)
-  $p_raid1 = (strpos($pc, 'raid10') === false)
-    && (preg_match('/raid1c[34]/', $pc) || preg_match('/\braid1\b/', $pc) || strpos($pc, 'dup') !== false);
-  $p_raid0 = (strpos($pc, 'raid0') !== false);
-  $p_single = (bool)preg_match('/\bsingle\b/', $pc);
-?>
-
-**<?=htmlspecialchars($p)?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
-<?php if ($p_raid1): ?>
-> **BTRFS RAID1** (RAID1, RAID1c3, RAID1c4): each chunk has **two / three / four** copies — **not** one copy per disk. Example: 6×2 TB RAID1 ≈ **6 TB** usable (two copies), not 2 TB. A single disk loss usually leaves data online; usable capacity still drops. Use **Suggest** for capacity-fit free floors, or set any free amounts you want.
-<?php elseif ($p_raid0 || $p_single): ?>
-> **<?= $p_raid0 ? 'RAID0' : 'Single' ?> profile:** little or no redundancy. Free thresholds here are capacity policy only (not array-style evacuate room). **Suggest free thresholds** is not offered — use **Custom values** if you want alerts.
-<?php endif; ?>
-
-_(<?=htmlspecialchars($p)?> thresholds from)_:
-: <select name="<?=$use_key?>" id="<?=$use_key?>" class="pool-use-custom" data-pool-safe="<?=htmlspecialchars($safe)?>">
-  <?=mk_option($p_use_custom, "no", _("Disk sizes"))?>
-  <?=mk_option($p_use_custom, "yes", _("Custom values"))?>
-  </select>
-
-<blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong> (opt-in). Disk sizes = pool members (not applied on RAID1 / RAID1c3 / RAID1c4 — see note above when relevant). Custom accepts <code>7.5T</code>, <code>1.2T</code>, <code>500G</code>, etc. Used for Alerts and for pool coloring under Appearance if that pool is included.
-</blockquote>
-
-<div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
-
-_(<?=htmlspecialchars($p)?> Warning)_:
-: <select name="<?=$w_key?>" id="<?=$w_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>">
-  <?=sg_size_options($pools[$p] ?? [], $w_val)?>
-  </select>
-
-_(<?=htmlspecialchars($p)?> Critical)_:
-: <select name="<?=$c_key?>" id="<?=$c_key?>" class="pool-size-select sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>">
-  <?=sg_size_options($pools[$p] ?? [], $c_val)?>
-  </select>
-
-</div>
-
-<div id="pool-<?=htmlspecialchars($safe)?>-custom-fields" markdown="1" style="display:none">
-
-_(<?=htmlspecialchars($p)?> Warning (custom))_:
-: <input type="text" name="<?=$wc_key?>" id="<?=$wc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="warn" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_warn_custom)?>" placeholder="e.g. 7.5T, 1.2T, 500G — blank = None">
-
-_(<?=htmlspecialchars($p)?> Critical (custom))_:
-: <input type="text" name="<?=$cc_key?>" id="<?=$cc_key?>" class="sg-thresh" data-sg-pair="pool-<?=htmlspecialchars($safe)?>" data-sg-level="crit" data-sg-label="<?=htmlspecialchars($p)?>" value="<?=htmlspecialchars($p_crit_custom)?>" placeholder="e.g. 500G, 1.2T — blank = None">
-
-</div>
-
-<?php
-  $p_math = null;
-  if (function_exists('sg_pool_math_package')) {
-    $p_math = sg_pool_math_package($p, $current_profile);
-  }
-  $sug = is_array($p_math) ? ($p_math['suggest'] ?? null) : null;
-  $bus = is_array($p_math) ? ($p_math['bus'] ?? null) : null;
-  $alts = is_array($p_math) ? ($p_math['alternatives'] ?? []) : [];
-  $warn_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['warn_tb']) : '';
-  $crit_lbl = ($sug && !empty($sug['apply'])) ? sg_format_tb_label($sug['crit_tb']) : '';
-?>
-<div class="sg-pool-math" markdown="1" id="pool-<?=htmlspecialchars($safe)?>-math" data-pool-safe="<?=htmlspecialchars($safe)?>">
-<?php if ($sug && !empty($sug['apply']) && $warn_lbl !== ''): ?>
-: <button type="button" class="sg-suggest-pool" data-pool-safe="<?=htmlspecialchars($safe)?>" data-warn="<?=htmlspecialchars($warn_lbl)?>" data-crit="<?=htmlspecialchars($crit_lbl)?>">Suggest free thresholds</button>
-  <span class="sg-math-inline-hint">Suggested free: Warning <strong><?=htmlspecialchars($warn_lbl)?></strong><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <strong><?=htmlspecialchars($crit_lbl)?></strong><?php endif; ?> on <strong><?=htmlspecialchars($sug['profile_key'] ?? '')?></strong> (est. usable <strong><?=htmlspecialchars(sg_format_tb_label($sug['usable_tb'] ?? 0))?></strong>). Recommended mapping: Warning ≈ largest-loss Δ, Critical ≈ smallest-loss Δ — change freely. Sets <strong>Custom</strong>; Apply to save. See docs/math/threshold-guide.md.</span>
-
-<blockquote class="inline_help">
-BTRFS capacity-fit math (not array “evacuate a whole disk”). <strong>Suggest</strong> recommends free floors so used data still fits after one member loss (largest-loss Δ / smallest-loss Δ). Warning/Critical are severity labels for free space — assign either amount to either field (prefer Warning free ≥ Critical free). Applies to RAID1/1cN, RAID10, RAID5/6. See docs/math/threshold-guide.md and scenarios.md.
-<?php
-  $pc_lower = strtolower((string)$current_profile);
-  if (strpos($pc_lower, 'raid5') !== false || strpos($pc_lower, 'raid6') !== false):
-?>
-<br><br>
-<strong>RAID5/RAID6:</strong> free-space Suggest still applies. For how these BTRFS profiles behave on Unraid, see
-<a href="https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/cache-pools/" target="_blank" rel="noopener">Unraid cache pools</a>,
-<a href="https://docs.unraid.net/unraid-os/using-unraid-to/manage-storage/file-systems/" target="_blank" rel="noopener">file systems</a>,
-and BTRFS
-<a href="https://btrfs.readthedocs.io/en/latest/btrfs-man5.html#raid56-status-and-recommended-practices" target="_blank" rel="noopener">RAID56 notes</a>.
-<?php endif; ?>
-</blockquote>
-<?php elseif ($p_raid0): ?>
-> No automatic free-threshold suggestion for <strong>RAID0</strong>. Free thresholds are capacity policy only (no redundancy recovery model). Use <strong>Custom values</strong> if you want alerts.
-<?php elseif ($p_single): ?>
-> No automatic free-threshold suggestion for <strong>single</strong> profiles. Free thresholds are capacity policy only. Use <strong>Custom values</strong> if you want alerts.
-<?php elseif ($sug): ?>
-> No automatic free-threshold suggestion for this profile (<?=htmlspecialchars((string)($sug['profile_key'] ?? 'unknown'))?>). Use Custom values if needed.
-<?php endif; ?>
-
-<?php if (is_array($sug) && !empty($sug['losses'])): ?>
-**<?=htmlspecialchars($p)?> — capacity after one member lost (same profile)**
-
-Est. usable now: <strong><?=htmlspecialchars(sg_format_tb_label($sug['usable_tb'] ?? 0))?></strong>
-<?php if (!empty($sug['apply'])): ?>
- · Largest-loss Δ (Warning): <strong><?=htmlspecialchars(sg_format_tb_label($sug['largest_loss_delta_tb'] ?? $sug['warn_tb'] ?? 0))?></strong>
- · Smallest-loss Δ (Critical): <strong><?=htmlspecialchars(sg_format_tb_label($sug['smallest_loss_delta_tb'] ?? $sug['crit_tb'] ?? 0))?></strong>
-<?php endif; ?>
-
-| If you lose a member of size… | Usable left (est.) | Fit free needed (Δ) |
-|-------------------------------|--------------------|---------------------|
-<?php foreach ($sug['losses'] as $loss): ?>
-| <?=htmlspecialchars(sg_format_tb_label($loss['size_tb']))?> | <?=htmlspecialchars(sg_format_tb_label($loss['usable_after_tb']))?> | <?=htmlspecialchars(sg_format_tb_label($loss['delta_tb']))?> |
-<?php endforeach; ?>
-
-> **Fit free (Δ):** free ≥ this before a loss ⇒ used data can still fit after that loss. **Rebalance comfort:** Suggest Warning (2× worst Δ) so you are less likely to sit at 0 free when restoring multi-copy placement. Neither means “you must replace the disk immediately.”
-<?php endif; ?>
-
-<?php if (is_array($alts) && !empty($alts)): ?>
-**<?=htmlspecialchars($p)?> — profile comparison (estimates)**
-
-<?php if (!empty($bus['note'])): ?>
-> <?=htmlspecialchars($bus['note'])?>
-<?php endif; ?>
-
-| Profile | Usable now | After worst loss | Δ free | Read ceiling* | Write ceiling* |
-|---------|------------|------------------|--------|---------------|----------------|
-<?php foreach ($alts as $row):
-  if (empty($row['viable_full']) && empty($row['viable_after_worst'])) continue;
-  $pk = $row['profile'] ?? '';
-  $r = isset($row['read_mbs_ceiling']) ? ('~' . (int)$row['read_mbs_ceiling']) : '—';
-  $w = isset($row['write_mbs_ceiling']) ? ('~' . (int)$row['write_mbs_ceiling']) : '—';
-?>
-| <?=htmlspecialchars($pk)?> | <?=htmlspecialchars(sg_format_tb_label($row['usable_tb'] ?? 0))?> | <?=htmlspecialchars(sg_format_tb_label($row['usable_after_worst_loss_tb'] ?? 0))?> | <?=htmlspecialchars(sg_format_tb_label($row['delta_worst_tb'] ?? 0))?> | <?=$r?> | <?=$w?> |
-<?php endforeach; ?>
-
-\* Absolute best-case from **bus/link** ceilings (and simple profile multipliers), not measured disk sequential speeds. For comparing profiles only.
-<?php endif; ?>
-</div>
-
-<?php endforeach; ?>
-<?php if (empty($pool_names)): ?>
-> No pools detected.
-<?php endif; ?>
-
-</div><!-- /#sg-cache-panel -->
 
 <input type="submit" name="#default" value="_(Default)_">
 : <input type="submit" name="#apply" value="_(Apply)_" disabled><input type="button" value="_(Done)_" onclick="done()">

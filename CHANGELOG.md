@@ -1,3 +1,12 @@
+## 2026.08.17ag
+
+- **Solid Settings page:** move **Cache / pools** thresholds above Alerts (no longer buried at the
+  bottom). **Pool coloring** and pool alert rows stay visible when pools exist — only threshold
+  fields hide behind **Show Cache**. **Show Array** on pools-only starts closed every visit (clears
+  sticky localStorage). Drop capacity tables / RAID essays from Settings (keep Suggest + short
+  help; details in docs/math/). Tighten Unraid-style `inline_help`.
+- Retains af/ae: no tip spans; empty pool thresholds = None; pulse default No.
+
 ## 2026.08.17af
 
 - **Settings page cleanup:** remove long inline tips next to Show Array/Show Cache (they shifted

@@ -31,7 +31,10 @@
   padding: 6px 12px;
   font-size: 0.95em;
 }
-.sg-cache-panel,
+.sg-cache-panel {
+  margin: 0.75em 0 1em;
+  padding: 0;
+}
 .sg-pools-wip {
   margin-top: 0.5em;
   padding: 8px 12px 4px;
@@ -265,10 +268,10 @@ td[data-sg-outline="critical"].sg-pulse .usage-disk {
 }
 
 .sg-section-toggles {
-  margin: 0.35em 0 0.85em;
+  margin: 0.35em 0 0.75em;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 0.6rem;
+  gap: 0.5em;
   align-items: center;
 }
 .sg-section-toggles .sg-advanced-btn {

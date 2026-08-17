@@ -52,7 +52,7 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | Highlight style | **Outline** (array and every pool) |
 | Color outlines green when OK/Normal | **Yes** |
 | Pulse free-bar colors on warn/crit | **No** (opt-in) |
-| Settings UI | Array shown when array detected (hidden if none — **Show Array** remembers); **Show Cache** hidden by default (choice remembered) |
+| Settings UI | Array shown when array detected (hidden if none — **Show Array** for this visit); **Show Cache** hides pool thresholds by default (choice remembered). Pool coloring stays visible when pools exist. |
 
 Pool free-bar **paint** defaults on; pool **thresholds** and **alerts** stay opt-in. Array paint/alerts default on when data disks exist, with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
 
@@ -120,7 +120,7 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 
 ## Cache / pool thresholds
 
-Pool (cache) UI is **hidden by default** — open **Show Cache** on Settings (choice is remembered in the browser). Array UI is shown when array data disks exist. On **pools-only** servers (no array data disks), Array settings stay hidden until **Show Array**; values still save but do nothing until an array exists. Array Warning/Critical disk-size defaults apply only when data disks are present.
+Pool **threshold** fields are **hidden by default** — open **Show Cache** on Settings (choice is remembered). Pool coloring and pool alert checkboxes stay visible whenever pools exist. Array UI is shown when array data disks exist. On **pools-only** servers, Array settings start hidden (**Show Array** for that visit only); saved values still apply when an array returns. Array Warning/Critical disk-size defaults apply only when data disks are present. Capacity-fit tables and profile essays live under **docs/math/** — Settings keeps short help and **Suggest free thresholds**.
 
 **Supported:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), free-bar coloring on Main, and alerts.  
 **Profile-aware:** alert wording by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts (use Custom / Suggest).  
@@ -318,7 +318,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 ### Today
 
 - Paint and thresholds: **raw free space** on `/mnt/{pool}` vs your Warning/Critical values (same comparison style as the array).  
-- Defaults: pool free-bar coloring **on** (all pools); pool thresholds **None** (no auto capacity-fit paint); pool alerts **off**. Settings pool UI is behind **Show Cache** (remembered).  
+- Defaults: pool free-bar coloring **on** (all pools); pool thresholds **None** (no auto capacity-fit paint); pool alerts **off**. Pool threshold fields are behind **Show Cache** (remembered); pool coloring is always on the Appearance section when pools exist.  
 - Notifications: **profile-class wording** so RAID1 is not described like array evacuate.  
 
 - **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom** or **Suggest** for capacity-policy free amounts.  
@@ -373,7 +373,7 @@ Hard-refresh the **main page** after install or update if styles look stale.
 | Wrong pool / no pool free-bar color | Confirm pool coloring Yes and the pool is checked under pools to color; open the pool page and verify free space |
 | Yellow/red seem “swapped” vs labels | Check whether Critical free amount is higher than Warning—the plugin ranks by free-space severity (see notice on Settings) |
 | Alerts never fire | Check the alert matrix; confirm thresholds; Unraid notification settings must allow warnings/alerts |
-| Settings look empty | With an array, Array thresholds stay visible. Pool/cache thresholds live under **Show Cache** (remembered). Appearance holds array/pool coloring toggles. |
+| Settings look empty | With an array, Array thresholds stay visible. Pool/cache thresholds live under **Show Cache**. Appearance shows pool coloring whenever pools exist. |
 | Disk size label ≠ Main (e.g. 26T vs 25.9T) | Labels use Main’s capacity source (`fsSize` / BTRFS used+free when mounted) and `my_scale` SI rules (decimals=-1). Hard-refresh Settings after upgrade; re-pick disk sizes or press Default if an old rounded label was saved. |
 
 Config path: `/boot/config/plugins/StorageGuard/StorageGuard.cfg`  
