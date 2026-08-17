@@ -22,7 +22,7 @@
   min="6.12.0"
   support="https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/"
   project="https://github.com/&github;"
-  readme="https://raw.githubusercontent.com/&github;/stable/README.md">
+  readme="https://raw.githubusercontent.com/&github;/main/README.md">
 
 <CHANGES>
 ###&version;
