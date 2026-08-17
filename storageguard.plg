@@ -4,9 +4,9 @@
 <!ENTITY author "RifleJock">
 <!ENTITY version "2026.08.17aa">
 <!ENTITY launch "Settings/StorageGuard">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
-<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
+<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
 <!ENTITY pkg "StorageGuard-&version;-x86_64-1">

@@ -18,8 +18,8 @@ CA is fed from [unraid-templates](https://github.com/ibigsnet/unraid-templates).
 |---------|----------|-----|
 | **Production (`stable`)** | Normal install / CA channel | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg` |
 | **Lab (`main`)** | Newest development tree | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg` |
-| **Recommended freeze** | Known-good pin (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.29aa/storageguard.plg` |
-| **Older rollback** (`2026.07.10bt`) | Earlier known-good line | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.07.10bt/storageguard.plg` |
+| **Recommended freeze** | Known-good pin (`2026.07.29aa`) | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.08.17aa/storageguard.plg` |
+| **Older rollback** (`2026.07.10bt`) | Earlier known-good line | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable-recommended-2026.08.17aa/storageguard.plg` |
 | **Pinned version** | Fixed tag | `https://raw.githubusercontent.com/ibigsnet/StorageGuard/vVERSION/storageguard.plg` |
 
 - **`stable`** — what CA installs; production updates.
@@ -30,7 +30,7 @@ CA is fed from [unraid-templates](https://github.com/ibigsnet/unraid-templates).
 
 | Tag | Version | Notes |
 |-----|---------|--------|
-| [`stable-recommended-2026.07.29aa`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.29aa) | `2026.07.29aa` | Current recommended freeze |
+| [`stable-recommended-2026.08.17aa`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.08.17aa) | `2026.08.17aa` | Current recommended freeze |
 | [`stable-recommended-2026.07.10bt`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10bt) | `2026.07.10bt` | Earlier known-good (BTRFS capacity math line) |
 | [`stable-recommended-2026.07.10ar`](https://github.com/ibigsnet/StorageGuard/releases/tag/stable-recommended-2026.07.10ar) | `2026.07.10ar` | Earlier baseline |
 
