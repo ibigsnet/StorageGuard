@@ -178,18 +178,26 @@ function sg_array_thresholds($cfg) {
         ];
     }
     $sg_ok = (($cfg['sg_defaults'] ?? '') === '1');
+    $kbs = function_exists('sg_array_data_disk_size_kbs') ? sg_array_data_disk_size_kbs() : [];
     if ($sg_ok && array_key_exists('array_warning', $cfg)) {
-        $warn_label = $cfg['array_warning'];
+        $warn_label = (string)$cfg['array_warning'];
+        if ($warn_label !== '' && function_exists('sg_migrate_disk_size_label') && !empty($kbs)) {
+            $warn_label = sg_migrate_disk_size_label($warn_label, $kbs);
+        }
         $warn = sg_parse_to_tb($warn_label);
     } else {
         $warn_label = sg_largest_data_disk_label();
         $warn = sg_largest_data_disk_tb();
     }
+    $crit_label = (string)($cfg['array_critical'] ?? '');
+    if ($crit_label !== '' && function_exists('sg_migrate_disk_size_label') && !empty($kbs)) {
+        $crit_label = sg_migrate_disk_size_label($crit_label, $kbs);
+    }
     return [
         'warn' => $warn,
-        'crit' => sg_parse_to_tb($cfg['array_critical'] ?? ''),
+        'crit' => sg_parse_to_tb($crit_label),
         'warn_label' => $warn_label,
-        'crit_label' => $cfg['array_critical'] ?? '',
+        'crit_label' => $crit_label,
         'custom' => false,
     ];
 }

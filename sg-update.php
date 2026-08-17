@@ -17,22 +17,33 @@ if (!isset($_POST['#default'])) {
     return;
 }
 
+// Prefer shared SI formatter (matches Unraid Main); fallback only if lib missing.
+if (!function_exists('sg_format_size_kb')) {
+    $sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
+    if (is_file($sg_lib)) {
+        @require_once $sg_lib;
+    }
+}
 if (!function_exists('sg_update_format_size')) {
     function sg_update_format_size($kb) {
+        if (function_exists('sg_format_size_kb')) {
+            return sg_format_size_kb($kb);
+        }
+        // SI fallback (decimal TB/GB) — same as Unraid Main, not binary TiB
         if (!$kb || $kb <= 0) return '0';
-        $bytes = $kb * 1024;
-        if ($bytes >= 1024 * 1024 * 1024 * 1024) {
-            $val = round($bytes / (1024 * 1024 * 1024 * 1024), 1);
-            return rtrim(rtrim((string)$val, '0'), '.') . 'T';
+        $bytes = (float)$kb * 1024.0;
+        if ($bytes >= 1e12) {
+            $val = round($bytes / 1e12, 1);
+            return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
         }
-        if ($bytes >= 1024 * 1024 * 1024) {
-            $val = round($bytes / (1024 * 1024 * 1024), 1);
-            return rtrim(rtrim((string)$val, '0'), '.') . 'G';
+        if ($bytes >= 1e9) {
+            $val = round($bytes / 1e9, 1);
+            return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
         }
-        if ($bytes >= 1024 * 1024) {
-            return (string)round($bytes / (1024 * 1024)) . 'M';
+        if ($bytes >= 1e6) {
+            return (string)round($bytes / 1e6) . 'M';
         }
-        return (string)round($bytes / 1024) . 'K';
+        return (string)round($bytes / 1e3) . 'K';
     }
 }
 

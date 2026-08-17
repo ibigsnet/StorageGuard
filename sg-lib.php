@@ -1,24 +1,156 @@
 <?php
 
+/**
+ * Format disks.ini size (KiB) like Unraid Main — decimal SI, not binary TiB/GiB.
+ *
+ * Unraid stores size in KiB (1024-byte units) but Main displays advertised capacity
+ * with powers of 1000 (e.g. ~25.9T for a marketed 26TB drive, not ~23.6T).
+ * Free-space math and threshold parse already use SI; labels must match.
+ */
 function sg_format_size_kb($kb) {
     if (!$kb || $kb <= 0) return '0';
-    $bytes = $kb * 1024;
-    if ($bytes >= 1024 * 1024 * 1024 * 1024) {
-        $val = round($bytes / (1024 * 1024 * 1024 * 1024), 1);
-        return rtrim(rtrim((string)$val, '0'), '.') . 'T';
+    $bytes = (float)$kb * 1024.0;
+    if ($bytes >= 1e12) {
+        $val = round($bytes / 1e12, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
     }
-    if ($bytes >= 1024 * 1024 * 1024) {
-        $val = round($bytes / (1024 * 1024 * 1024), 1);
-        return rtrim(rtrim((string)$val, '0'), '.') . 'G';
+    if ($bytes >= 1e9) {
+        $val = round($bytes / 1e9, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
     }
-    if ($bytes >= 1024 * 1024) {
-        return round($bytes / (1024 * 1024)) . 'M';
+    if ($bytes >= 1e6) {
+        return (string)round($bytes / 1e6) . 'M';
     }
-    return round($bytes / 1024) . 'K';
+    if ($bytes >= 1e3) {
+        return (string)round($bytes / 1e3) . 'K';
+    }
+    return (string)max(0, (int)round($bytes)) . 'B';
+}
+
+/**
+ * Pre-2026.08.16 binary (1024^n) size label — only for migrating saved disk-size cfg.
+ * Do not use for new UI or thresholds.
+ */
+function sg_format_size_kb_legacy_binary($kb) {
+    if (!$kb || $kb <= 0) return '0';
+    $bytes = (float)$kb * 1024.0;
+    $tib = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+    $gib = 1024.0 * 1024.0 * 1024.0;
+    $mib = 1024.0 * 1024.0;
+    $kib = 1024.0;
+    if ($bytes >= $tib) {
+        $val = round($bytes / $tib, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+    }
+    if ($bytes >= $gib) {
+        $val = round($bytes / $gib, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
+    }
+    if ($bytes >= $mib) {
+        return (string)round($bytes / $mib) . 'M';
+    }
+    return (string)round($bytes / $kib) . 'K';
+}
+
+/**
+ * Map a saved disk-size dropdown value to SI if it was a legacy binary label for a live disk.
+ * Leaves custom / unmatched strings unchanged (e.g. intentional free floors not tied to a disk).
+ *
+ * @param string $label
+ * @param int[]  $size_kbs disks.ini size fields (KiB)
+ */
+function sg_migrate_disk_size_label($label, $size_kbs) {
+    $label = trim((string)$label);
+    if ($label === '' || $label === '0' || empty($size_kbs)) {
+        return $label;
+    }
+    $si_set = [];
+    $bin_to_si = [];
+    foreach ($size_kbs as $kb) {
+        $kb = (int)$kb;
+        if ($kb <= 0) {
+            continue;
+        }
+        $si = sg_format_size_kb($kb);
+        $si_set[$si] = true;
+        $bin = sg_format_size_kb_legacy_binary($kb);
+        if ($bin !== '' && $bin !== $si) {
+            $bin_to_si[$bin] = $si;
+        }
+    }
+    if (isset($si_set[$label])) {
+        return $label;
+    }
+    if (isset($bin_to_si[$label])) {
+        return $bin_to_si[$label];
+    }
+    return $label;
+}
+
+/** @return int[] data-disk sizes from disks.ini (KiB) */
+function sg_array_data_disk_size_kbs() {
+    $disks_ini = '/var/local/emhttp/disks.ini';
+    if (!is_file($disks_ini)) {
+        return [];
+    }
+    $disks = @parse_ini_file($disks_ini, true) ?: [];
+    $out = [];
+    foreach ($disks as $key => $d) {
+        if (empty($d['device'])) {
+            continue;
+        }
+        $type = $d['type'] ?? '';
+        $name = $d['name'] ?? $key;
+        $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
+        if (!$is_data) {
+            continue;
+        }
+        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        if ($kb > 0) {
+            $out[] = $kb;
+        }
+    }
+    return $out;
+}
+
+/** @return int[] pool member sizes from disks.ini (KiB) for a pool name (e.g. cache) */
+function sg_pool_member_size_kbs($pool) {
+    $pool = preg_replace('/\d+$/', '', (string)$pool);
+    if ($pool === '') {
+        return [];
+    }
+    $disks_ini = '/var/local/emhttp/disks.ini';
+    if (!is_file($disks_ini)) {
+        return [];
+    }
+    $disks = @parse_ini_file($disks_ini, true) ?: [];
+    $out = [];
+    foreach ($disks as $key => $d) {
+        if (($d['type'] ?? '') !== 'Cache') {
+            continue;
+        }
+        if (empty($d['device'])) {
+            continue;
+        }
+        $status = $d['status'] ?? '';
+        if (strpos($status, '_NP') !== false) {
+            continue;
+        }
+        $prefix = preg_replace('/\d+$/', '', $key);
+        if ($prefix !== $pool) {
+            continue;
+        }
+        $kb = isset($d['size']) ? (int)$d['size'] : 0;
+        if ($kb > 0) {
+            $out[] = $kb;
+        }
+    }
+    return $out;
 }
 
 function sg_kb_to_tb($kb) {
     if ($kb <= 0) return 0.0;
+    // KiB → bytes → decimal TB (SI), same scale as Unraid Main and free-space math
     return ($kb * 1024.0) / 1e12;
 }
 
@@ -264,10 +396,16 @@ function sg_pool_resolve_thresholds($cfg, $safe, $pname = null) {
         ];
     }
 
-    $w = sg_lib_parse_to_tb($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pool}_warning"] ?? '');
-    $c = sg_lib_parse_to_tb($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pool}_critical"] ?? '');
-    $wl = (string)($cfg["pool_{$safe}_warning"] ?? '');
-    $cl = (string)($cfg["pool_{$safe}_critical"] ?? '');
+    $wl = (string)($cfg["pool_{$safe}_warning"] ?? $cfg["pool_{$pool}_warning"] ?? '');
+    $cl = (string)($cfg["pool_{$safe}_critical"] ?? $cfg["pool_{$pool}_critical"] ?? '');
+    // Disk-size dropdowns: migrate legacy binary labels (23.6T) → Unraid SI (25.9T)
+    $pool_kbs = function_exists('sg_pool_member_size_kbs') ? sg_pool_member_size_kbs($pool) : [];
+    if (!empty($pool_kbs)) {
+        $wl = sg_migrate_disk_size_label($wl, $pool_kbs);
+        $cl = sg_migrate_disk_size_label($cl, $pool_kbs);
+    }
+    $w = sg_lib_parse_to_tb($wl);
+    $c = sg_lib_parse_to_tb($cl);
 
     $class = is_array($sug) ? (string)($sug['class'] ?? '') : '';
     if ($class === '' && function_exists('sg_pool_btrfs_profile') && function_exists('sg_pool_profile_class')) {

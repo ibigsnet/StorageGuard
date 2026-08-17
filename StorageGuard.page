@@ -19,23 +19,25 @@ $disks_ini = '/var/local/emhttp/disks.ini';
 $has_disks = file_exists($disks_ini);
 $disks = $has_disks ? parse_ini_file($disks_ini, true) : [];
 
-// Helper: format KB size to human like 26T, 8T, 1.2T, 500G
+// Format disks.ini KiB like Unraid Main (decimal SI). Shared helper in sg-lib.php.
 function sg_format_size($kb) {
-    if (!$kb || $kb <= 0) return '0';
-    $bytes = $kb * 1024;
-    if ($bytes >= 1024 * 1024 * 1024 * 1024) {
-        $val = round($bytes / (1024 * 1024 * 1024 * 1024), 1);
-        return rtrim(rtrim($val, '0'), '.') . 'T';
-    } elseif ($bytes >= 1024 * 1024 * 1024) {
-        $val = round($bytes / (1024 * 1024 * 1024), 1);
-        return rtrim(rtrim($val, '0'), '.') . 'G';
-    } elseif ($bytes >= 1024 * 1024) {
-        $val = round($bytes / (1024 * 1024));
-        return $val . 'M';
-    } else {
-        $val = round($bytes / 1024);
-        return $val . 'K';
+    if (function_exists('sg_format_size_kb')) {
+        return sg_format_size_kb($kb);
     }
+    if (!$kb || $kb <= 0) return '0';
+    $bytes = (float)$kb * 1024.0;
+    if ($bytes >= 1e12) {
+        $val = round($bytes / 1e12, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'T';
+    }
+    if ($bytes >= 1e9) {
+        $val = round($bytes / 1e9, 1);
+        return rtrim(rtrim(sprintf('%.1f', $val), '0'), '.') . 'G';
+    }
+    if ($bytes >= 1e6) {
+        return (string)round($bytes / 1e6) . 'M';
+    }
+    return (string)round($bytes / 1e3) . 'K';
 }
 
 // Get current BTRFS profile for a pool (e.g. RAID10, RAID1, RAID5)
@@ -213,6 +215,10 @@ $has_array_disks = !empty($array_raw_sizes);
 // Array Warning: largest data disk until user has saved defaults (or explicitly set a size / None after seed)
 if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
     $array_warning = $cfg['array_warning'];
+    // Legacy binary labels (e.g. 23.6T) → SI matching Main (e.g. 25.9T)
+    if ($array_use_custom !== 'yes' && $array_warning !== '' && function_exists('sg_migrate_disk_size_label')) {
+        $array_warning = sg_migrate_disk_size_label($array_warning, $array_raw_sizes);
+    }
     if ($array_use_custom !== 'yes' && $array_warning !== '' && !empty($array_sizes) && !in_array($array_warning, $array_sizes, true)) {
         $array_warning = $array_defaults['warning'] ?? '';
     }
@@ -224,6 +230,9 @@ if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
 // Critical: default None
 if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
     $array_critical = $cfg['array_critical'];
+    if ($array_use_custom !== 'yes' && $array_critical !== '' && function_exists('sg_migrate_disk_size_label')) {
+        $array_critical = sg_migrate_disk_size_label($array_critical, $array_raw_sizes);
+    }
     if ($array_use_custom !== 'yes' && $array_critical !== '' && !empty($array_sizes) && !in_array($array_critical, $array_sizes, true)) {
         $array_critical = '';
     }
@@ -593,6 +602,11 @@ Each pool has its own Warning / Critical free amounts (for **Alerts** and option
     $c_val = $cfg[$c_key];
   } else {
     $c_val = '';
+  }
+  $p_raws = $pools_raw[$p] ?? [];
+  if ($p_use_custom !== 'yes' && function_exists('sg_migrate_disk_size_label') && !empty($p_raws)) {
+    if ($w_val !== '') $w_val = sg_migrate_disk_size_label($w_val, $p_raws);
+    if ($c_val !== '') $c_val = sg_migrate_disk_size_label($c_val, $p_raws);
   }
   if ($p_use_custom !== 'yes' && $w_val !== '' && !empty($pools[$p]) && !in_array($w_val, $pools[$p], true)) {
     $w_val = '';

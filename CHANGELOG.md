@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+###2026.08.16aa
+- **Capacity labels match Unraid Main (decimal SI):** disk-size dropdowns and defaults use powers of
+  1000 (e.g. **25.9T**), not binary TiB labeled as T (**23.6T**). Free-space math was already SI;
+  labels now agree. Legacy binary disk-size cfg values remap to SI when they match a live disk.
+
 ###2026.08.15af
 - Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
 

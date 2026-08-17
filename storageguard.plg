@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.15af">
+<!ENTITY version "2026.08.16aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,6 +26,11 @@
 
 <CHANGES>
 ###&version;
+- <strong>Capacity labels = Unraid Main (decimal SI):</strong> disk-size dropdowns show e.g.
+  <strong>25.9T</strong> like Main Size, not binary TiB as 23.6T. Legacy binary labels remap when
+  they still match a live disk.
+
+###2026.08.15af
 - **Uninstall:** remove all plugin-owned flash config and runtime scratch (clean reinstall).
 - Wipe StorageGuard.cfg and /tmp/storageguard_alerts on remove.
 

@@ -84,16 +84,25 @@ if ($storage_online && $array_present) {
 
 $sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
 $use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
+$array_size_kbs = function_exists('sg_array_data_disk_size_kbs') ? sg_array_data_disk_size_kbs() : [];
 if ($use_custom) {
   $arr_warn = sg_parse_to_tb($cfg['array_warning_custom'] ?? '');
   $arr_crit = sg_parse_to_tb($cfg['array_critical_custom'] ?? '');
 } else {
   if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
-    $arr_warn = sg_parse_to_tb($cfg['array_warning']);
+    $aw = (string)($cfg['array_warning'] ?? '');
+    if ($aw !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
+      $aw = sg_migrate_disk_size_label($aw, $array_size_kbs);
+    }
+    $arr_warn = sg_parse_to_tb($aw);
   } else {
     $arr_warn = $array_present ? sg_largest_data_disk_tb() : 0.0;
   }
-  $arr_crit = sg_parse_to_tb($cfg['array_critical'] ?? '');
+  $ac = (string)($cfg['array_critical'] ?? '');
+  if ($ac !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
+    $ac = sg_migrate_disk_size_label($ac, $array_size_kbs);
+  }
+  $arr_crit = sg_parse_to_tb($ac);
 }
 
 $array_coloring = ($cfg['array_coloring'] ?? 'yes') === 'yes';

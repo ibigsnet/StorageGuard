@@ -24,6 +24,8 @@ Storage Guard watches **remaining free space** on:
 
 You set a **Warning** and/or **Critical** free-space threshold for each. Thresholds mean: “how much free space is left?” Units can be whatever fits (`8T`, `500G`, `1.5T`, …)—not only terabytes.
 
+**Capacity labels match Unraid Main (decimal SI).** Disk-size dropdowns use the same scale as Main’s **Size** column (powers of 1000: a marketed ~26 TB drive shows about **25.9T**, not binary TiB ~23.6T). Free-space samples and threshold math use the same SI scale. Saved pre-2026.08.16 binary disk-size labels are mapped to SI when they still match a live disk.
+
 When free space crosses a threshold, Storage Guard paints that target’s **total free space bar** on Unraid’s **main page** (the array’s free bar, or a pool’s data free bar—not the whole page):
 
 | Free space | Free bar on main page | Alerts (if enabled) |
