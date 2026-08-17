@@ -343,12 +343,15 @@ foreach ($pool_names as $p) {
   <span id="sg-cache-hidden-hint" class="sg-page-lead" style="display:inline;margin-left:0.5em;">Pool / cache thresholds &amp; paint (hidden by default).</span>
 </p>
 
+<?php
+// Single open tag — do not split <div> across if/else with a blank line + markdown
+// blockquote after it. On pools-only hosts that pattern made Unraid’s page Markdown
+// exit HTML mode and show the raw div tag as text (CA install on Holo).
+$sg_array_style = $has_array_disks ? '' : ' style="display:none"';
+?>
+<div id="sg-array-block" class="sg-array-block"<?= $sg_array_style ?> markdown="1">
 <?php if (!$has_array_disks): ?>
-<div id="sg-array-block" class="sg-array-block" style="display:none" markdown="1">
-
-> **No array detected.** Array settings below do **nothing** until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here.
-<?php else: ?>
-<div id="sg-array-block" class="sg-array-block" markdown="1">
+<p class="sg-page-lead"><strong>No array detected.</strong> Array settings below do <strong>nothing</strong> until array data disks are present. Saved values stay in the config and apply again when the array returns. You can still edit them here (Show Array).</p>
 <?php endif; ?>
 
 ### Array

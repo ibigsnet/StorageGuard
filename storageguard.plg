@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17ac">
+<!ENTITY version "2026.08.17ad">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,28 +26,25 @@
 
 <CHANGES>
 ###&version;
-- <strong>Defaults:</strong> Outline; green OK; pulse warn/crit; pool free-bar coloring on; array
-  alerts on when array present; cache/pool alerts stay off. <strong>Show Array / Show Cache</strong>
-  (cache hidden by default; remembered). Capacity labels match Main Size (<code>fsSize</code> +
-  my_scale decimals). Docs: no WIP for pools.
+- <strong>Fix:</strong> pools-only / no-array hosts no longer show raw
+  <code>&lt;div id="sg-array-block" …&gt;</code> as page text. Array block uses one open tag
+  + HTML notice (Unraid Markdown was breaking on blank line + <code>&gt;</code> blockquote).
+
+###2026.08.17ac
+- Defaults: Outline; green OK; pulse; pool coloring on; array alerts when array present;
+  Show Array / Show Cache; Main-aligned capacity labels.
 
 ###2026.08.17ab
-- Plugins UI: trim embedded CHANGES list (every <code>###</code> is a release). Full history in CHANGELOG.md.
+- Plugins UI: trim embedded CHANGES list. Full history in CHANGELOG.md.
 
 ###2026.08.17aa
-- Stock UI inject harden: fixed HeadInlineJS paths only; marker-only strip; stock backup.
+- Stock UI inject harden: fixed HeadInlineJS paths; marker-only strip; stock backup.
 
 ###2026.08.16ac
-- Clean package replace on every upgrade (removepkg + wipe emhttp before .txz).
+- Clean package replace on every upgrade.
 
 ###2026.08.16ab
-- Array defaults: Warning = largest data disk, Critical = smallest; both array alerts on for new installs.
-
-###2026.08.16aa
-- Capacity labels match Unraid Main (decimal SI, e.g. 25.9T).
-
-###2026.08.15af
-- Full uninstall wipe of plugin flash config and alert scratch.
+- Array defaults: Warning = largest data disk, Critical = smallest; both array alerts on.
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md

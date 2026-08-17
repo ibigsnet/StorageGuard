@@ -1,3 +1,10 @@
+## 2026.08.17ad
+
+- **Fix pools-only Settings page:** no-array branch no longer prints raw
+  `<div id="sg-array-block" … markdown="1">` as text. Unraid page Markdown was exiting HTML mode
+  after a blank line + `>` blockquote inside the array block (common on cache-only hosts). Single
+  open tag + HTML lead notice instead.
+
 ## 2026.08.17ac
 
 - **Product defaults:** Outline style; green outline when OK; pulse on warn/crit; pool free-bar coloring **on** (all pools); array alerts on when array present; cache/pool alerts remain off.
