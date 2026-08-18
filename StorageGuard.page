@@ -193,10 +193,17 @@ if (!empty($array_raw_sizes)) {
     ];
 }
 
-// Pool defaults: Warning = None; Critical = None (user opts in per pool)
+// Pool defaults: Warning = largest member; Critical = smallest (same model as Array)
 $pool_defaults = [];
-foreach ($pools_raw as $pname => $raws) {
-    $pool_defaults[$pname] = ['warning' => '', 'critical' => ''];
+foreach ($pools as $pname => $sizes) {
+    if (!empty($sizes)) {
+        $pool_defaults[$pname] = [
+            'warning' => $sizes[0],
+            'critical' => $sizes[count($sizes) - 1],
+        ];
+    } else {
+        $pool_defaults[$pname] = ['warning' => '', 'critical' => ''];
+    }
 }
 
 // Build <option>s; include leading "None" (empty value = no threshold for that level)
@@ -276,7 +283,7 @@ $outline_show_ok = (($cfg['outline_show_ok'] ?? 'yes') === 'yes') ? 'yes' : 'no'
 
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';  // 'all' or comma list
 
-// --- Alerts: product default = Array Warning + Critical (when array exists). All pool alerts off. ---
+// --- Alerts: product default Yes for Array (when present) and all pools ---
 if ($sg_defaults_ok && isset($cfg['alerts_array_warning'])) {
     $alerts_array_warning = $cfg['alerts_array_warning'];
 } else {
@@ -301,16 +308,15 @@ foreach ($pool_names as $p) {
     $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $p);
     $wk = "alerts_pool_{$safe}_warning";
     $ck = "alerts_pool_{$safe}_critical";
-    // Until defaults are seeded, never show pool alerts as on
     if ($sg_defaults_ok && isset($cfg[$wk])) {
         $pw = $cfg[$wk];
     } else {
-        $pw = 'no';
+        $pw = 'yes';
     }
     if ($sg_defaults_ok && isset($cfg[$ck])) {
         $pc = $cfg[$ck];
     } else {
-        $pc = 'no';
+        $pc = 'yes';
     }
     $pool_alert_cfg[$p] = [
         'safe' => $safe,
@@ -393,6 +399,58 @@ Remaining free space. Blank = None. Prefer Warning &gt; Critical.
 
 </div><!-- /#sg-array-block -->
 
+---
+
+### Alerts
+
+<div style="margin:0.5em 0 1em; overflow-x:auto;">
+<table class="tablesorter" style="width:auto; min-width:280px;">
+<thead>
+<tr>
+  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
+  <th style="padding:4px 12px; text-align:center;">Warning</th>
+  <th style="padding:4px 12px; text-align:center;">Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr class="sg-array-alert-row"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
+  <td style="padding:6px 12px 6px 0;">Array</td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_warning" value="no">
+    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_array_critical" value="no">
+    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?>>
+  </td>
+</tr>
+<?php foreach ($pool_alert_cfg as $p => $ac): ?>
+<tr class="sg-pool-alert-row">
+  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars(sg_pool_title($p))?></td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+  <td style="padding:6px 12px; text-align:center;">
+    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
+    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
+  </td>
+</tr>
+<?php endforeach; ?>
+<?php if (!$has_array_disks && empty($pool_alert_cfg)): ?>
+<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected.</td></tr>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+
+<blockquote class="inline_help">
+Unraid notifications when free space crosses a threshold. Independent of coloring. Nothing checked = no alerts.
+</blockquote>
+
+---
+
+
 <div id="sg-cache-panel" class="sg-cache-panel" style="display:none" markdown="1">
 
 ### Cache / pools
@@ -411,12 +469,12 @@ Remaining free space. Blank = None. Prefer Warning &gt; Critical.
   if ($sg_defaults_ok && array_key_exists($w_key, $cfg)) {
     $w_val = $cfg[$w_key];
   } else {
-    $w_val = '';
+    $w_val = $pool_defaults[$p]['warning'] ?? '';
   }
   if ($sg_defaults_ok && array_key_exists($c_key, $cfg)) {
     $c_val = $cfg[$c_key];
   } else {
-    $c_val = '';
+    $c_val = $pool_defaults[$p]['critical'] ?? '';
   }
   $p_raws = $pools_raw[$p] ?? [];
   if ($p_use_custom !== 'yes' && function_exists('sg_migrate_disk_size_label') && !empty($p_raws)) {
@@ -445,7 +503,7 @@ _(Thresholds from)_:
   </select>
 
 <blockquote class="inline_help">
-Default Warning/Critical = <strong>None</strong>. Disk sizes = pool members. Custom: <code>7.5T</code>, <code>500G</code>, etc.
+Default Warning = largest member, Critical = smallest (same as Array). Custom: <code>7.5T</code>, <code>500G</code>. <strong>None</strong> turns that level off.
 </blockquote>
 
 <div id="pool-<?=htmlspecialchars($safe)?>-disk-selects" markdown="1">
@@ -504,55 +562,6 @@ No automatic suggestion for <?= $p_raid0 ? 'RAID0' : 'single' ?> — set Custom 
 
 ---
 
-### Alerts
-
-<div style="margin:0.5em 0 1em; overflow-x:auto;">
-<table class="tablesorter" style="width:auto; min-width:280px;">
-<thead>
-<tr>
-  <th style="padding:4px 12px 4px 0; text-align:left;">Target</th>
-  <th style="padding:4px 12px; text-align:center;">Warning</th>
-  <th style="padding:4px 12px; text-align:center;">Critical</th>
-</tr>
-</thead>
-<tbody>
-<tr class="sg-array-alert-row"<?= $has_array_disks ? '' : ' style="display:none"' ?>>
-  <td style="padding:6px 12px 6px 0;">Array</td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_array_warning" value="no">
-    <input type="checkbox" name="alerts_array_warning" value="yes" <?= $alerts_array_warning === 'yes' ? 'checked' : '' ?>>
-  </td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_array_critical" value="no">
-    <input type="checkbox" name="alerts_array_critical" value="yes" <?= $alerts_array_critical === 'yes' ? 'checked' : '' ?>>
-  </td>
-</tr>
-<?php foreach ($pool_alert_cfg as $p => $ac): ?>
-<tr class="sg-pool-alert-row">
-  <td style="padding:6px 12px 6px 0;"><?=htmlspecialchars(sg_pool_title($p))?></td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_warning" value="yes" <?= $ac['warning'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-  <td style="padding:6px 12px; text-align:center;">
-    <input type="hidden" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="no">
-    <input type="checkbox" name="alerts_pool_<?=htmlspecialchars($ac['safe'])?>_critical" value="yes" <?= $ac['critical'] === 'yes' ? 'checked' : '' ?>>
-  </td>
-</tr>
-<?php endforeach; ?>
-<?php if (!$has_array_disks && empty($pool_alert_cfg)): ?>
-<tr><td colspan="3" style="padding:8px 0; color:#888;">No array disks or pools detected.</td></tr>
-<?php endif; ?>
-</tbody>
-</table>
-</div>
-
-<blockquote class="inline_help">
-Unraid notifications when free space crosses a threshold. Independent of coloring. Nothing checked = no alerts.
-</blockquote>
-
----
-
 ### Appearance
 
 <div id="sg-show-ok-row" markdown="1">
@@ -564,7 +573,7 @@ _(Color outlines green when OK/Normal)_:
   </select>
 
 <blockquote class="inline_help">
-Static green outline when free is still above thresholds. Outline style only. Default Yes.
+Green outline when free is still above thresholds (Outline style). Default Yes.
 </blockquote>
 
 </div>

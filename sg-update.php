@@ -17,12 +17,10 @@ if (!isset($_POST['#default'])) {
     return;
 }
 
-// Prefer shared SI formatter (matches Unraid Main); fallback only if lib missing.
-if (!function_exists('sg_format_size_kb')) {
-    $sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
-    if (is_file($sg_lib)) {
-        @require_once $sg_lib;
-    }
+// Shared lib: SI sizes + product defaults map
+$sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
+if (is_file($sg_lib)) {
+    @require_once $sg_lib;
 }
 if (!function_exists('sg_update_format_size')) {
     function sg_update_format_size($kb) {
@@ -75,35 +73,48 @@ if (!is_array($default)) {
     $default = [];
 }
 
-// Array product defaults depend on whether data disks exist (pools-only hosts hide Array UI).
-// Warning = largest data disk (evacuate room); Critical = smallest data disk; both alerts on.
-$has_array = ($largest_warn !== '');
-$default['array_warning'] = $largest_warn;
-$default['array_critical'] = $smallest_crit;
-$default['array_use_custom'] = 'no';
-$default['array_warning_custom'] = '';
-$default['array_critical_custom'] = '';
-$default['array_color_style'] = 'outline';
-// Yes only when array data disks exist — no-array / cache-only → No (inactive paint)
-$default['array_coloring'] = $has_array ? 'yes' : 'no';
-$default['outline_pulse'] = 'no';
-$default['outline_show_ok'] = 'yes';
-// Pool free-bar paint on by default (all pools); pool *alerts* stay off below
-$default['pool_coloring'] = 'yes';
-$default['pools_to_color'] = 'all';
-$default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
-$default['alerts_array_critical'] = $has_array ? 'yes' : 'no';
-$default['sg_defaults'] = '';
+// Prefer shared product map (Yes toggles, pool autofill, outline OK / no pulse).
+if (function_exists('sg_product_defaults_map')) {
+    foreach (sg_product_defaults_map() as $k => $v) {
+        $default[$k] = $v;
+    }
+    // Unraid Default button clears the "seeded" lock so next Apply re-locks
+    $default['sg_defaults'] = '';
+} else {
+    // Fallback if lib missing
+    $has_array = ($largest_warn !== '');
+    $default['array_warning'] = $largest_warn;
+    $default['array_critical'] = $smallest_crit;
+    $default['array_use_custom'] = 'no';
+    $default['array_warning_custom'] = '';
+    $default['array_critical_custom'] = '';
+    $default['array_color_style'] = 'outline';
+    $default['array_coloring'] = $has_array ? 'yes' : 'no';
+    $default['outline_pulse'] = 'no';
+    $default['outline_show_ok'] = 'yes';
+    $default['pool_coloring'] = 'yes';
+    $default['pools_to_color'] = 'all';
+    $default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
+    $default['alerts_array_critical'] = $has_array ? 'yes' : 'no';
+    $default['sg_defaults'] = '';
+}
 
 foreach ($_POST as $key => $value) {
     if (!is_string($key) || $key === '' || $key[0] === '#') continue;
 
+    // Covered by sg_product_defaults_map when lib loaded; keep loop for unknown keys cleanup
     if (preg_match('/^alerts_pool_.+_(warning|critical)$/', $key)) {
-        $default[$key] = 'no';
+        if (!isset($default[$key])) {
+            $default[$key] = 'yes';
+        }
         continue;
     }
 
-    if (preg_match('/^pool_.+_(warning|critical|warning_custom|critical_custom)$/', $key)) {
+    if (preg_match('/^pool_.+_(warning|critical)$/', $key) && strpos($key, '_custom') === false) {
+        // leave map values; do not blank
+        continue;
+    }
+    if (preg_match('/^pool_.+_(warning_custom|critical_custom)$/', $key)) {
         $default[$key] = '';
         continue;
     }

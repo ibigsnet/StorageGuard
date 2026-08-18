@@ -466,9 +466,10 @@ function sg_lib_parse_to_tb($str) {
 /**
  * Resolve pool free thresholds for paint/alerts.
  *
- * User values always win. Empty Warning/Critical = **None** (no yellow/red, no soft-default).
- * Capacity-fit suggestions are offered only via the Settings **Suggest** button / math UI —
- * never applied automatically on install (that painted healthy pools yellow on RAID1/10).
+ * User values always win. Empty Warning/Critical = **None** (no yellow/red).
+ * Product Default / first install autofills Warning=largest member, Critical=smallest
+ * (same model as Array) and turns pool alerts on — user can still choose None after.
+ * Capacity-fit **Suggest** remains optional Custom floors (math UI).
  *
  * Severity paint rule (sg_level): lower free amount = more severe (critical), higher free = warning,
  * regardless of form field order. Prefer Warning free ≥ Critical free as amounts of free space.
@@ -597,4 +598,170 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
     }
 
     return $line1 . ' ' . $line2 . $guide . $line3;
+}
+
+/**
+ * Flash cfg path.
+ */
+function sg_cfg_path() {
+    return '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
+}
+
+/**
+ * Build machine-aware product defaults (Yes toggles, outline OK, no pulse,
+ * Array/Pool thresholds = largest warn / smallest crit when disks exist).
+ *
+ * @return array<string,string>
+ */
+function sg_product_defaults_map() {
+    $out = [
+        'sg_defaults' => '1',
+        'array_coloring' => 'no',
+        'pool_coloring' => 'yes',
+        'array_color_style' => 'outline',
+        'outline_pulse' => 'no',
+        'outline_show_ok' => 'yes',
+        'array_warning' => '',
+        'array_critical' => '',
+        'array_use_custom' => 'no',
+        'array_warning_custom' => '',
+        'array_critical_custom' => '',
+        'pools_to_color' => 'all',
+        'alerts_array_warning' => 'no',
+        'alerts_array_critical' => 'no',
+        'btrfs_hints_enabled' => 'yes',
+    ];
+
+    $arr_labels = [];
+    if (function_exists('sg_array_data_disk_size_kbs')) {
+        $kbs = sg_array_data_disk_size_kbs();
+        if (is_array($kbs) && $kbs) {
+            rsort($kbs, SORT_NUMERIC);
+            foreach ($kbs as $kb) {
+                $arr_labels[] = sg_format_size_kb($kb);
+            }
+            $arr_labels = array_values(array_unique($arr_labels));
+        }
+    }
+    if ($arr_labels) {
+        $out['array_warning'] = $arr_labels[0];
+        $out['array_critical'] = $arr_labels[count($arr_labels) - 1];
+        $out['array_coloring'] = 'yes';
+        $out['alerts_array_warning'] = 'yes';
+        $out['alerts_array_critical'] = 'yes';
+    }
+
+    // Pools: same largest/smallest member model; alerts Yes
+    $disks_ini = '/var/local/emhttp/disks.ini';
+    if (is_file($disks_ini)) {
+        $disks = @parse_ini_file($disks_ini, true) ?: [];
+        $by_pool = [];
+        foreach ($disks as $key => $d) {
+            if (!is_array($d) || empty($d['device'])) {
+                continue;
+            }
+            if (($d['type'] ?? '') !== 'Cache') {
+                continue;
+            }
+            $status = (string)($d['status'] ?? '');
+            if (strpos($status, '_NP') !== false) {
+                continue;
+            }
+            $pname = preg_replace('/\d+$/', '', (string)$key);
+            if ($pname === '' || $pname === 'flash') {
+                continue;
+            }
+            $sz = sg_disk_capacity_kb($d);
+            if ($sz > 0) {
+                $by_pool[$pname][] = $sz;
+            }
+        }
+        foreach ($by_pool as $pname => $raws) {
+            rsort($raws, SORT_NUMERIC);
+            $labels = [];
+            foreach ($raws as $kb) {
+                $labels[] = sg_format_size_kb($kb);
+            }
+            $labels = array_values(array_unique($labels));
+            if (!$labels) {
+                continue;
+            }
+            $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $pname);
+            $out["pool_{$safe}_use_custom"] = 'no';
+            $out["pool_{$safe}_warning"] = $labels[0];
+            $out["pool_{$safe}_critical"] = $labels[count($labels) - 1];
+            $out["pool_{$safe}_warning_custom"] = '';
+            $out["pool_{$safe}_critical_custom"] = '';
+            $out["pool_{$safe}_color_style"] = 'outline';
+            $out["alerts_pool_{$safe}_warning"] = 'yes';
+            $out["alerts_pool_{$safe}_critical"] = 'yes';
+        }
+    }
+
+    return $out;
+}
+
+/**
+ * Write product defaults to flash cfg.
+ *
+ * @param bool $fresh true = replace with product map; false = fill only missing/empty threshold keys
+ * @return bool
+ */
+function sg_seed_product_cfg($fresh = true) {
+    $path = sg_cfg_path();
+    $dir = dirname($path);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
+    }
+    $want = sg_product_defaults_map();
+    $cur = [];
+    if (!$fresh && is_readable($path)) {
+        $parsed = @parse_ini_file($path);
+        if (is_array($parsed)) {
+            $cur = $parsed;
+        }
+    }
+    if ($fresh || !$cur) {
+        $merged = $want;
+    } else {
+        $merged = $cur;
+        foreach ($want as $k => $v) {
+            if (!array_key_exists($k, $merged)) {
+                $merged[$k] = $v;
+                continue;
+            }
+            // Heal empty disk-size thresholds when we have a product value
+            if (($merged[$k] === '' || $merged[$k] === null)
+                && $v !== ''
+                && preg_match('/^(array_|pool_).*(warning|critical)$/', $k)
+                && strpos($k, '_custom') === false) {
+                $merged[$k] = $v;
+            }
+        }
+        // Always refresh product Yes/outline defaults when healing an unseeded or partial cfg
+        if (($merged['sg_defaults'] ?? '') !== '1') {
+            foreach (['array_coloring', 'pool_coloring', 'outline_pulse', 'outline_show_ok',
+                'alerts_array_warning', 'alerts_array_critical', 'array_color_style', 'pools_to_color',
+                'btrfs_hints_enabled'] as $k) {
+                if (isset($want[$k])) {
+                    $merged[$k] = $want[$k];
+                }
+            }
+            foreach ($want as $k => $v) {
+                if (strpos($k, 'alerts_pool_') === 0) {
+                    $merged[$k] = $v;
+                }
+            }
+            $merged['sg_defaults'] = '1';
+        }
+    }
+
+    $lines = ['; Storage Guard — managed by plugin', ''];
+    foreach ($merged as $k => $v) {
+        if (!is_string($k) || !preg_match('/^[A-Za-z0-9_]+$/', $k)) {
+            continue;
+        }
+        $lines[] = $k . '="' . str_replace(['\\', '"'], ['\\\\', '\\"'], (string)$v) . '"';
+    }
+    return @file_put_contents($path, implode("\n", $lines) . "\n") !== false;
 }

@@ -426,7 +426,7 @@ function initStorageGuardUI() {
     // data-sg-has-array from Settings page (0 = pools-only / no array data disks)
     var hasArray = formEl && formEl.getAttribute('data-sg-has-array') === '1';
 
-    // Product defaults: outline + green OK; pulse off; pool paint on; array paint/alerts when array exists
+    // Product defaults: Yes toggles; outline + green OK; pulse off; autofill disk sizes
     setSelect('outline_pulse', 'no');
     setSelect('outline_show_ok', 'yes');
     setSelect('array_coloring', hasArray ? 'yes' : 'no');
@@ -441,7 +441,6 @@ function initStorageGuardUI() {
     var defCrit = (arrCrit && arrCrit.getAttribute('data-sg-default-crit'))
       || (arrWarn && arrWarn.getAttribute('data-sg-default-crit'))
       || '';
-    // no array → thresholds None; with array → largest warn / smallest crit
     setSelect('array_warning', hasArray ? defWarn : '');
     setSelect('array_critical', hasArray ? defCrit : '');
 
@@ -461,12 +460,25 @@ function initStorageGuardUI() {
       if (!safe) return;
       sel.value = 'no';
       setSelect('pool_' + safe + '_color_style', 'outline');
-      setSelect('pool_' + safe + '_warning', '');
-      setSelect('pool_' + safe + '_critical', '');
+      var wSel = document.getElementById('pool_' + safe + '_warning');
+      var cSel = document.getElementById('pool_' + safe + '_critical');
+      // Autofill: first real size option (skip None) = largest; last = smallest
+      var wDef = '';
+      var cDef = '';
+      if (wSel && wSel.options) {
+        for (var i = 0; i < wSel.options.length; i++) {
+          if (wSel.options[i].value) { wDef = wSel.options[i].value; break; }
+        }
+        for (var j = wSel.options.length - 1; j >= 0; j--) {
+          if (wSel.options[j].value) { cDef = wSel.options[j].value; break; }
+        }
+      }
+      setSelect('pool_' + safe + '_warning', wDef);
+      setSelect('pool_' + safe + '_critical', cDef || wDef);
       setInput('pool_' + safe + '_warning_custom', '');
       setInput('pool_' + safe + '_critical_custom', '');
-      setCheckbox('alerts_pool_' + safe + '_warning', false);
-      setCheckbox('alerts_pool_' + safe + '_critical', false);
+      setCheckbox('alerts_pool_' + safe + '_warning', true);
+      setCheckbox('alerts_pool_' + safe + '_critical', true);
     });
 
 

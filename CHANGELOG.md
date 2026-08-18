@@ -1,3 +1,11 @@
+## 2026.08.17ah
+
+- **Settings order:** Array → **Alerts** → Cache / pools (alerts between the two disk sections again).
+- **Post-install defaults:** seed flash cfg from live disks.ini — Array/Pool Warning=largest,
+  Critical=smallest; coloring/alerts/green outline OK Yes; pulse No. Install heal fills
+  empty thresholds on upgrade without wiping user choices.
+- Default button / JS reset match the same product map.
+
 ## 2026.08.17ag
 
 - **Solid Settings page:** move **Cache / pools** thresholds above Alerts (no longer buried at the
