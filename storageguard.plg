@@ -4,9 +4,9 @@
 <!ENTITY author "RifleJock">
 <!ENTITY version "2026.08.17ah">
 <!ENTITY launch "Settings/StorageGuard">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
-<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
+<!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
 <!ENTITY pkg "StorageGuard-&version;-x86_64-1">
@@ -22,7 +22,7 @@
   min="6.12.0"
   support="https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/"
   project="https://github.com/&github;"
-  readme="https://raw.githubusercontent.com/&github;/main/README.md">
+  readme="https://raw.githubusercontent.com/&github;/testing/README.md">
 
 <CHANGES>
 ###&version;
@@ -35,7 +35,7 @@
 - Pools-only Settings HTML; product defaults Outline/green OK; capacity labels = Main.
 
 ### Older releases
-- Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
+- Full changelog: https://github.com/ibigsnet/StorageGuard/blob/testing/CHANGELOG.md
 </CHANGES>
 
 <FILE Run="/bin/bash">
