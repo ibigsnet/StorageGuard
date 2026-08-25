@@ -1,3 +1,11 @@
+# Changelog — StorageGuard
+
+User-facing history for this plugin. The `.plg` file (Community Applications / Plugins page) shows only the **most recent releases**; this file is the complete record.
+
+**Install channels:** production/CA uses branch **`main`**; WIP uses branch **`testing`**. See [RELEASES.md](RELEASES.md).
+
+---
+
 ## 2026.08.17ah
 
 - **Settings order:** Array → **Alerts** → Cache / pools (alerts between the two disk sections again).
@@ -53,325 +61,317 @@
 
 - **Audit harden:** stock HeadInline inject uses `StorageGuard-inject` markers only (fixed emhttp paths — never walks shares/folders named Storage Guard); one-time stock backup; SECURITY.md matches full flash wipe; docs/stock-ui-inject.md.
 
-# Changelog — StorageGuard
-
-User-facing history for this plugin. The `.plg` file (Community Applications / Plugins page) shows only the **most recent releases**; this file is the complete record.
-
-**Install channels:** production/CA uses branch `stable`; lab uses `main`. See [RELEASES.md](RELEASES.md).
-
----
-
-###2026.08.16ac
+## 2026.08.16ac
 - **Install/upgrade hygiene:** prepare always `removepkg`s every prior `StorageGuard-*` package
   and wipes the emhttp plugin dir before the new `.txz`. Prevents mixed leftover files across
   `YYYY.MM.DDxx` package names.
 
-###2026.08.16ab
+## 2026.08.16ab
 - **Array defaults:** Warning = largest data disk, **Critical = smallest data disk**; both Array
   Warning and Array Critical **alerts on** for new installs / Default / unseeded first open.
   Existing saved configs unchanged until Default or re-Apply.
 
-###2026.08.16aa
+## 2026.08.16aa
 - **Capacity labels match Unraid Main (decimal SI):** disk-size dropdowns and defaults use powers of
   1000 (e.g. **25.9T**), not binary TiB labeled as T (**23.6T**). Free-space math was already SI;
   labels now agree. Legacy binary disk-size cfg values remap to SI when they match a live disk.
 
-###2026.08.15af
+## 2026.08.15af
 - Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
 
-###2026.08.15ab
+## 2026.08.15ab
 - Changelog: Plugins page shows recent entries only; full history on GitHub <code>CHANGELOG.md</code>.
 
-###2026.08.14ae
+## 2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
   to largest/smallest disk. Saved Custom or disk-size values win; empty soft-defaults to capacity-fit
   suggestions. Suggest recommends largest-loss Δ → Warning, smallest-loss Δ → Critical (user may reverse).
 - Clearer pool notification text; guide + alternate scenarios: docs/math/threshold-guide.md.
 
-###2026.08.14ad
+## 2026.08.14ad
 - **Pool free thresholds (capacity-fit):** Warning = free needed so data still fits after
   <em>largest</em> member loss; Critical = after <em>smallest</em> member loss (equal disks share
   one floor). Paint/alerts use this for RAID1/1cN/RAID10/RAID5/6 unless Custom. Drops 2× rebalance pad.
 - Docs: scenarios, RAID1, RAID10, math README updated.
 
-###2026.08.14ac
+## 2026.08.14ac
 - **Fix:** pools-only / no array — product Default and first open no longer enable Array coloring
   or Array Warning alerts; Array UI stays hidden (Show hidden items…). default.cfg documents
   machine-aware defaults; sg-update.php sets array_coloring / alerts from live disks.ini.
 
-###2026.08.14ab
+## 2026.08.14ab
 - Support link points at Unraid forum thread (topic 199796); project remains GitHub.
 - **Lab channel:** On branch `main`, PluginURL + raw FILE sources point at `main` (lab uninstall/reinstall testing).
 - Branch `stable` remains the CA/production pin Production channel is branch `stable` (CA PluginURL).
 
-###2026.08.14aa
+## 2026.08.14aa
 - **License:** GNU GPLv3 or later (copyright ibigs, LLC; Author: RifleJock). MIT retired for new releases.
 - **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
 - CA templates and install URLs follow `stable` for store users.
 
-###2026.07.29
+## 2026.07.29
 - Alerts/paint only when array is fully started (not stopped, starting/stopping, or maintenance). Missing mounts are not 0 free.
 - Version day rolled to calendar date (was incorrectly still on 2026.07.10 letter suffixes).
 
-###2026.07.10bt
+## 2026.07.10bt
 - RAID5/6: calm “read Unraid/BTRFS docs” notes in math docs, DOCS, Settings help, and parity alerts.
 
-###2026.07.10bs
+## 2026.07.10bs
 - Docs: drop RAID5/6 stability scare notes from caveats; parity alert text stays capacity-focused.
 
-###2026.07.10br
+## 2026.07.10br
 - Array alerts: name matching disks as diskN | sdx (size), including nvme/USB device ids from disks.ini.
 
-###2026.07.10bq
+## 2026.07.10bq
 - BTRFS speed model: multi-stream RAID1 write ceiling ~N/2 (not 1×); docs match 6-disk 3× write / 6× read ideal.
 
-###2026.07.10bp
+## 2026.07.10bp
 - BTRFS math: Suggest for RAID1/1cN too; Critical=fit Δ, Warning=2×Δ; scenarios docs (6×2T RAID1 walkthrough).
 
-###2026.07.10bo
+## 2026.07.10bo
 - Docs: accurate BTRFS profile notes (RAID10 not fixed pairs; no forced replace); align pool alert/help wording.
 
-###2026.07.10bn
+## 2026.07.10bn
 - Settings: Array/Pool form fields in clean markdown region so Array coloring rows center like Pool.
 
-###2026.07.10bm
+## 2026.07.10bm
 - Settings: fix Array coloring form row when no array (inactive note no longer breaks the dl line).
 
-###2026.07.10bl
+## 2026.07.10bl
 - Settings: restore pre-hide-array Appearance blockouts (bb layout) while keeping hide-array and new labels.
 
-###2026.07.10bk
+## 2026.07.10bk
 - Settings: rename/reorder green-outline and pulse labels; hide green option when no Outline targets.
 
-###2026.07.10bj
+## 2026.07.10bj
 - Settings: keep Appearance mini-blockouts while restoring centered form columns (left rail only; compact selects).
 
-###2026.07.10bi
+## 2026.07.10bi
 - Settings: Default re-hides array settings when no array; restore Array/Pool coloring mini-blockouts under Appearance.
 
-###2026.07.10bh
+## 2026.07.10bh
 - Settings: restore Array section one-liner under the heading.
 
-###2026.07.10bg
+## 2026.07.10bg
 - Settings: when array present, array fields sit in main Unraid form table again (no always-on wrapper).
 
-###2026.07.10bf
+## 2026.07.10bf
 - Settings: restore Unraid two-column form layout; nested wrappers no longer use markdown.
 
-###2026.07.10be
+## 2026.07.10be
 - Settings: restore Unraid form layout (drop nested markdown wrappers that left-aligned fields).
 
-###2026.07.10bd
+## 2026.07.10bd
 - Settings: compact select/input widths (fix full-width stretch in nested blocks).
 
-###2026.07.10bc
+## 2026.07.10bc
 - Settings: hide array UI when no array; Show hidden items to edit (inactive until array returns).
 
-###2026.07.10ba
+## 2026.07.10ba
 - Settings: RAID1 notes mention RAID10/5/6 can get Suggest free thresholds.
 
-###2026.07.10az
+## 2026.07.10az
 - Settings: clarify no Suggest for RAID1 / RAID0 / single (not RAID10).
 
-###2026.07.10ay
+## 2026.07.10ay
 - Settings: quieter lead; Pools to color + per-pool highlight styles split.
 
-###2026.07.10ax
+## 2026.07.10ax
 - Settings: quieter one-line intro under the title.
 
-###2026.07.10aw
+## 2026.07.10aw
 - Settings Appearance: indent Array/Pool coloring under Appearance block.
 
-###2026.07.10av
+## 2026.07.10av
 - Settings layout: Array thresholds, Alerts, Appearance (Array/Pool coloring); advanced pools for thresholds.
 
-###2026.07.10au
+## 2026.07.10au
 - Settings: free-space thresholds always visible for alerts; highlight style / which-pools only under Enable coloring.
 
-###2026.07.10at
+## 2026.07.10at
 - Settings: Suggest free thresholds for pools (capacity Δ); profile what-if tables; bus-ceiling speed notes. Math library + docs/math.
 
-###2026.07.10as
+## 2026.07.10as
 - BTRFS pool math library (capacity Δ free suggestions, bus-ceiling speed notes); docs/math per profile. Not auto-applied to Settings yet.
 
-###2026.07.10ar
+## 2026.07.10ar
 - Solid + Pulse: flash yellow/red over Unraid green free fill; force asset reinstall after CDN lag.
 
-###2026.07.10aq
+## 2026.07.10aq
 - Solid + Pulse off-half uses Unraid greenbar gradient (not empty track / not CSS revert).
 
-###2026.07.10ap
+## 2026.07.10ap
 - Solid + Pulse: flash warn color over native free fill (green between flashes); Pulse=No stays solid. Undo empty opacity flash.
 
-###2026.07.10ao
+## 2026.07.10ao
 - Solid + Pulse: hard flash via opacity so yellow/red fill actually blinks (keyframes cannot override !important backgrounds).
 
-###2026.07.10an
+## 2026.07.10an
 - Mirrored pools (RAID1/1cN/dup): ignore member disk-size thresholds for paint/alerts; custom still applies. Settings label cleanup (no trailing ?).
 
-###2026.07.10am
+## 2026.07.10am
 - Pulse is hard on/off flash (no fade). Outline blinks border on/off; solid fill blinks color fully on/off (no lime blend).
 
-###2026.07.10al
+## 2026.07.10al
 - Hard on/off pulse CSS.
 
-###2026.07.10ak
+## 2026.07.10ak
 - Fix Pulse=Yes keyframes blocked by !important static outline rules.
 
-###2026.07.10aj
+## 2026.07.10aj
 - Classic outline pulse; strip .sg-pulse when Pulse is No.
 
-###2026.07.10ai
+## 2026.07.10ai
 - Outline pulse polish (outer glow + light inner wash).
 
-###2026.07.10ag
+## 2026.07.10ag
 - Restore Pulse=Yes animations; Main flash fix retained.
 
-###2026.07.10af
+## 2026.07.10af
 - Re-paint free bars immediately after Main device-table jQuery .html() updates.
 
-###2026.07.10ae
+## 2026.07.10ae
 - Outline free-cell markers + CSS; pulse only with Pulse Yes.
 
-###2026.07.10ad
+## 2026.07.10ad
 - Reduce in-code commentary; keep sources lean.
 
-###2026.07.10ac
+## 2026.07.10ac
 - Outline re-apply no longer clearPaints the same look.
 
-###2026.07.10ab
+## 2026.07.10ab
 - Public release notes and packaging cleanup.
 
-###2026.07.10aa
+## 2026.07.10aa
 - Free-bar outline stability work for OK highlight and Pulse off.
 
-###2026.07.10
+## 2026.07.10
 - Free-bar paint reliability for Pulse and OK outline highlighting.
 
-###2026.07.09zj
+## 2026.07.09zj
 - Clean reinstall path; Settings polish complete (Appearance first, Enable coloring, Pulse color, decimal examples).
 
-###2026.07.09zi
+## 2026.07.09zi
 - Settings polish: Appearance first (global); Enable coloring / Outline|Solid / Pulse color labels; accurate hints (pulse = warn/crit only, not green); decimal custom examples.
 
-###2026.07.09zh
+## 2026.07.09zh
 - Settings page declutter: short intro, compact labels/help, Appearance section, slim advanced pools (no RAID essay). Quick-glance layout.
 
-###2026.07.09zg
+## 2026.07.09zg
 - Pulse is a global flasher for warning/critical (Outline border and Solid fill), not “Outline-only”. Settings label cleaned up; green-when-OK stays Outline-only.
 
-###2026.07.09zf
+## 2026.07.09zf
 - Pool free-space coloring on Main defaults to No (array coloring still Yes). Opt in under Advanced pools when ready.
 
-###2026.07.09ze
+## 2026.07.09ze
 - Outline wording: border only (free fill unchanged), not “keep free fill…”. Solid = recolor fill. Docs + CSS comments match.
 - Verify pulse vs solid: pulse/green-OK are Outline-only; solid never pulses; soft re-apply without clearPaint to avoid flash/pulse restart.
 
-###2026.07.09zd
+## 2026.07.09zd
 - Default button: fully reset pool thresholds/alerts/styles (and array product defaults). Unraid only restores default.cfg keys; dynamic pool_* keys needed an #include + form UI reset.
 
-###2026.07.09zc
+## 2026.07.09zc
 - Array highlight style default is Outline (not Solid); solid fill optional. Same default for pool style when unset.
 
-###2026.07.09zb
+## 2026.07.09zb
 - Advanced pools WIP note: alerts and coloring are fine to use; BTRFS profile math/suggestions not yet — custom free-space thresholds OK for alerting.
 
-###2026.07.09za
+## 2026.07.09za
 - Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
 - Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z).
 
-###2026.07.09z
+## 2026.07.09z
 - Settings/docs: mark Pools section as WIP while pool logic is still being refined.
 
-###2026.07.09y
+## 2026.07.09y
 - Fix cache/pool free-bar flashing when pulse is off: solid color on parent disk cell (survives Main live DOM updates); paint pool total free only, not every member disk.
 
-###2026.07.09x
+## 2026.07.09x
 - Recovery notifies: when free space rises above thresholds after warning/critical, send Unraid normal (green/OK) notification, similar to parity complete.
 
-###2026.07.09w
+## 2026.07.09w
 - support URL back to GitHub for now; Unraid forum later.
 
-###2026.07.09v
+## 2026.07.09v
 - support URL set to Unraid forum thread (topic 199796). project remains GitHub.
 
-###2026.07.09u
+## 2026.07.09u
 - Plugins README is INLINE blurb only (**Name** + one paragraph), matching LXC/UD/Dynamix. Real Markdown on Plugins page; no ####Name####. Full docs in DOCS.md.
 
-###2026.07.09t
+## 2026.07.09t
 - README blurb-only in repo; GitHub raw CDN still served long copy to some installs.
 
-###2026.07.09s
+## 2026.07.09s
 - Slim README attempt (still too long for Plugins list).
 
-###2026.07.09r
+## 2026.07.09r
 - Fix Plugins list description and README layout for Unraid (####Name#### blurb).
 - Ensure README.md ships with the plugin again.
 
-###2026.07.09q
+## 2026.07.09q
 - Full rolling changelog restored (letters a through p as single-line notes).
 - Product defaults and Open pool link fixes from prior letters.
 
-###2026.07.09o
+## 2026.07.09o
 - Fix Open pool link (markdown left PHP unparsed in the URL).
 
-###2026.07.09n
+## 2026.07.09n
 - Product defaults via sg_defaults=1: Array Warning=largest disk; pool free thresholds None; alerts=Array Warning only (not critical, not pool).
 
-###2026.07.09m
+## 2026.07.09m
 - Dynamic array notifications (name disks matching threshold; evacuate-room wording).
 - Pool notifications by BTRFS profile class (mirror vs parity vs RAID10 vs none).
 - DOCS: notification catalog, pool scenarios, planned features.
 
-###2026.07.09l
+## 2026.07.09l
 - Docs/settings: green OK state; notice if Critical free amount is higher than Warning.
 - Severity always by free-space amount (lower free = critical).
 
-###2026.07.09k
+## 2026.07.09k
 - Defaults: Array Warning = largest data disk; pool thresholds None.
 - Alerts default: Array Warning only (critical and all pool alerts off).
 
-###2026.07.09j
+## 2026.07.09j
 - Fix array free-bar paint wiped by pool-root walks (Array of N devices row).
 - Solid default; optional outline pulse; optional green outline when free space OK.
 
-###2026.07.09i
+## 2026.07.09i
 - Solid is default highlight style; Outline pulse is optional (off by default).
 - Optional green outline when free space is OK (Outline only, off by default).
 - Fix outline pulse thrashing (re-paint only when status changes).
 
-###2026.07.09h
+## 2026.07.09h
 - Docs and settings copy cleanup (README, DOCS, UI help text).
 - Alerts: checkbox matrix restored (Warning/Critical per target).
 - Clearer free-space wording (any unit, not TB only).
 
-###2026.07.09g
+## 2026.07.09g
 - Per-block Outline/Solid: Array and each pool independently.
 - Custom free-space values for pools (same as array: 1.5T, 500G, 7.5T, etc.).
 - Friendlier custom placeholders/examples.
 
-###2026.07.09f
+## 2026.07.09f
 - Settings cleanup: uniform Array/Pools layout; hide details when coloration is No.
 - Threshold None option; default Warning=largest disk, Critical=None.
 - Outline/solid highlight style (global, later made per-block).
 
-###2026.07.09e
+## 2026.07.09e
 - Only re-fetch assets if color.js stale (avoid CDN overwrite).
 
-###2026.07.09d
+## 2026.07.09d
 - Outline (default pulse) or solid free-bar highlight style.
 
-###2026.07.09c
+## 2026.07.09c
 - Order-independent thresholds + cleaner settings layout.
 
-###2026.07.09b
+## 2026.07.09b
 - Boot-pool Data Partition coloring + asset re-fetch.
 
-###2026.07.09a
+## 2026.07.09a
 - Fix pool coloring for internal-boot-on-cache / pools-only.
 
-###2026.07.09
+## 2026.07.09
 - Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
 
-###2026.07.06
+## 2026.07.06
 - Initial public development series (array/pool thresholds, alerts, Plugins metadata).
