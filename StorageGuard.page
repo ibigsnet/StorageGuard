@@ -445,7 +445,7 @@ Remaining free space. Blank = None. Prefer Warning &gt; Critical.
 </div>
 
 <blockquote class="inline_help">
-Unraid notifications when free space crosses a threshold. Independent of coloring. Nothing checked = no alerts.
+Unraid notifications when a target hits Warning or Critical. One notify per level change, not hourly. Independent of coloring. Nothing checked = no alerts.
 </blockquote>
 
 ---
@@ -489,9 +489,11 @@ Unraid notifications when free space crosses a threshold. Independent of colorin
   }
   $current_profile = get_btrfs_profile($p);
   $devices_summary = get_pool_devices_summary($pools[$p] ?? []);
-  $pc = strtolower(trim((string)$current_profile));
-  $p_raid0 = (strpos($pc, 'raid0') !== false);
-  $p_single = (bool)preg_match('/\bsingle\b/', $pc);
+  $p_members = count($p_raws);
+  $p_one_disk = function_exists('sg_pool_one_disk_mode')
+    ? sg_pool_one_disk_mode($current_profile, $p_members)
+    : 'unknown';
+  $p_nonsurvival = ($p_one_disk === 'nonsurvival');
 ?>
 
 **<?=htmlspecialchars(sg_pool_title($p))?>** — <?=htmlspecialchars($current_profile)?> · <?=htmlspecialchars($devices_summary)?> · <a href="/Main/Device?name=<?=htmlspecialchars(rawurlencode($p), ENT_QUOTES)?>">Open pool</a>
@@ -546,9 +548,9 @@ _(Critical (custom))_:
 <blockquote class="inline_help">
 Fills Custom with capacity-fit free floors (Warning <?=htmlspecialchars($warn_lbl)?><?php if ($crit_lbl !== '' && $crit_lbl !== $warn_lbl): ?>, Critical <?=htmlspecialchars($crit_lbl)?><?php endif; ?>). Apply to save. Details: docs/math/.
 </blockquote>
-<?php elseif ($p_raid0 || $p_single): ?>
+<?php elseif ($p_nonsurvival): ?>
 <blockquote class="inline_help">
-No automatic suggestion for <?= $p_raid0 ? 'RAID0' : 'single' ?> — set Custom values if you want alerts.
+This layout cannot survive a disk loss — Main paints Critical while the pool stays this profile. Custom free amounts are optional capacity policy only; they do not turn the bar green.
 </blockquote>
 <?php endif; ?>
 </div>

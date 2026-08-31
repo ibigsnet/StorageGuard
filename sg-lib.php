@@ -417,13 +417,65 @@ function sg_pool_btrfs_profile($pool) {
 
 function sg_pool_profile_class($profile) {
     $p = strtolower(trim((string)$profile));
-    if ($p === '' || $p === 'unknown') return 'unknown';
+    if ($p === '' || $p === 'unknown' || strpos($p, 'unknown') === 0) return 'unknown';
     if (strpos($p, 'raid10') !== false) return 'striped_mirror';
     if (preg_match('/raid1c[34]/', $p) || preg_match('/\braid1\b/', $p)) return 'mirror';
     if (strpos($p, 'raid5') !== false || strpos($p, 'raid6') !== false) return 'parity';
-    if (strpos($p, 'raid0') !== false || strpos($p, 'single') !== false) return 'none';
-    if (strpos($p, 'dup') !== false) return 'mirror';
+    // RAID0 / single / DUP: no extra copy on another disk (DUP is two copies on the same device).
+    if (strpos($p, 'raid0') !== false || strpos($p, 'single') !== false || strpos($p, 'dup') !== false) {
+        return 'none';
+    }
     return 'unknown';
+}
+
+/** Count present pool members (disks.ini Cache slots, skip _NP). */
+function sg_pool_member_count($pool) {
+    return count(sg_pool_member_size_kbs($pool));
+}
+
+/**
+ * Can this pool keep data online after losing one whole disk?
+ *
+ * @return string survives|nonsurvival|unknown
+ */
+function sg_pool_one_disk_mode($profile, $member_count) {
+    $n = (int)$member_count;
+    if ($n <= 1) {
+        return 'nonsurvival';
+    }
+    $class = sg_pool_profile_class($profile);
+    if ($class === 'none') {
+        return 'nonsurvival';
+    }
+    if ($class === 'unknown') {
+        return 'unknown';
+    }
+    $min = 2;
+    if (function_exists('sg_math_min_devices')) {
+        $key = function_exists('sg_math_profile_key') ? sg_math_profile_key($profile) : '';
+        $min = (int)sg_math_min_devices($key);
+    } else {
+        $p = strtolower(trim((string)$profile));
+        if (strpos($p, 'raid6') !== false) {
+            $min = 3;
+        } elseif (preg_match('/raid1c4/', $p)) {
+            $min = 4;
+        } elseif (preg_match('/raid1c3/', $p)) {
+            $min = 3;
+        }
+    }
+    if ($n < $min) {
+        return 'nonsurvival';
+    }
+    return 'survives';
+}
+
+/** Layout with no one-disk survival always paints/alerts critical (not a free-space floor). */
+function sg_pool_effective_level($free_level, $one_disk_mode) {
+    if ($one_disk_mode === 'nonsurvival') {
+        return 'critical';
+    }
+    return $free_level;
 }
 
 /**
@@ -580,7 +632,7 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
             $line2 = "On BTRFS RAID10 (two copies + striping), one disk loss usually leaves data online. Free space is whether used data still fits after usable capacity drops, and whether remove/rebalance/convert has room.";
             break;
         case 'none':
-            $line2 = "This pool has little or no redundancy (single/RAID0). Free thresholds are capacity policy only; a disk failure risks data.";
+            $line2 = "This pool has no whole-disk redundancy (RAID0, single, or DUP). Free thresholds are capacity policy only; Storage Guard already treats a disk failure as data loss.";
             break;
         default:
             $line2 = "Check the pool profile on Main/Settings for what a disk failure would mean on this layout.";
@@ -598,6 +650,38 @@ function sg_pool_notify_body($severity, $pname, $free_tb, $th, $profile, $class)
     }
 
     return $line1 . ' ' . $line2 . $guide . $line3;
+}
+
+/**
+ * Notify body when the pool cannot survive one whole-disk failure (layout, not free space).
+ */
+function sg_pool_layout_notify_body($pname, $profile, $member_count) {
+    $n = (int)$member_count;
+    $prof = trim((string)$profile);
+    if ($prof === '' || stripos($prof, 'unknown') !== false) {
+        $prof = 'unknown';
+    }
+    $line1 = "Pool '{$pname}' cannot keep data online if any one member disk fails.";
+    $line1 .= " Layout: {$prof}";
+    if ($n > 0) {
+        $line1 .= ', ' . $n . ' device' . ($n === 1 ? '' : 's');
+    }
+    $line1 .= '.';
+
+    $p = strtolower($prof);
+    if (strpos($p, 'raid0') !== false) {
+        $line2 = " BTRFS RAID0 has no copies; losing any disk loses the pool.";
+    } elseif (preg_match('/\bsingle\b/', $p)) {
+        $line2 = " BTRFS single stores one copy of each chunk; a failed disk loses the chunks that lived only there.";
+    } elseif (strpos($p, 'dup') !== false) {
+        $line2 = " BTRFS DUP keeps two copies on the same device, so a whole-disk failure still loses the data.";
+    } elseif ($n <= 1) {
+        $line2 = " A one-disk pool has nowhere else for that data to live.";
+    } else {
+        $line2 = " This pool does not have enough devices for the data profile to survive one disk loss.";
+    }
+
+    return $line1 . $line2 . " Main paints this pool Critical for that reason, not because free space is low.";
 }
 
 /**

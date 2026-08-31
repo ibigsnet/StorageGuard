@@ -6,6 +6,19 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.08.31aa
+
+- **Failed-disk paint:** BTRFS pools that cannot survive one whole-disk failure stay **Critical**
+  on Main (red), independent of free-space floors. That covers **RAID0**, **single**, **DUP**
+  (copies on the same device — not a mirror), **one-disk** pools, and redundant profiles that
+  do not have enough devices (e.g. RAID1c3 on two disks). RAID1/10/5/6 with enough members
+  still use capacity-fit free thresholds.
+- **Alerts:** still evaluated on the existing ~10s Main check. Notify **once per level change**
+  (critical → warning sends the warning; warning/critical → OK sends recovered). Dropped the
+  hourly re-send of the same warning/critical.
+- Settings help: no-survival layouts explain red = layout, not free space. DUP is no-survival,
+  not mirror.
+
 ## 2026.08.17ah
 
 - **Settings order:** Array → **Alerts** → Cache / pools (alerts between the two disk sections again).

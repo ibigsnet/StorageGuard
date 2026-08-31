@@ -18,7 +18,7 @@ Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrf
 
 ### DUP
 
-**DUP** puts two copies on the **same** device. That can help with some media corruption, but it does **not** protect against whole-disk failure. Unraid multi-disk pools usually use multi-device profiles for data, not DUP.
+**DUP** puts two copies on the **same** device. That can help with some media corruption, but it does **not** protect against whole-disk failure. Unraid multi-disk pools usually use multi-device profiles for data, not DUP. Storage Guard treats DUP like RAID0/single for failed-disk paint (**Critical**), not like RAID1.
 
 ### Usable capacity (estimate)
 
@@ -123,7 +123,7 @@ These multi-stream figures are **upper bounds** for comparing profiles — cachi
 | **Suggest free thresholds** | **Yes** when $\Delta > 0$ (e.g. **3+** equal disks); **not** for typical 2-disk RAID1 ($\Delta \approx 0$) |
 | Recommended Warning / Critical | $\max\Delta$ / $\min\Delta$ (equal disks ⇒ one free floor) |
 | User free amounts | Fully free (Custom); disk-size evacuate floors ignored for paint |
-| Paint / alerts | Soft capacity-fit only if $\Delta > 0$ and Custom empty; else your numbers |
+| Paint / alerts | Soft capacity-fit only if $\Delta > 0$ and Custom empty; else your numbers. **One-disk RAID1** and **DUP** paint Critical (no whole-disk survival). |
 | Alerts | Mirror wording: data usually online; free ≠ “evacuate failed disk” |
 
 Not array-style “leave free ≥ full disk size.”  

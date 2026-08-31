@@ -5,7 +5,7 @@ How free-space thresholds, free-bar coloring on Unraid’s **main page**, and al
 **Install (recommended):** Apps (Community Applications) → search **Storage Guard** → Install.  
 
 **Manual install:** Plugins → Install Plugin →  
-`https://raw.githubusercontent.com/ibigsnet/StorageGuard/stable/storageguard.plg`
+`https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg`
 
 **Support:** [Unraid forum — Storage Guard](https://forums.unraid.net/topic/199796-plugin-storage-guard-free-space-thresholds-so-you-know-if-a-failed-disk-still-leaves-room-to-move-data/)  
 **Source:** [github.com/ibigsnet/StorageGuard](https://github.com/ibigsnet/StorageGuard)  
@@ -28,12 +28,13 @@ You set a **Warning** and/or **Critical** free-space threshold for each. Thresho
 
 When free space crosses a threshold, Storage Guard paints that target’s **total free space bar** on Unraid’s **main page** (the array’s free bar, or a pool’s data free bar—not the whole page):
 
-| Free space | Free bar on main page | Alerts (if enabled) |
-|------------|----------------------|---------------------|
+| Condition | Free bar on main page | Alerts (if enabled) |
+|-----------|----------------------|---------------------|
 | **Above** all thresholds (healthy) | Normal Unraid look, **or** optional **green outline** (Outline style + green-when-OK) | Silent |
 | At or below **Warning** | **Yellow** | Unraid **warning** notification |
 | At or below **Critical** | **Red** | Unraid **alert** notification |
-| Back **above** all thresholds after a warn/alert | Normal / optional green outline | Unraid **normal** notification (“recovered”) — same severity family as parity complete |
+| Pool **cannot survive one disk loss** (RAID0, single, DUP, one-disk, or too few devices for the profile) | **Red** (layout, not free space) | One **alert** if that pool’s Critical (or Warning) checkbox is on |
+| Back **above** all thresholds after a warn/alert (or a no-survival pool gains redundancy) | Normal / optional green outline | Unraid **normal** notification (“recovered”) — same severity family as parity complete |
 
 **None** (or a blank custom field) means that level is unused.
 
@@ -48,13 +49,13 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | Array Warning free | Size of **largest array data disk** (machine-specific) |
 | Array Critical free | Size of **smallest array data disk** (machine-specific) |
 | Pool Warning / Critical free | **None** (opt-in) |
-| Alerts | **Array Warning + Array Critical** when an array is present; **all pool/cache alerts off** |
+| Alerts | **Array Warning + Array Critical** when an array is present; **pool Warning + Critical on** for detected pools (uncheck to stay silent; paint can stay red) |
 | Highlight style | **Outline** (array and every pool) |
 | Color outlines green when OK/Normal | **Yes** |
 | Pulse free-bar colors on warn/crit | **No** (opt-in) |
 | Settings UI | Array shown when array detected (hidden if none — **Show Array** for this visit); **Show Cache** hides pool thresholds by default (choice remembered). Pool coloring stays visible when pools exist. |
 
-Pool free-bar **paint** defaults on; pool **thresholds** and **alerts** stay opt-in. Array paint/alerts default on when data disks exist, with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
+Pool free-bar **paint** defaults on; pool **free thresholds** stay empty until you set them. Pool alert checkboxes default on. Array paint/alerts default on when data disks exist, with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
 
 ### Recommended threshold order
 
@@ -123,7 +124,7 @@ Use **Custom free-space values** when the right number is not a disk size—for 
 Pool **threshold** fields are **hidden by default** — open **Show Cache** on Settings (choice is remembered). Pool coloring and pool alert checkboxes stay visible whenever pools exist. Array UI is shown when array data disks exist. On **pools-only** servers, Array settings start hidden (**Show Array** for that visit only); saved values still apply when an array returns. Array Warning/Critical disk-size defaults apply only when data disks are present. Capacity-fit tables and profile essays live under **docs/math/** — Settings keeps short help and **Suggest free thresholds**.
 
 **Supported:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), free-bar coloring on Main, and alerts.  
-**Profile-aware:** alert wording by profile class; **mirrored pools (RAID1 / RAID1cN / dup) ignore disk-size thresholds** for paint/alerts (use Custom / Suggest).  
+**Profile-aware:** alert wording by profile class; **mirrored pools (RAID1 / RAID1cN) ignore disk-size thresholds** for paint/alerts (use Custom / Suggest). **DUP** is not a mirror for failed-disk purposes (copies on the same device).  
 **Capacity math / Suggest:** Settings can fill Custom Warning/Critical from same-profile Δ for RAID1/1cN, RAID10, RAID5, and RAID6. Formulas: [docs/math/](docs/math/README.md).
 
 Pools are detected live from Unraid—nothing is hard-coded. New installs often ship with a first pool named **`cache`**, but that is only a common Unraid default: every pool can use **any** name Unraid allows. Storage Guard lists whatever your server actually has.
@@ -136,7 +137,7 @@ For each pool you can:
 - Enable Warning / Critical **alerts** separately  
 - Use **Suggest free thresholds** where the profile supports capacity-Δ math  
 
-**Pool defaults (new install / Default):** free-bar coloring = **Yes** (all pools); Warning/Critical free = **None** until you set them; **pool alerts off**. Array warn/crit alerts on when an array is present.
+**Pool defaults (new install / Default):** free-bar coloring = **Yes** (all pools); Warning/Critical free = **None** until you set them; pool alerts on for detected pools. Array warn/crit alerts on when an array is present.
 
 ### Why free space matters on BTRFS pools
 
@@ -168,7 +169,8 @@ Useful Unraid UI: **main page → click the pool name → Balance Status**
 
 | Profile | Rough usable | Failure tolerance (typical) | Notes |
 |---------|----------------|-----------------------------|--------|
-| single / RAID0 | ~100% | None — any loss can mean data loss | |
+| single / RAID0 | ~100% | None — any loss can mean data loss | Main stays **red** |
+| DUP | ~50% of that device | None vs whole-disk failure | Two copies on the **same** device; Main stays **red** |
 | RAID1 | ~50% | **1** device (always 2 copies) | N disks still only 2 copies per chunk |
 | RAID1c3 / RAID1c4 | ~33% / ~25% | 2 / 3 devices | Often used for metadata |
 | RAID10 | ~50% | **1** guaranteed | Not fixed pairs; odd N OK |
@@ -245,21 +247,23 @@ On the Settings page, a small matrix of **checkboxes** chooses who gets notifica
 - Rows: **Array**, each **pool**  
 - Columns: Warning, Critical  
 
-**Default (with array data disks):** **Array → Warning** and **Array → Critical** on. All **pool/cache** alerts off until you enable them.
+**Default (with array data disks):** **Array → Warning** and **Array → Critical** on. Detected **pools** default Warning + Critical on (uncheck to stay silent).
 
 Checked = send an Unraid notification when that target hits that level.  
 Nothing checked for a row = silent for that target.  
-Alerts use the **same free-space thresholds and severity ranking** as main-page free-bar coloring (including custom values and the “lower free amount = critical” rule). They do **not** require free-bar coloring to be on.
+Alerts use the **same severity ranking** as main-page free-bar coloring (free-space thresholds, plus layout-critical for pools that cannot survive a disk loss). They do **not** require free-bar coloring to be on.
 
-If free space is in the critical band but only the warning checkbox is enabled, you get a **warning** notification (highest enabled severity that matches).
+If the level is critical but only the warning checkbox is enabled, you get a **warning** notification (highest enabled severity that matches).
+
+Main still **checks** about every **10 seconds** while the Main page is open. A notification is sent **only when the level changes** (for example critical → warning sends the warning). The same warning/critical is **not** repeated every hour.
 
 ### Recovery (cleared) notifications
 
-When free space was at warning or critical and later rises **above** your thresholds again, Storage Guard sends one **recovered** notification using Unraid importance `normal` (the green/OK style used when parity finishes successfully).
+When the level was warning or critical and later returns to **ok**, Storage Guard sends one **recovered** notification using Unraid importance `normal` (the green/OK style used when parity finishes successfully).
 
 - Only fires after a prior warning/critical for that target (array or a pool).  
-- Does **not** fire on first install just because free space is already healthy.  
-- Warning/critical can re-notify about once per hour while still degraded; recovery fires once when you return to OK.
+- Does **not** fire on first install just because the target is already healthy.  
+- If critical becomes warning, you get the **warning** notify only (not recovered plus warning).
 
 ### What notifications say (current)
 
@@ -283,7 +287,7 @@ When free space was at warning or critical and later rises **above** your thresh
 
 Same structure as warning, stronger language (“likely not enough…”, plan replacement or free substantial space).
 
-#### Pool Warning / Critical
+#### Pool Warning / Critical (free space)
 
 **Subject:** `Storage Guard: Pool {name} free space warning|critical`
 
@@ -294,10 +298,16 @@ Always includes free space, threshold, and detected **BTRFS data profile** (when
 | **Mirror** | RAID1, RAID1c3, RAID1c4 | Multi-copy chunks; one-disk loss usually leaves data online; free = capacity/policy, not array-style evacuate |
 | **Parity** | RAID5, RAID6 | Free ≈ capacity fit after loss + recovery headroom |
 | **Striped mirror** | RAID10 | BTRFS two copies + striping; one failure usually OK; free = post-loss fit / remove-rebalance wiggle room |
-| **No redundancy** | single, RAID0 | Capacity policy only; disk loss **risks data** |
-| **Unknown** | other / non-BTRFS | Generic free-space threshold text |
+| **No redundancy** | single, RAID0, DUP | Layout-critical on Main; disk loss **loses data** |
+| **Unknown** | other / non-BTRFS | Generic free-space threshold text; one-disk still layout-critical |
 
 Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Critical from capacity math where the profile supports it (see docs/math).
+
+#### Pool cannot survive a disk loss
+
+**Subject:** `Storage Guard: Pool {name} cannot survive a disk loss`
+
+Sent once when that pool is first seen as layout-critical (RAID0, single, DUP, one disk, or too few devices). Same notify path as other critical/warning alerts — not a second system, and not repeated every hour. Recovered (or the next free-space warning/critical) fires if the layout later *can* survive a disk.
 
 ### Notification outcomes (summary)
 
@@ -310,6 +320,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 | Array custom threshold | same | Custom free wording, no fake disk names |
 | Pool RAID1 + free low | same paint | Mirror narrative (not “evacuate like array”) |
 | Pool RAID5 + free low | same paint | Rebalance/recovery headroom narrative |
+| Pool RAID0 / single / DUP / one disk | **Red** | One layout-critical notify (if Critical alerts on) |
 
 ---
 
@@ -321,7 +332,8 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 - Defaults: pool free-bar coloring **on** (all pools); pool thresholds **None** (no auto capacity-fit paint); pool alerts **off**. Pool threshold fields are behind **Show Cache** (remembered); pool coloring is always on the Appearance section when pools exist.  
 - Notifications: **profile-class wording** so RAID1 is not described like array evacuate.  
 
-- **Mirror class (RAID1 / RAID1cN / dup):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom** or **Suggest** for capacity-policy free amounts.  
+- **Mirror class (RAID1 / RAID1cN):** member **disk-size** dropdown values are **ignored** for paint and alerts. Surviving a single disk failure does not require free space to evacuate data off the failed disk. Use **Custom** or **Suggest** for capacity-policy free amounts.  
+- **No whole-disk survival (RAID0, single, DUP, one-disk, or too few devices):** Main stays **Critical**. Free thresholds do not turn that green.  
 - **Parity / RAID10 / other:** disk-size and custom thresholds apply as configured.  
 - **Capacity math / Suggest:** Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{\mathrm{fit}}$ for RAID1/1cN, RAID10, RAID5, RAID6. See [docs/math/](docs/math/README.md).  
 - **Speeds:** optional best-case **bus/link multi-stream ceilings** for comparing profiles only — not measured disk sequential throughput. See [docs/math/unraid-io.md](docs/math/unraid-io.md).
@@ -335,7 +347,8 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 | **RAID1c3 / RAID1c4** | Yes (extra copies) | **No** for single loss | Same as mirror class |
 | **RAID5 / RAID6** | Yes if within tolerance | Not array-evacuate; capacity + recovery room | Recovery headroom |
 | **BTRFS RAID10** | Usually yes (1 disk) | **No** forced replace; free so used still fits | Same-profile Δ (Suggest) |
-| **single / RAID0** | **No** | N/A | Capacity only; data at risk |
+| **single / RAID0 / DUP** | **No** | N/A | Layout-critical; data at risk |
+| **One-disk pool (any profile)** | **No** | N/A | Layout-critical |
 
 **Profile conversion** (e.g. RAID10 → RAID1 or RAID5) can **change** usable free space after or before a failure, at the cost of different failure tolerance and write shape. Storage Guard will never auto-convert.
 
