@@ -38,8 +38,8 @@ $$
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **No** — no recovery free model |
-| Thresholds | **Custom** only (capacity policy / alerts you invent) |
-| Alerts | “None” class: free is policy; disk loss risks data |
-| Paint | Uses whatever free thresholds you set |
+| Thresholds | Optional Custom (capacity policy only) |
+| Paint | **Always Critical** on Main — losing any disk loses the pool |
+| Alerts | One layout-critical notify if pool Critical (or Warning) alerts are on; not hourly |
 
-Code: class `none` → `apply = false` in `sg_pool_threshold_suggestions`.
+Code: class `none` → `apply = false` in `sg_pool_threshold_suggestions`; `sg_pool_one_disk_mode` → `nonsurvival`.

@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.17ah">
+<!ENTITY version "2026.08.31aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -26,6 +26,9 @@
 
 <CHANGES>
 ###&version;
+- RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
+
+###2026.08.17ah
 - Settings: Array → Alerts → Cache order; post-install autofill disks; Yes defaults; green outline OK, pulse off.
 
 ###2026.08.17ag–ae

@@ -56,7 +56,7 @@ Unequal members ⇒ **warning** when free is only enough for a mild (small-disk)
 | RAID1 / 1c3 / 1c4 | Usually yes | Yes | Yes |
 | RAID10 | Usually yes | Yes | Yes |
 | RAID5 / RAID6 | If within tolerance | Yes | Yes (see [raid5.md](raid5.md) / Unraid+BTRFS docs) |
-| single / RAID0 | **No** | Policy only | N/A recovery |
+| single / RAID0 / DUP | **No** | Policy only | N/A recovery (Main stays Critical) |
 
 ---
 
@@ -152,7 +152,7 @@ Planning: **Warning 4 T** (largest-loss $\Delta$), **Critical 2 T** (smalles
 | Per-disk loss rows | Settings table under each pool |
 | Other profiles on same disks | Profile comparison table |
 | Mirror disk-size dropdowns | **Ignored** for paint/alerts (evacuate model wrong) |
-| single / RAID0 | No Suggest — Custom only |
+| single / RAID0 / DUP / one-disk | No Suggest — Main stays Critical |
 | Alert text | Profile-class wording (mirror / RAID10 / parity / none) |
 
 Code: `sg_pool_threshold_suggestions` in `sg-pool-math.php`  

@@ -62,7 +62,7 @@ function sg_math_max($sizes) {
 
 /**
  * Normalize profile string to a math key.
- * @return string single|raid0|raid1|raid1c3|raid1c4|raid10|raid5|raid6|unknown
+ * @return string single|raid0|dup|raid1|raid1c3|raid1c4|raid10|raid5|raid6|unknown
  */
 function sg_math_profile_key($profile) {
     $p = strtolower(trim((string)$profile));
@@ -70,7 +70,8 @@ function sg_math_profile_key($profile) {
     if (strpos($p, 'raid10') !== false) return 'raid10';
     if (preg_match('/raid1c3/', $p)) return 'raid1c3';
     if (preg_match('/raid1c4/', $p)) return 'raid1c4';
-    if (preg_match('/\braid1\b/', $p) || strpos($p, 'dup') !== false) return 'raid1';
+    if (preg_match('/\braid1\b/', $p)) return 'raid1';
+    if (strpos($p, 'dup') !== false) return 'dup';
     if (strpos($p, 'raid5') !== false) return 'raid5';
     if (strpos($p, 'raid6') !== false) return 'raid6';
     if (strpos($p, 'raid0') !== false) return 'raid0';
@@ -96,7 +97,7 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
 
     $key = sg_math_profile_key($profile_or_key);
     // If already a math key, use directly
-    $known = ['single','raid0','raid1','raid1c3','raid1c4','raid10','raid5','raid6','unknown'];
+    $known = ['single','raid0','dup','raid1','raid1c3','raid1c4','raid10','raid5','raid6','unknown'];
     if (in_array(strtolower((string)$profile_or_key), $known, true)) {
         $key = strtolower((string)$profile_or_key);
     }
@@ -108,6 +109,9 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
         case 'single':
         case 'raid0':
             return $sum;
+        case 'dup':
+            // Two copies on the same device: about half raw, no other disk to fail over to.
+            return $sum / 2.0;
         case 'raid1':
             // BTRFS RAID1: two copies on different devices. ≈ half raw when N≥2.
             // One remaining device is effectively single (full sum) — not sum/2.
@@ -166,7 +170,7 @@ function sg_capacity_delta_tb($profile_or_key, $sizes_tb, $i) {
  * Unequal members ⇒ yellow between min and max Δ; red at or below min Δ.
  *
  * Applies to mirror (RAID1/1c3/1c4), striped_mirror (RAID10), and parity (RAID5/6).
- * Does not apply to single/RAID0 (no recovery model) or unknown.
+ * Does not apply to single/RAID0/DUP (no one-disk recovery) or unknown.
  * Not Unraid-array "evacuate largest disk" semantics.
  *
  * @return array{

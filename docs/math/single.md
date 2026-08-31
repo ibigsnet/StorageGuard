@@ -38,8 +38,8 @@ Rough upper bound ≈ $N\cdot R$ read / $N\cdot W$ write when work fans across d
 | Behavior | Detail |
 |----------|--------|
 | **Suggest free thresholds** | **No** — no recovery free model |
-| Thresholds | **Custom** only (capacity policy) |
-| Alerts | “None” class: free is policy; disk loss risks data |
-| Paint | Uses whatever free thresholds you set |
+| Thresholds | Optional Custom (capacity policy only) |
+| Paint | **Always Critical** on Main — a failed disk loses the chunks that lived only there |
+| Alerts | One layout-critical notify if pool Critical (or Warning) alerts are on; not hourly |
 
-Code: class `none` → `apply = false` in `sg_pool_threshold_suggestions`.
+Code: class `none` → `apply = false` in `sg_pool_threshold_suggestions`; `sg_pool_one_disk_mode` → `nonsurvival`.

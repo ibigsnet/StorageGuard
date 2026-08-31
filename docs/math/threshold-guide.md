@@ -26,7 +26,7 @@ Regardless of which form field you type into:
 So if you set Warning = `2T` and Critical = `4T`, paint still treats **2T as red** and **4T as yellow** (lower free = more severe).  
 **Tip:** keep **Warning free ≥ Critical free** as numbers (e.g. Warning `4T`, Critical `2T`) so field labels match severity.
 
-Alerts only fire for levels you enable under **Alerts** (pool Warning / Critical checkboxes).
+Alerts only fire for levels you enable under **Alerts** (pool Warning / Critical checkboxes). The same level is not re-sent every hour — only when it **changes**.
 
 ---
 
@@ -117,9 +117,9 @@ Pick a member size as free floor. That is **not** the same as $\Delta_{\mathrm{f
 
 Coloring and notifications are independent. You can paint without Unraid notifications, or notify without paint.
 
-### G — Single / RAID0
+### G — Single / RAID0 / DUP / one-disk
 
-No capacity-fit suggestion. Free thresholds are policy only (no “still online after one loss” model).
+No capacity-fit suggestion. Main stays **Critical** because a disk loss loses data. Optional Custom free amounts are capacity policy only — they do not turn the bar green.
 
 ### H — Array (not a pool)
 

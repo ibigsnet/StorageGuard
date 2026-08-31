@@ -91,7 +91,8 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 
 | Profile | Usable (first-order) | 1-disk data online? | Notes |
 |---------|----------------------|---------------------|--------|
-| single / RAID0 | $\sum S_i$ | **No** | No recovery free model |
+| single / RAID0 | $\sum S_i$ | **No** | No recovery free model; Main stays Critical |
+| DUP | $\sum S_i / 2$ | **No** | Two copies on the same device; Main stays Critical |
 | RAID1 | $\sum S_i / 2$ | Usually yes | **2** copies, not N |
 | RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
 | RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
@@ -138,10 +139,10 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 | mirror | RAID1, RAID1c3, RAID1c4 | **Yes** |
 | striped_mirror | RAID10 | **Yes** |
 | parity | RAID5, RAID6 | **Yes** (see [raid5](raid5.md) / [raid6](raid6.md)) |
-| none | single, RAID0 | **No** — Custom / disk-size only |
+| none | single, RAID0, DUP | **No** — Main stays Critical (layout); Custom is capacity policy only |
 
-- **Your saved free amounts always win** (Custom or disk-size).  
-- Empty thresholds = **None** for paint/alerts. Use **Suggest free thresholds** to fill Custom from the recommendation.  
+- **Your saved free amounts always win** (Custom or disk-size) for **free-space** paint on profiles that can survive a disk. Layout-critical pools stay red regardless.  
+- Empty thresholds = **None** for **free-space** paint/alerts. Pools that cannot survive one disk still paint **Critical**. Use **Suggest free thresholds** to fill Custom from the recommendation on redundant profiles.  
 - Full guide + “what if I don’t follow it?”: **[threshold-guide.md](threshold-guide.md)**.
 
 ## Where it shows up
@@ -149,13 +150,14 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 | Surface | Role |
 |---------|------|
 | Settings → Show Cache (pools) | Suggest button, loss table, alternate-profile table |
-| Unraid main-page free bars (array / pool) | Paint from configured free thresholds |
+| Unraid main-page free bars (array / pool) | Paint from configured free thresholds; no-survival pools stay Critical |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
 | `get-config` → `_status.pools.*.math` | Machine-readable package for UI |
 
 ## Code
 
-`sg-pool-math.php` — `sg_usable_tb`, `sg_capacity_delta_tb`, `sg_pool_threshold_suggestions`, `sg_pool_profile_alternatives`, `sg_pool_math_package`.
+`sg-pool-math.php` — `sg_usable_tb`, `sg_capacity_delta_tb`, `sg_pool_threshold_suggestions`, `sg_pool_profile_alternatives`, `sg_pool_math_package`.  
+`sg-lib.php` — `sg_pool_one_disk_mode`, `sg_pool_effective_level` (layout-critical paint).
 
 ## Docs map
 

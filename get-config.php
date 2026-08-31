@@ -150,12 +150,34 @@ foreach (array_keys($pool_names) as $pname) {
     : ['warn' => 0.0, 'crit' => 0.0, 'source' => 'none'];
   $warn = (float)($th['warn'] ?? 0);
   $crit = (float)($th['crit'] ?? 0);
+  $members = function_exists('sg_pool_member_count')
+    ? sg_pool_member_count($pname)
+    : (is_array($math) && isset($math['members_tb']) ? count($math['members_tb']) : 0);
+  $one_disk = function_exists('sg_pool_one_disk_mode')
+    ? sg_pool_one_disk_mode($profile, $members)
+    : 'unknown';
+  $level = 'ok';
+  $level_reason = 'none';
+  if ($enabled && $free !== null) {
+    $level = sg_level($free, $warn, $crit);
+    if (function_exists('sg_pool_effective_level')) {
+      $level = sg_pool_effective_level($level, $one_disk);
+    }
+    if ($one_disk === 'nonsurvival') {
+      $level_reason = 'layout';
+    } elseif ($level === 'warning' || $level === 'critical') {
+      $level_reason = 'free';
+    }
+  }
   $pool_status[$pname] = [
     'enabled' => $enabled,
     'free_tb' => ($free !== null) ? round($free, 3) : null,
     'warn_tb' => round($warn, 3),
     'crit_tb' => round($crit, 3),
-    'level'   => ($enabled && $free !== null) ? sg_level($free, $warn, $crit) : 'ok',
+    'level'   => $level,
+    'level_reason' => $level_reason,
+    'one_disk_mode' => $one_disk,
+    'members' => $members,
     'style'   => sg_style($cfg, "pool_{$safe}_color_style"),
     'profile' => $profile,
     'threshold_source' => $th['source'] ?? 'none',

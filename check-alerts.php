@@ -3,6 +3,7 @@
 header('Content-Type: application/json');
 
 require_once __DIR__ . '/sg-lib.php';
+require_once __DIR__ . '/sg-pool-math.php';
 
 $cfg_file = '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
 $cfg = [];
@@ -87,15 +88,6 @@ function sg_state_key($key) {
     return preg_replace('/[^a-zA-Z0-9_-]/', '_', $key);
 }
 
-function sg_should_send($key, $min_interval = 3600) {
-    global $state_dir;
-    $file = $state_dir . '/' . sg_state_key($key);
-    $last = @filemtime($file);
-    if ($last && (time() - $last) < $min_interval) return false;
-    @touch($file);
-    return true;
-}
-
 function sg_get_last_level($key) {
     global $state_dir;
     $file = $state_dir . '/' . sg_state_key($key) . '.level';
@@ -111,31 +103,22 @@ function sg_set_last_level($key, $level) {
 }
 
 function sg_process_level($key, $level, $warn_subject, $crit_subject, $ok_subject, $warn_body, $crit_body, $ok_body) {
-    global $sent, $state_dir;
+    global $sent;
     $last = sg_get_last_level($key);
+    if ($level === $last) {
+        return;
+    }
 
     if ($level === 'critical') {
-        if ($last !== 'critical') {
-            sg_send_notify($crit_subject, $crit_body, 'alert');
-            @touch($state_dir . '/' . sg_state_key($key));
-            $sent[] = $key . '_critical';
-        } elseif (sg_should_send($key)) {
-            sg_send_notify($crit_subject, $crit_body, 'alert');
-            $sent[] = $key . '_critical';
-        }
+        sg_send_notify($crit_subject, $crit_body, 'alert');
+        $sent[] = $key . '_critical';
         sg_set_last_level($key, 'critical');
         return;
     }
 
     if ($level === 'warning') {
-        if ($last !== 'warning') {
-            sg_send_notify($warn_subject, $warn_body, 'warning');
-            @touch($state_dir . '/' . sg_state_key($key));
-            $sent[] = $key . '_warning';
-        } elseif (sg_should_send($key)) {
-            sg_send_notify($warn_subject, $warn_body, 'warning');
-            $sent[] = $key . '_warning';
-        }
+        sg_send_notify($warn_subject, $warn_body, 'warning');
+        $sent[] = $key . '_warning';
         sg_set_last_level($key, 'warning');
         return;
     }
@@ -311,24 +294,44 @@ foreach ($cfg as $k => $v) {
     $pool_free = sg_get_pool_free_tb($pname);
     if ($pool_free === null) continue; // pool not mounted / free unknown
     $th = sg_pool_thresholds($cfg, $safe, $pname);
+    $profile = sg_pool_btrfs_profile($pname);
+    $class = sg_pool_profile_class($profile);
+    $members = function_exists('sg_pool_member_count') ? sg_pool_member_count($pname) : 0;
+    $one_disk = function_exists('sg_pool_one_disk_mode')
+        ? sg_pool_one_disk_mode($profile, $members)
+        : 'unknown';
     $level = sg_level($pool_free, $th['warn'], $th['crit']);
+    if (function_exists('sg_pool_effective_level')) {
+        $level = sg_pool_effective_level($level, $one_disk);
+    }
     if ($level === 'critical' && !$p_crit_on) $level = $p_warn_on ? 'warning' : 'ok';
     if ($level === 'warning' && !$p_warn_on) $level = 'ok';
 
-    $profile = sg_pool_btrfs_profile($pname);
-    $class = sg_pool_profile_class($profile);
-
     if ($level === 'critical' || $level === 'warning' || $level === 'ok') {
-        $warn_body = sg_pool_notify_body('warning', $pname, $pool_free, $th, $profile, $class);
-        $crit_body = sg_pool_notify_body('critical', $pname, $pool_free, $th, $profile, $class);
-        $free_h = function_exists('sg_human_free') ? sg_human_free($pool_free) : (round($pool_free, 2) . 'T');
-        $ok_body = "Pool {$pname} free space is back above your thresholds ({$free_h} free). No longer at warning or critical free-space levels.";
+        $layout = ($one_disk === 'nonsurvival');
+        if ($layout && function_exists('sg_pool_layout_notify_body')) {
+            $layout_body = sg_pool_layout_notify_body($pname, $profile, $members);
+            $warn_body = $layout_body;
+            $crit_body = $layout_body;
+            $ok_body = "Pool {$pname} is no longer at a Storage Guard warning or critical level.";
+            $warn_subject = "Storage Guard: Pool {$pname} cannot survive a disk loss";
+            $crit_subject = "Storage Guard: Pool {$pname} cannot survive a disk loss";
+            $ok_subject = "Storage Guard: Pool {$pname} recovered";
+        } else {
+            $warn_body = sg_pool_notify_body('warning', $pname, $pool_free, $th, $profile, $class);
+            $crit_body = sg_pool_notify_body('critical', $pname, $pool_free, $th, $profile, $class);
+            $free_h = function_exists('sg_human_free') ? sg_human_free($pool_free) : (round($pool_free, 2) . 'T');
+            $ok_body = "Pool {$pname} free space is back above your thresholds ({$free_h} free). No longer at warning or critical free-space levels.";
+            $warn_subject = "Storage Guard: Pool {$pname} free space warning";
+            $crit_subject = "Storage Guard: Pool {$pname} free space critical";
+            $ok_subject = "Storage Guard: Pool {$pname} free space recovered";
+        }
         sg_process_level(
             "pool_{$safe}",
             $level,
-            "Storage Guard: Pool {$pname} free space warning",
-            "Storage Guard: Pool {$pname} free space critical",
-            "Storage Guard: Pool {$pname} free space recovered",
+            $warn_subject,
+            $crit_subject,
+            $ok_subject,
             $warn_body,
             $crit_body,
             $ok_body
