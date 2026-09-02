@@ -61,6 +61,7 @@ echo "StorageGuard: ready."
 
 <FILE Name="/boot/config/plugins/StorageGuard/&pkgfile;" Run="upgradepkg --install-new --reinstall">
 <URL>&raw;/archive/&pkgfile;?v=&version;</URL>
+<MD5>78a074c942c456cee48270c8cce7da1f</MD5>
 </FILE>
 
 <FILE Run="/bin/bash">
