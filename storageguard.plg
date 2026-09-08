@@ -24,10 +24,7 @@
 
 <CHANGES>
 ###&version;
-- Hashed raw install; Settings threshold note escapes form values.
-
-###2026.09.06aa
-- Install copies plugin files from GitHub raw (SHA256/MD5 pin). No archive .txz payload.
+- Hashed raw install (SHA256/MD5); Settings threshold note escapes form values.
 
 ###2026.08.31aa
 - RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
@@ -42,7 +39,7 @@
 - Pools-only Settings HTML; product defaults Outline/green OK; capacity labels = Main.
 
 ### Older releases
-- Full changelog: https://github.com/ibigsnet/StorageGuard/blob/testing/CHANGELOG.md
+- Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
 </CHANGES>
 
 <FILE Run="/bin/bash">
