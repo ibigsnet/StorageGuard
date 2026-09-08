@@ -15,3 +15,6 @@ NOTES.local.md
 AGENTS.md
 scripts/pack-txz.sh
 scripts/promote-stable.sh
+
+# Plugin payload is hashed raw files in the .plg — do not ship Slackware txz
+archive/*.txz

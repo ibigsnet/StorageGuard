@@ -6,6 +6,16 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.06ab
+
+- **CA review:** hashed raw install (no unsigned `.txz`). Settings threshold note
+  HTML-escapes form values (`updateOrderNote`).
+
+## 2026.09.06aa
+
+- **Install:** plugin files come from GitHub raw with SHA256/MD5 pins in the `.plg`.
+  Dropped `archive/*.txz` payload (`upgradepkg`). Addresses CA review: unsigned package download.
+
 ## 2026.08.31aa
 
 - **Failed-disk paint:** BTRFS pools that cannot survive one whole-disk failure stay **Critical**

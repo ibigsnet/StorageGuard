@@ -2,15 +2,13 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.08.31aa">
+<!ENTITY version "2026.09.06ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
 <!ENTITY raw "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main">
 <!ENTITY plugdir "/usr/local/emhttp/plugins/StorageGuard">
 <!ENTITY configdir "/boot/config/plugins/StorageGuard">
-<!ENTITY pkg "StorageGuard-&version;-x86_64-1">
-<!ENTITY pkgfile "&pkg;.txz">
 ]>
 
 <PLUGIN name="&name;"
@@ -26,6 +24,12 @@
 
 <CHANGES>
 ###&version;
+- Hashed raw install; Settings threshold note escapes form values.
+
+###2026.09.06aa
+- Install copies plugin files from GitHub raw (SHA256/MD5 pin). No archive .txz payload.
+
+###2026.08.31aa
 - RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
 
 ###2026.08.17ah
@@ -55,13 +59,68 @@ done
 rm -rf /usr/local/emhttp/plugins/StorageGuard \
        /usr/local/emhttp/plugins/storageguard 2>/dev/null || true
 rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
+mkdir -p /usr/local/emhttp/plugins/StorageGuard
 echo "StorageGuard: ready."
 ]]></INLINE>
 </FILE>
 
-<FILE Name="/boot/config/plugins/StorageGuard/&pkgfile;" Run="upgradepkg --install-new --reinstall">
-<URL>&raw;/archive/&pkgfile;?v=&version;</URL>
+<!-- raw-files begin -->
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page">
+<URL>&raw;/StorageGuard.page?v=&version;</URL>
+<SHA256>3ed7b25a72335db889ef7874a28bfc46b83faaaba910ebba008729e44f668294</SHA256>
+<MD5>981f91befc8d5a3777bd0bb975de65d5</MD5>
 </FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg">
+<URL>&raw;/default.cfg?v=&version;</URL>
+<SHA256>d4d7286afd69b2aaa924a6e1476b39427e57624bf7d8519db918d97844f18b18</SHA256>
+<MD5>db2f8540518cb5b4767577b3ce0c4e1a</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/README.md">
+<URL>&raw;/README.md?v=&version;</URL>
+<SHA256>cbf2ccab683cd6f07669668ca14ea2cce9758ade366432fb2f8ff45ae35a5d4d</SHA256>
+<MD5>3630739e71bf42ed8e12536955e706f1</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
+<URL>&raw;/sg-update.php?v=&version;</URL>
+<SHA256>b84ae5efc8fa1b5fc5daa29bf879a222b383dbf54537e9fe0696e219e4663eea</SHA256>
+<MD5>83c55bb0612e1b66e15dc959b8543182</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
+<URL>&raw;/storageguard.js?v=&version;</URL>
+<SHA256>33edddf2e17818b37ed63d2235678fc382af9eceeccc2650b729122c1e89e442</SHA256>
+<MD5>83fa36b4f3cece4a28a0b41f0161d0ea</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
+<URL>&raw;/storageguard.css?v=&version;</URL>
+<SHA256>47829df059e2bd84a59be5b209bee72a8c26759bb6e87f69d466c1ab979d7a3e</SHA256>
+<MD5>01f4c08dadf25c2f6719bf1cd35b1db9</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js">
+<URL>&raw;/storageguard-color.js?v=&version;</URL>
+<SHA256>46baab54b659fa73d351d2b5d68b2b09b9e3b173a1ffa8cb7647383cd65c7839</SHA256>
+<MD5>ffe4505f4ae791b04626a6d08b061687</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/get-config.php">
+<URL>&raw;/get-config.php?v=&version;</URL>
+<SHA256>1d89953e6ac30e23f3aeb67e5c8a1d3d0080af982baa728a5d6e380fe12ccae7</SHA256>
+<MD5>4c426d2190432b0141136f8e57236856</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/check-alerts.php">
+<URL>&raw;/check-alerts.php?v=&version;</URL>
+<SHA256>df65362aba9ecee49cf51f24fa9c95c77d45e455f0109b161d86c730b172f950</SHA256>
+<MD5>a450b57bfaed2eeeff2f744941f95384</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
+<URL>&raw;/sg-lib.php?v=&version;</URL>
+<SHA256>683b9ba5f644248887cb82df9905a4dc9c78eb023cd9e7ae352abe40eb1b1bd0</SHA256>
+<MD5>5ee5634a813fc4889a0ed33d39e4d237</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
+<URL>&raw;/sg-pool-math.php?v=&version;</URL>
+<SHA256>2431adb99e10564c0b25940ee005a003c884582b0299eb8ef54cccd6572b83f3</SHA256>
+<MD5>e023014d0826b835d4f9b7db11adf6de</MD5>
+</FILE>
+<!-- raw-files end -->
 
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
