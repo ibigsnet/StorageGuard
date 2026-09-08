@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.06ab">
+<!ENTITY version "2026.09.08ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,10 +24,13 @@
 
 <CHANGES>
 ###&version;
-- Hashed raw install; Settings threshold note escapes form values.
+- Install overlays hashed files; do not wipe the live plugin before FILE copy.
 
-###2026.09.06aa
-- Install copies plugin files from GitHub raw (SHA256/MD5 pin). No archive .txz payload.
+###2026.09.08aa
+- Alerts check is POST+csrf (Main poll no longer starts notifies on GET).
+
+###2026.09.06aa–ab
+- Hashed raw install (SHA256/MD5); Settings threshold note escapes form values.
 
 ###2026.08.31aa
 - RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
@@ -50,14 +53,15 @@
 echo "StorageGuard: preparing..."
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 mkdir -p /boot/config/plugins/StorageGuard
-# YYYY.MM.DDxx package names: always remove prior installs so upgrades never leave mixed files
+# Forget old Slackware txz registration WITHOUT deleting the live tree.
+# removepkg / rm -rf here ran before GitHub FILE copies; a failed download
+# left Plugins on "error install".
 for p in /var/log/packages/StorageGuard-*; do
   [ -e "$p" ] || continue
-  echo "StorageGuard: removing old package $(basename "$p")"
-  removepkg "$(basename "$p")" 2>/dev/null || true
+  echo "StorageGuard: forgetting old package $(basename "$p") (overlay files next)"
+  rm -f "$p"
 done
-rm -rf /usr/local/emhttp/plugins/StorageGuard \
-       /usr/local/emhttp/plugins/storageguard 2>/dev/null || true
+rm -rf /usr/local/emhttp/plugins/storageguard 2>/dev/null || true
 rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
 mkdir -p /usr/local/emhttp/plugins/StorageGuard
 echo "StorageGuard: ready."
@@ -97,8 +101,8 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js">
 <URL>&raw;/storageguard-color.js?v=&version;</URL>
-<SHA256>46baab54b659fa73d351d2b5d68b2b09b9e3b173a1ffa8cb7647383cd65c7839</SHA256>
-<MD5>ffe4505f4ae791b04626a6d08b061687</MD5>
+<SHA256>bd12beeaab139564f65e2fd9f0150cfc033f8a9e7e533388e7ad27bbc0ebad04</SHA256>
+<MD5>99eade83e9f91a966da5776b368f0c77</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/get-config.php">
 <URL>&raw;/get-config.php?v=&version;</URL>
@@ -107,8 +111,8 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/check-alerts.php">
 <URL>&raw;/check-alerts.php?v=&version;</URL>
-<SHA256>df65362aba9ecee49cf51f24fa9c95c77d45e455f0109b161d86c730b172f950</SHA256>
-<MD5>a450b57bfaed2eeeff2f744941f95384</MD5>
+<SHA256>5b66342a6fd8a611376f05063c6b75cc81e70baf5f0f063178d1e1790816a6d4</SHA256>
+<MD5>53976567a97586233fed6ca3ea8934fa</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
 <URL>&raw;/sg-lib.php?v=&version;</URL>

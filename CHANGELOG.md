@@ -6,15 +6,26 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08ab
+
+- **Install:** do not `rm -rf` the live plugin or `removepkg` before GitHub FILE copies
+  (Update All error-install). Overlay; forget old txz package names only.
+
+## 2026.09.08aa
+
+- **Alerts:** `check-alerts.php` is POST + csrf_token. Main’s color script no longer
+  starts notifies with a plain GET.
+
 ## 2026.09.06ab
 
-- **CA review:** hashed raw install (no unsigned `.txz`). Settings threshold note
+- **Install / security:** hashed raw files (no unsigned `.txz`). Settings threshold note
   HTML-escapes form values (`updateOrderNote`).
 
 ## 2026.09.06aa
 
 - **Install:** plugin files come from GitHub raw with SHA256/MD5 pins in the `.plg`.
-  Dropped `archive/*.txz` payload (`upgradepkg`). Addresses CA review: unsigned package download.
+  Dropped `archive/*.txz` payload (`upgradepkg`). Pins the download so the payload cannot
+  change under a given plugin version.
 
 ## 2026.08.31aa
 
