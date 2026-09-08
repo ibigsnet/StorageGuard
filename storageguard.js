@@ -118,6 +118,15 @@ function initStorageGuardUI() {
     };
   }
 
+  function sgEscHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function updateOrderNote() {
     var note = document.getElementById('sg-order-note');
     if (!note) return;
@@ -150,8 +159,8 @@ function initStorageGuardUI() {
     }
 
     var lines = inverted.map(function (x) {
-      return '<li><strong>' + x.label + '</strong>: Critical free space (<code>' + x.crit +
-        '</code>) is <em>higher</em> than Warning (<code>' + x.warn + '</code>)</li>';
+      return '<li><strong>' + sgEscHtml(x.label) + '</strong>: Critical free space (<code>' + sgEscHtml(x.crit) +
+        '</code>) is <em>higher</em> than Warning (<code>' + sgEscHtml(x.warn) + '</code>)</li>';
     }).join('');
 
     note.style.display = 'block';

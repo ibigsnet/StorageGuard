@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.06ab
+
+- **CA review:** hashed raw install (no unsigned `.txz`). Settings threshold note
+  HTML-escapes form values (`updateOrderNote`).
+
 ## 2026.09.06aa
 
 - **Install:** plugin files come from GitHub raw with SHA256/MD5 pins in the `.plg`.
