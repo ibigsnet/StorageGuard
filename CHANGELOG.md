@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08aa
+
+- **Alerts:** `check-alerts.php` is POST + csrf_token. Main’s color script no longer
+  starts notifies with a plain GET.
+
 ## 2026.09.06ab
 
 - **Install / security:** hashed raw files (no unsigned `.txz`). Settings threshold note

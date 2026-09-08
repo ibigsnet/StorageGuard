@@ -2,6 +2,23 @@
 
 header('Content-Type: application/json');
 
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    http_response_code(405);
+    header('Allow: POST');
+    echo json_encode(['sent' => false, 'reason' => 'POST required']);
+    exit;
+}
+$csrf_expected = '';
+if (is_readable('/var/local/emhttp/var.ini')) {
+    $var_ini = @parse_ini_file('/var/local/emhttp/var.ini');
+    $csrf_expected = is_array($var_ini) ? (string)($var_ini['csrf_token'] ?? '') : '';
+}
+if ($csrf_expected !== '' && !hash_equals($csrf_expected, (string)($_POST['csrf_token'] ?? ''))) {
+    http_response_code(403);
+    echo json_encode(['sent' => false, 'reason' => 'Invalid csrf_token']);
+    exit;
+}
+
 require_once __DIR__ . '/sg-lib.php';
 require_once __DIR__ . '/sg-pool-math.php';
 

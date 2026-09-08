@@ -527,7 +527,17 @@
         data._status._opts = opts;
         log('status', data._status, opts);
         applyStatus(data._status, opts);
-        fetch('/plugins/StorageGuard/check-alerts.php', { credentials: 'same-origin' }).catch(function () {});
+        var alertBody = new URLSearchParams();
+        if (typeof csrf_token !== 'undefined' && csrf_token) {
+          alertBody.set('csrf_token', csrf_token);
+        }
+        fetch('/plugins/StorageGuard/check-alerts.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: alertBody.toString()
+        }).catch(function () {});
       })
       .catch(function (err) {
         console.warn('Storage Guard: config fetch failed', err);
