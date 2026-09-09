@@ -6,6 +6,11 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08ae
+
+- **Settings:** Outline or fill (all targets) Apply writes Array and every pool.
+  A single Array/pool tab can still differ until Settings is Applied again.
+
 ## 2026.09.08ad
 
 - **Tabs:** no empty parent “Storage Guard” tab. **Array** is hidden when there are

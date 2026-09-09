@@ -367,6 +367,7 @@ function initStorageGuardUI() {
     setSelect('outline_show_ok', 'yes');
     setSelect('array_coloring', hasArray ? 'yes' : 'no');
     setSelect('array_color_style', 'outline');
+    setSelect('color_style', 'outline');
     setSelect('array_use_custom', 'no');
     setInput('array_warning_custom', '');
     setInput('array_critical_custom', '');

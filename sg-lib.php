@@ -703,6 +703,7 @@ function sg_product_defaults_map() {
         'array_coloring' => 'no',
         'pool_coloring' => 'yes',
         'array_color_style' => 'outline',
+        'color_style' => 'outline',
         'outline_pulse' => 'no',
         'outline_show_ok' => 'yes',
         'array_warning' => '',

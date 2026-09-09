@@ -216,6 +216,15 @@ if ($pool_coloring !== 'yes') {
     $pool_coloring = 'no';
 }
 $array_color_style = sg_resolve_style($cfg, 'array_color_style');
+$color_style = sg_resolve_style($cfg, 'color_style');
+$sg_styles_agree = [$array_color_style];
+foreach ($pool_names as $pn) {
+    $sg_styles_agree[] = sg_resolve_style($cfg, 'pool_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $pn) . '_color_style');
+}
+$sg_styles_agree = array_values(array_unique($sg_styles_agree));
+if (count($sg_styles_agree) === 1) {
+    $color_style = $sg_styles_agree[0];
+}
 $outline_pulse = (($cfg['outline_pulse'] ?? 'no') === 'yes') ? 'yes' : 'no';
 $outline_show_ok = (($cfg['outline_show_ok'] ?? 'yes') === 'yes') ? 'yes' : 'no';
 $pools_to_color = $cfg['pools_to_color'] ?? 'all';

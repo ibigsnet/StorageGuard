@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.08ad">
+<!ENTITY version "2026.09.08ae">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,6 +24,9 @@
 
 <CHANGES>
 ###&version;
+- Settings: Outline or fill (all targets) Apply sets Array and every pool.
+
+###2026.09.08ad
 - No empty Storage Guard tab; hide Array when no array disks; Outline or fill on each storage tab.
 
 ###2026.09.08ac
@@ -83,13 +86,13 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
 <URL>&raw;/sg-update.php?v=&version;</URL>
-<SHA256>6d195ce14d7b727848129e4989bd1b0f80ae0366345ead12d3bd69fbe5b437fa</SHA256>
-<MD5>c821dd6dc4d03e0a9cdfb7face2a1e54</MD5>
+<SHA256>19ed9a97f8d25b6a07b8f36ed52b2e687a52702a5c3f3a4b524a1e675323d8fd</SHA256>
+<MD5>782886a20c6093c2a66e0ff3ffb04ad2</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
 <URL>&raw;/storageguard.js?v=&version;</URL>
-<SHA256>7f4e4e63ba04762928ce2346597e1eab8f34a2d9ba3557f56b16e9c3b26ec6c2</SHA256>
-<MD5>122f28593eb391d6daea411b34afabe6</MD5>
+<SHA256>399675354d0555393273875191584d9898db767852e209541f7a0944a27c03e2</SHA256>
+<MD5>5fdcaaf36bc871793cbce7e4fc1e26f9</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
 <URL>&raw;/storageguard.css?v=&version;</URL>
@@ -113,8 +116,8 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
 <URL>&raw;/sg-lib.php?v=&version;</URL>
-<SHA256>e31247bc85b2d92645e709cbc0ba0eaed1fe9d7ea0dd4596b4c0bad51e7864dc</SHA256>
-<MD5>479b7e36873264473c1f9bbe52592898</MD5>
+<SHA256>c671063ec1a0eff0b4057df137d85400f7bd03333ce4b6fab6e876bac486105f</SHA256>
+<MD5>613f48b6d6e5ab2479fa24da705cb786</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
 <URL>&raw;/sg-pool-math.php?v=&version;</URL>
@@ -128,18 +131,18 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGHelp.page">
 <URL>&raw;/SGHelp.page?v=&version;</URL>
-<SHA256>146fe43274a1e578cc2c4e4858e7edc0834a5e5f30ad7ebc1a57ac1d977b5101</SHA256>
-<MD5>88bbc1178ed6278e24157aede9bf8549</MD5>
+<SHA256>ae5a9d245c9764e2ec512e5cc942481ca41bf302632b787d3e583c525f733b57</SHA256>
+<MD5>3be337d9dd0415dc9df6478c1387b753</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGSettings.page">
 <URL>&raw;/SGSettings.page?v=&version;</URL>
-<SHA256>35dda55d169b283149c36b0d4fef8e4edee41094284a66f21a1aa0eff4d759de</SHA256>
-<MD5>edfde3a5ad0bed4373d97102f34657b1</MD5>
+<SHA256>9bfe624835ff2cccb85f3c11f9ad73a616f2bb34001285917122521d54c5dd1d</SHA256>
+<MD5>25c0c8ec6c8e043ae6b7af0eeec3a1ca</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-page-boot.php">
 <URL>&raw;/sg-page-boot.php?v=&version;</URL>
-<SHA256>11fc42dff69d7b185081ada972c57262622381b35b4fa7804347534e09acdf49</SHA256>
-<MD5>9a8b0e64f5d1ffaa13240de258fa3ea1</MD5>
+<SHA256>7cd25c3336d9c0ca59bba3c40e9cd134745e035070d7365800ae896f1431b9e5</SHA256>
+<MD5>7c16f65c8feaa22000019ebdcf1198da</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php">
 <URL>&raw;/sg-target-page.php?v=&version;</URL>

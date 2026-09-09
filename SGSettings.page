@@ -17,6 +17,23 @@ sg_page_styles();
     <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
     <input type="hidden" name="#include" value="plugins/StorageGuard/sg-update.php">
     <input type="hidden" name="sg_defaults" value="1">
+    <input type="hidden" name="sg_tab" value="settings">
+
+    <dl>
+      <dt>Outline or fill (all targets):</dt>
+      <dd>
+        <select name="color_style" id="color_style">
+          <?= mk_option($color_style, 'outline', _('Outline')) ?>
+          <?= mk_option($color_style, 'solid', _('Solid (fill)')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Apply sets Array and every pool to this. A single pool tab can still differ until you Apply here again.
+<?php if (count($sg_styles_agree) > 1): ?>
+      Targets currently differ.
+<?php endif; ?>
+    </blockquote>
 
     <dl>
       <dt>Color outlines green when OK/Normal:</dt>

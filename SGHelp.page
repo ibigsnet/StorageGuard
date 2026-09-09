@@ -14,7 +14,7 @@ sg_page_styles();
   </p>
   <ul style="line-height:1.5;margin:0.4em 0 0.8em 1.25em;padding:0">
     <li><strong>Array</strong> (only if you have array disks) and each pool tab (named like <strong>Cache</strong>) set Warning/Critical, alerts, coloring, and outline vs fill for that target.</li>
-    <li><strong>Settings</strong> — green outline when OK, pulse on warn/crit (all targets).</li>
+    <li><strong>Settings</strong> — outline vs fill for <em>all</em> targets, green outline when OK, pulse on warn/crit.</li>
     <li>Pools that cannot survive a disk loss (RAID0, single, DUP, one disk) stay Critical on Main.</li>
   </ul>
   <p>

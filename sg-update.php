@@ -8,17 +8,38 @@ if (is_file($sg_lib)) {
 if (is_array($keys)) {
     foreach (array_keys($keys) as $k) {
         if (!is_string($k)) continue;
-        if ($k === 'pool_all' || $k === 'sg_target' || $k === 'sg_target_coloring' || preg_match('/^pool_color_/', $k)) {
+        if ($k === 'pool_all' || $k === 'sg_target' || $k === 'sg_target_coloring' || $k === 'sg_tab' || preg_match('/^pool_color_/', $k)) {
             unset($keys[$k]);
             continue;
         }
-        if ($k === 'color_style' || $k === 'cache_coloring') {
+        if ($k === 'cache_coloring') {
             unset($keys[$k]);
         }
     }
 }
 
 if (!isset($_POST['#default'])) {
+    if (($_POST['sg_tab'] ?? '') === 'settings') {
+        $style = (strtolower((string)($_POST['color_style'] ?? 'outline')) === 'solid') ? 'solid' : 'outline';
+        $_POST['color_style'] = $style;
+        $_POST['array_color_style'] = $style;
+        $stamp = function_exists('sg_list_pool_names') ? sg_list_pool_names() : [];
+        $cur_cfg = function_exists('parse_plugin_cfg') ? parse_plugin_cfg('StorageGuard') : [];
+        if (is_array($cur_cfg)) {
+            foreach (array_keys($cur_cfg) as $ck) {
+                if (preg_match('/^pool_(.+)_color_style$/', (string)$ck, $m)) {
+                    $_POST['pool_' . $m[1] . '_color_style'] = $style;
+                }
+            }
+        }
+        foreach ($stamp as $pn) {
+            $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $pn);
+            if ($safe !== '') {
+                $_POST['pool_' . $safe . '_color_style'] = $style;
+            }
+        }
+    }
+    unset($_POST['sg_tab']);
     $target = trim((string)($_POST['sg_target'] ?? ''));
     if ($target !== '' && $target !== 'array' && function_exists('sg_list_pool_names')) {
         $want = (strtolower((string)($_POST['sg_target_coloring'] ?? 'no')) === 'yes');
