@@ -6,6 +6,12 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08ag
+
+- **Docs / Help:** Settings tabs (Array, named pools, Settings, Help). Suggest hidden on
+  2-disk RAID1. Warning/Critical Δ mapping matches code (`max` / `min`). Channels:
+  CA **`main`**, WIP **`testing`**.
+
 ## 2026.09.08af
 
 - **Suggest free thresholds:** 2-disk RAID1 does not suggest (survivor holds a full

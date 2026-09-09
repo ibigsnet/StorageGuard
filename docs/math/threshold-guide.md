@@ -51,7 +51,7 @@ $$
 | **Warning** | $\max\Delta$ (largest-member loss) |
 | **Critical** | $\min\Delta$ (smallest-member loss) |
 
-**Suggest free thresholds** fills **Custom** with that pair. You can reverse, change, or ignore it.
+**Suggest free thresholds** (on that **pool’s tab**) fills **Custom** with that pair when Δ is a real capacity drop. **2-disk RAID1** does not Suggest (survivor holds a full copy; tiny GB size-field skew is ignored). You can reverse, change, or ignore the numbers; Custom always works.
 
 ### Soft default / disk-size on RAID1–RAID10–RAID5/6
 
@@ -134,4 +134,4 @@ Array defaults: Warning = largest **data** disk free, Critical = smallest **data
 | [scenarios.md](scenarios.md) | Fit math + worked examples |
 | [raid10.md](raid10.md) / [raid1.md](raid1.md) | Profile notes + product behavior |
 | [README.md](README.md) | Index of math docs |
-| Settings → Storage Guard → **Show Cache** | Suggest button + per-pool loss table |
+| Tools → Storage Guard → **pool tab** (e.g. Cache) | Suggest button when the profile supports it |

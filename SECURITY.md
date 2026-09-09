@@ -40,8 +40,8 @@ Export or screenshot settings before uninstall if you want them later.
 
 ## Install channel
 
-Production / Community Applications: GitHub branch **`stable`**.  
-Lab / development: branch **`main`**.
+Production / Community Applications: GitHub branch **`main`**.  
+WIP: branch **`testing`**.
 
 ## Contact
 
