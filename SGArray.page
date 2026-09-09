@@ -1,0 +1,8 @@
+Menu="StorageGuard:1"
+Title="Array"
+Tag="server"
+Markdown="false"
+---
+<?php
+$sg_target_kind = 'array';
+require '/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php';

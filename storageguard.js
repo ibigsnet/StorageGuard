@@ -333,79 +333,6 @@ function initStorageGuardUI() {
   updateOrderNote();
 
 
-  // Array: visible when data disks exist; pools-only starts hidden (not sticky).
-  var setArrayHiddenOpen = null;
-  (function wireArrayToggle() {
-    var form = document.getElementById('storageguard-form');
-    var hasArray = form && form.getAttribute('data-sg-has-array') === '1';
-    var btn = document.getElementById('sg-toggle-array');
-    var block = document.getElementById('sg-array-block');
-    var appear = document.getElementById('sg-array-appearance');
-    // Drop legacy sticky key so old "Show Array" sessions do not reopen by default.
-    try { localStorage.removeItem('sg_show_array'); } catch (e0) { /* ignore */ }
-
-    function setOpen(open) {
-      if (hasArray) {
-        open = true;
-        if (btn) btn.style.display = 'none';
-      }
-      if (block) block.style.display = open ? '' : 'none';
-      if (appear) appear.style.display = open ? '' : 'none';
-      document.querySelectorAll('.sg-array-alert-row').forEach(function (tr) {
-        tr.style.display = open ? '' : 'none';
-      });
-      if (btn) btn.textContent = open ? 'Hide Array' : 'Show Array';
-      if (open) {
-        updateArrayCustom();
-        var ac = document.getElementById('array_coloring');
-        if (ac) {
-          var sec = document.getElementById(ac.getAttribute('data-sg-section') || 'array-color-options');
-          setVisible(sec, ac.value === 'yes');
-        }
-        updateOrderNote();
-      }
-    }
-    setArrayHiddenOpen = setOpen;
-    if (hasArray) {
-      setOpen(true);
-      return;
-    }
-    if (!btn) return;
-    setOpen(false);
-    btn.addEventListener('click', function () {
-      var open = !block || block.style.display === 'none';
-      setOpen(open);
-    });
-  })();
-
-  // Cache thresholds: hidden by default; remembers open state.
-  // Pool coloring + pool alert rows stay visible whenever pools exist (not tied to this toggle).
-  (function wireCacheToggle() {
-    var btn = document.getElementById('sg-toggle-cache');
-    var panel = document.getElementById('sg-cache-panel');
-    if (!btn || !panel) return;
-    var key = 'sg_show_cache';
-    function setOpen(open) {
-      panel.style.display = open ? '' : 'none';
-      btn.textContent = open ? 'Hide Cache' : 'Show Cache';
-      try { localStorage.setItem(key, open ? '1' : '0'); } catch (e2) { /* ignore */ }
-      if (open) {
-        document.querySelectorAll('.pool-use-custom').forEach(function (s) {
-          var safe = s.getAttribute('data-pool-safe');
-          if (safe) updatePoolCustom(safe);
-        });
-        updateOrderNote();
-      }
-    }
-    var saved = false;
-    try { saved = localStorage.getItem(key) === '1'; } catch (e3) { /* ignore */ }
-    setOpen(saved);
-    btn.addEventListener('click', function () {
-      var open = panel.style.display === 'none';
-      setOpen(open);
-    });
-  })();
-
   function resetFormToProductDefaults() {
     function setSelect(id, value) {
       var el = document.getElementById(id);
@@ -503,10 +430,6 @@ function initStorageGuardUI() {
       var safe = s.getAttribute('data-pool-safe');
       if (safe) updatePoolCustom(safe);
     });
-    // Product Default: re-hide array settings when no array (config values stay; UI collapses)
-    if (typeof setArrayHiddenOpen === 'function') {
-      setArrayHiddenOpen(false);
-    }
     updateShowOkVisibility();
     updateOrderNote();
   }

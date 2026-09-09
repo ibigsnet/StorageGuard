@@ -849,3 +849,95 @@ function sg_seed_product_cfg($fresh = true) {
     }
     return @file_put_contents($path, implode("\n", $lines) . "\n") !== false;
 }
+
+function sg_plugin_root() {
+    return '/usr/local/emhttp/plugins/StorageGuard';
+}
+
+/** Display name: cache → Cache. */
+function sg_pool_title($name) {
+    $name = (string)$name;
+    if ($name === '') {
+        return $name;
+    }
+    return strtoupper($name[0]) . substr($name, 1);
+}
+
+function sg_pool_page_safe($pname) {
+    return preg_replace('/[^a-zA-Z0-9_]/', '_', (string)$pname);
+}
+
+/** Live pool names from disks.ini (Cache slots, skip empty/_NP/flash). */
+function sg_list_pool_names() {
+    $disks_ini = '/var/local/emhttp/disks.ini';
+    if (!is_file($disks_ini)) {
+        return [];
+    }
+    $disks = @parse_ini_file($disks_ini, true) ?: [];
+    $names = [];
+    foreach ($disks as $key => $d) {
+        if (!is_array($d) || empty($d['device'])) {
+            continue;
+        }
+        if (($d['type'] ?? '') !== 'Cache') {
+            continue;
+        }
+        if (strpos((string)($d['status'] ?? ''), '_NP') !== false) {
+            continue;
+        }
+        $pname = preg_replace('/\d+$/', '', (string)$key);
+        if ($pname === '' || $pname === 'flash') {
+            continue;
+        }
+        if (sg_disk_capacity_kb($d) > 0) {
+            $names[$pname] = true;
+        }
+    }
+    $out = array_keys($names);
+    natcasesort($out);
+    return array_values($out);
+}
+
+/**
+ * Write SGPool_<name>.page tabs for each live pool (TbnN pattern).
+ * Generated files are runtime-only — not in the hashed FILE list.
+ */
+function sg_sync_pool_pages() {
+    $root = sg_plugin_root();
+    if (!is_dir($root)) {
+        return;
+    }
+    $names = sg_list_pool_names();
+    $keep = [];
+    $i = 0;
+    foreach ($names as $pname) {
+        $safe = sg_pool_page_safe($pname);
+        if ($safe === '') {
+            continue;
+        }
+        $keep[$safe] = true;
+        $menu = 10 + $i;
+        $i++;
+        $title = str_replace(['"', '<', '>'], '', sg_pool_title($pname));
+        $pname_php = str_replace(['\\', "'"], ['\\\\', "\\'"], $pname);
+        $page = $root . '/SGPool_' . $safe . '.page';
+        $body = <<<PAGE
+Menu="StorageGuard:{$menu}"
+Title="{$title}"
+Tag="database"
+Markdown="false"
+---
+<?php
+\$sg_target_kind = 'pool';
+\$sg_pool = '{$pname_php}';
+require '/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php';
+
+PAGE;
+        @file_put_contents($page, $body);
+    }
+    foreach (glob($root . '/SGPool_*.page') ?: [] as $f) {
+        if (preg_match('/^SGPool_(.+)\.page$/', basename($f), $m) && empty($keep[$m[1]])) {
+            @unlink($f);
+        }
+    }
+}

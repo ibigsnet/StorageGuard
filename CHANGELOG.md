@@ -6,6 +6,13 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08ac
+
+- **Settings tabs:** Unraid tab strip like NBD / Thunderbolt Net. **Array**, then one tab
+  named after each live pool (e.g. **Cache**), **Settings** (green outline / pulse),
+  **Help**. Dropped Show Array / Show Cache. Pool tabs are generated at runtime
+  (`SGPool_*.page`), same idea as tbn0/tbn1.
+
 ## 2026.09.08ab
 
 - **Install:** do not `rm -rf` the live plugin or `removepkg` before GitHub FILE copies

@@ -1,0 +1,3 @@
+#!/bin/bash
+# Refresh Array / pool-named Settings tabs after array start.
+php -r 'require_once "/usr/local/emhttp/plugins/StorageGuard/sg-lib.php"; if (function_exists("sg_sync_pool_pages")) { sg_sync_pool_pages(); }' >/dev/null 2>&1 || true

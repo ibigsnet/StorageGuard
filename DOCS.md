@@ -53,7 +53,7 @@ When free space crosses a threshold, Storage Guard paints that target’s **tota
 | Highlight style | **Outline** (array and every pool) |
 | Color outlines green when OK/Normal | **Yes** |
 | Pulse free-bar colors on warn/crit | **No** (opt-in) |
-| Settings UI | Array shown when array detected (hidden if none — **Show Array** for this visit); **Show Cache** hides pool thresholds by default (choice remembered). Pool coloring stays visible when pools exist. |
+| Settings UI | Unraid tab strip: **Array**, then one tab per live pool (**Cache**, …), **Settings** (green OK / pulse), **Help**. |
 
 Pool free-bar **paint** defaults on; pool **free thresholds** stay empty until you set them. Pool alert checkboxes default on. Array paint/alerts default on when data disks exist, with largest-disk Warning and smallest-disk Critical. Equal-size data disks use the same value for both (no separate yellow band).
 
