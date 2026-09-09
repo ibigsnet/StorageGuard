@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.08ae">
+<!ENTITY version "2026.09.08af">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,7 +24,7 @@
 
 <CHANGES>
 ###&version;
-- Settings: Outline or fill (all targets) Apply sets Array and every pool.
+- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets.
 
 ###2026.09.08ad
 - No empty Storage Guard tab; hide Array when no array disks; Outline or fill on each storage tab.
@@ -121,8 +121,8 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
 <URL>&raw;/sg-pool-math.php?v=&version;</URL>
-<SHA256>2431adb99e10564c0b25940ee005a003c884582b0299eb8ef54cccd6572b83f3</SHA256>
-<MD5>e023014d0826b835d4f9b7db11adf6de</MD5>
+<SHA256>af4461eaebf706865b65d5ee8b028f0046d146b0faf70aab9c81d30a541e4e9d</SHA256>
+<MD5>0d4aae2e3ab1c092a321ef7b04a9f09b</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGArray.page">
 <URL>&raw;/SGArray.page?v=&version;</URL>

@@ -6,6 +6,12 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08af
+
+- **Suggest free thresholds:** 2-disk RAID1 does not suggest (survivor holds a full
+  copy). Ignore Δ under 10G so slightly different “same” SSDs do not fill Custom
+  with e.g. 3G.
+
 ## 2026.09.08ae
 
 - **Settings:** Outline or fill (all targets) Apply writes Array and every pool.
