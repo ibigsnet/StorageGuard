@@ -4,14 +4,3 @@ Tabs="true"
 Title="Storage Guard"
 Icon="shield"
 Tag="shield"
-Markdown="false"
----
-<?php
-/* Parent tab strip. Sync pool-named tabs before children paint when possible. */
-if (is_file('/usr/local/emhttp/plugins/StorageGuard/sg-lib.php')) {
-  require_once '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
-  if (function_exists('sg_sync_pool_pages')) {
-    sg_sync_pool_pages();
-  }
-}
-?>

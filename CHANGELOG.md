@@ -6,6 +6,12 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08ad
+
+- **Tabs:** no empty parent “Storage Guard” tab. **Array** is hidden when there are
+  no array data disks. **Outline or fill** stays on each Array/pool tab (not nested
+  under coloring Yes).
+
 ## 2026.09.08ac
 
 - **Settings tabs:** Unraid tab strip like NBD / Thunderbolt Net. **Array**, then one tab

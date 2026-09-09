@@ -907,6 +907,12 @@ function sg_sync_pool_pages() {
     if (!is_dir($root)) {
         return;
     }
+    $flag = '/var/tmp/storageguard-has-array';
+    if (function_exists('sg_array_present') && sg_array_present()) {
+        @file_put_contents($flag, "1\n");
+    } else {
+        @unlink($flag);
+    }
     $names = sg_list_pool_names();
     $keep = [];
     $i = 0;

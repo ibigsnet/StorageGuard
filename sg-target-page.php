@@ -188,7 +188,7 @@ $pair = ($kind === 'pool') ? ('pool-' . $safe) : 'array';
     <dl>
       <dt>Color Main free bar:</dt>
       <dd>
-        <select name="array_coloring" id="array_coloring" class="sg-toggle" data-sg-section="array-color-options">
+        <select name="array_coloring" id="array_coloring">
           <?= mk_option($array_coloring, 'yes', _('Yes')) ?>
           <?= mk_option($array_coloring, 'no', _('No')) ?>
         </select>
@@ -197,20 +197,18 @@ $pair = ($kind === 'pool') ? ('pool-' . $safe) : 'array';
     <blockquote class="inline_help">
       <strong>Yes</strong> = color the array Total free bar on Main.
     </blockquote>
-    <div id="array-color-options">
-      <dl>
-        <dt>Highlight style:</dt>
-        <dd>
-          <select name="array_color_style" id="array_color_style">
-            <?= mk_option($array_color_style, 'outline', _('Outline')) ?>
-            <?= mk_option($array_color_style, 'solid', _('Solid')) ?>
-          </select>
-        </dd>
-      </dl>
-      <blockquote class="inline_help">
-        Outline = border only. Solid = recolor free fill.
-      </blockquote>
-    </div>
+    <dl>
+      <dt>Outline or fill:</dt>
+      <dd>
+        <select name="array_color_style" id="array_color_style">
+          <?= mk_option($array_color_style, 'outline', _('Outline')) ?>
+          <?= mk_option($array_color_style, 'solid', _('Solid (fill)')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Outline = border only. Solid = recolor the free fill.
+    </blockquote>
 
 <?php else: ?>
     <p class="sg-section-lead">
@@ -317,7 +315,7 @@ $pair = ($kind === 'pool') ? ('pool-' . $safe) : 'array';
     <dl>
       <dt>Color Main free bar:</dt>
       <dd>
-        <select name="sg_target_coloring" id="pool_coloring" class="sg-toggle" data-sg-section="pool-color-options">
+        <select name="sg_target_coloring" id="pool_coloring">
           <?= mk_option($target_coloring, 'yes', _('Yes')) ?>
           <?= mk_option($target_coloring, 'no', _('No')) ?>
         </select>
@@ -326,20 +324,18 @@ $pair = ($kind === 'pool') ? ('pool-' . $safe) : 'array';
     <blockquote class="inline_help">
       <strong>Yes</strong> = color this pool’s free bar on Main.
     </blockquote>
-    <div id="pool-color-options">
-      <dl>
-        <dt>Highlight style:</dt>
-        <dd>
-          <select name="<?= htmlspecialchars($style_key) ?>" id="<?= htmlspecialchars($style_key) ?>">
-            <?= mk_option($p_style, 'outline', _('Outline')) ?>
-            <?= mk_option($p_style, 'solid', _('Solid')) ?>
-          </select>
-        </dd>
-      </dl>
-      <blockquote class="inline_help">
-        Outline = border only. Solid = recolor free fill.
-      </blockquote>
-    </div>
+    <dl>
+      <dt>Outline or fill:</dt>
+      <dd>
+        <select name="<?= htmlspecialchars($style_key) ?>" id="<?= htmlspecialchars($style_key) ?>">
+          <?= mk_option($p_style, 'outline', _('Outline')) ?>
+          <?= mk_option($p_style, 'solid', _('Solid (fill)')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Outline = border only. Solid = recolor the free fill.
+    </blockquote>
 <?php endif; ?>
 
     <dl>
