@@ -217,6 +217,15 @@ function sg_pool_threshold_suggestions($profile, $sizes_tb) {
         && $class !== 'none'
         && in_array($class, ['mirror', 'striped_mirror', 'parity'], true)
     );
+    // 2-disk RAID1: survivor still holds a full copy. Δ is only member-size
+    // mismatch (often a few GB on "same" SSDs) — not a real free floor.
+    if ($n === 2 && $key === 'raid1') {
+        $apply = false;
+    }
+    // Ignore sub-10G Δ (rounding / firmware size skew)
+    if ($max_delta > 0.0 && $max_delta < 0.01) {
+        $apply = false;
+    }
     // Warn earlier (larger free floor): largest-loss Δ. Crit later/severe: smallest-loss Δ.
     $warn = $max_delta;
     $crit = $min_delta;

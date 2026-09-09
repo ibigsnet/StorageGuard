@@ -6,6 +6,30 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.08af
+
+- **Suggest free thresholds:** 2-disk RAID1 does not suggest (survivor holds a full
+  copy). Ignore Δ under 10G so slightly different “same” SSDs do not fill Custom
+  with e.g. 3G.
+
+## 2026.09.08ae
+
+- **Settings:** Outline or fill (all targets) Apply writes Array and every pool.
+  A single Array/pool tab can still differ until Settings is Applied again.
+
+## 2026.09.08ad
+
+- **Tabs:** no empty parent “Storage Guard” tab. **Array** is hidden when there are
+  no array data disks. **Outline or fill** stays on each Array/pool tab (not nested
+  under coloring Yes).
+
+## 2026.09.08ac
+
+- **Settings tabs:** Unraid tab strip like NBD / Thunderbolt Net. **Array**, then one tab
+  named after each live pool (e.g. **Cache**), **Settings** (green outline / pulse),
+  **Help**. Dropped Show Array / Show Cache. Pool tabs are generated at runtime
+  (`SGPool_*.page`), same idea as tbn0/tbn1.
+
 ## 2026.09.08ab
 
 - **Install:** do not `rm -rf` the live plugin or `removepkg` before GitHub FILE copies

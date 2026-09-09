@@ -1,0 +1,79 @@
+Menu="StorageGuard:80"
+Title="Settings"
+Tag="gears"
+Markdown="false"
+---
+<?php
+require_once '/usr/local/emhttp/plugins/StorageGuard/sg-page-boot.php';
+sg_page_styles();
+?>
+<div class="sg-wrap">
+  <p class="sg-section-lead">
+    Plugin-wide Main paint. Per-target thresholds, alerts, and coloring are on the <strong>Array</strong> and pool tabs.
+  </p>
+  <form method="POST" action="/update.php" target="progressFrame" id="storageguard-form"
+    data-sg-has-array="<?= $has_array_disks ? '1' : '0' ?>">
+    <?= sg_csrf_field() ?>
+    <input type="hidden" name="#file" value="StorageGuard/StorageGuard.cfg">
+    <input type="hidden" name="#include" value="plugins/StorageGuard/sg-update.php">
+    <input type="hidden" name="sg_defaults" value="1">
+    <input type="hidden" name="sg_tab" value="settings">
+
+    <dl>
+      <dt>Outline or fill (all targets):</dt>
+      <dd>
+        <select name="color_style" id="color_style">
+          <?= mk_option($color_style, 'outline', _('Outline')) ?>
+          <?= mk_option($color_style, 'solid', _('Solid (fill)')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Apply sets Array and every pool to this. A single pool tab can still differ until you Apply here again.
+<?php if (count($sg_styles_agree) > 1): ?>
+      Targets currently differ.
+<?php endif; ?>
+    </blockquote>
+
+    <dl>
+      <dt>Color outlines green when OK/Normal:</dt>
+      <dd>
+        <select name="outline_show_ok" id="outline_show_ok">
+          <?= mk_option($outline_show_ok, 'no', _('No')) ?>
+          <?= mk_option($outline_show_ok, 'yes', _('Yes')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Green outline when free is still above thresholds (Outline style). Default Yes.
+    </blockquote>
+
+    <dl>
+      <dt>Pulse free-bar colors on warn/crit:</dt>
+      <dd>
+        <select name="outline_pulse" id="outline_pulse">
+          <?= mk_option($outline_pulse, 'no', _('No')) ?>
+          <?= mk_option($outline_pulse, 'yes', _('Yes')) ?>
+        </select>
+      </dd>
+    </dl>
+    <blockquote class="inline_help">
+      Gently pulse yellow/red at Warning/Critical. Does not pulse OK. Default No.
+    </blockquote>
+
+    <dl>
+      <dt>&nbsp;</dt>
+      <dd>
+        <input type="submit" name="#default" value="<?= _('Default') ?>">
+        <input type="submit" name="#apply" value="<?= _('Apply') ?>" disabled>
+        <input type="button" value="<?= _('Done') ?>" onclick="done()">
+      </dd>
+    </dl>
+  </form>
+</div>
+<script src="<?autov('/plugins/StorageGuard/storageguard.js')?>"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  if (typeof initStorageGuardUI === 'function') initStorageGuardUI();
+});
+</script>

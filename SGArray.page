@@ -1,0 +1,9 @@
+Menu="StorageGuard:1"
+Title="Array"
+Tag="server"
+Markdown="false"
+Cond="file_exists('/var/tmp/storageguard-has-array')"
+---
+<?php
+$sg_target_kind = 'array';
+require '/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php';

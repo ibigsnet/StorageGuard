@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.08ab">
+<!ENTITY version "2026.09.08af">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,10 +24,16 @@
 
 <CHANGES>
 ###&version;
-- Install overlays hashed files; do not wipe the live plugin before FILE copy.
+- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets.
 
-###2026.09.08aa
-- Alerts check is POST+csrf (Main poll no longer starts notifies on GET).
+###2026.09.08ad
+- No empty Storage Guard tab; hide Array when no array disks; Outline or fill on each storage tab.
+
+###2026.09.08ac
+- Settings tabs: Array, each pool by name, Settings, Help.
+
+###2026.09.08aa–ab
+- Alerts check is POST+csrf; overlay install (do not wipe live plugin).
 
 ###2026.09.06aa–ab
 - Hashed raw install (SHA256/MD5); Settings threshold note escapes form values.
@@ -35,14 +41,8 @@
 ###2026.08.31aa
 - RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
 
-###2026.08.17ah
-- Settings: Array → Alerts → Cache order; post-install autofill disks; Yes defaults; green outline OK, pulse off.
-
-###2026.08.17ag–ae
-- Cache thresholds Show Cache; empty pool = None (until ah autofill); pulse default No.
-
-###2026.08.17ad–ab
-- Pools-only Settings HTML; product defaults Outline/green OK; capacity labels = Main.
+###2026.08.17ah–ab
+- Array/Alerts/Cache order; Show Cache; pools-only HTML; Main-matching capacity labels.
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
@@ -71,8 +71,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page">
 <URL>&raw;/StorageGuard.page?v=&version;</URL>
-<SHA256>3ed7b25a72335db889ef7874a28bfc46b83faaaba910ebba008729e44f668294</SHA256>
-<MD5>981f91befc8d5a3777bd0bb975de65d5</MD5>
+<SHA256>68dfcd10d82177bb55c87f671e5f4a3aa98a8ddb7b9d2f4a3ea8815a4225485a</SHA256>
+<MD5>4fbeef9bd22a08b270e664cc6e82abee</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg">
 <URL>&raw;/default.cfg?v=&version;</URL>
@@ -86,13 +86,13 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
 <URL>&raw;/sg-update.php?v=&version;</URL>
-<SHA256>b84ae5efc8fa1b5fc5daa29bf879a222b383dbf54537e9fe0696e219e4663eea</SHA256>
-<MD5>83c55bb0612e1b66e15dc959b8543182</MD5>
+<SHA256>19ed9a97f8d25b6a07b8f36ed52b2e687a52702a5c3f3a4b524a1e675323d8fd</SHA256>
+<MD5>782886a20c6093c2a66e0ff3ffb04ad2</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
 <URL>&raw;/storageguard.js?v=&version;</URL>
-<SHA256>33edddf2e17818b37ed63d2235678fc382af9eceeccc2650b729122c1e89e442</SHA256>
-<MD5>83fa36b4f3cece4a28a0b41f0161d0ea</MD5>
+<SHA256>399675354d0555393273875191584d9898db767852e209541f7a0944a27c03e2</SHA256>
+<MD5>5fdcaaf36bc871793cbce7e4fc1e26f9</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
 <URL>&raw;/storageguard.css?v=&version;</URL>
@@ -116,13 +116,43 @@ echo "StorageGuard: ready."
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
 <URL>&raw;/sg-lib.php?v=&version;</URL>
-<SHA256>683b9ba5f644248887cb82df9905a4dc9c78eb023cd9e7ae352abe40eb1b1bd0</SHA256>
-<MD5>5ee5634a813fc4889a0ed33d39e4d237</MD5>
+<SHA256>c671063ec1a0eff0b4057df137d85400f7bd03333ce4b6fab6e876bac486105f</SHA256>
+<MD5>613f48b6d6e5ab2479fa24da705cb786</MD5>
 </FILE>
 <FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
 <URL>&raw;/sg-pool-math.php?v=&version;</URL>
-<SHA256>2431adb99e10564c0b25940ee005a003c884582b0299eb8ef54cccd6572b83f3</SHA256>
-<MD5>e023014d0826b835d4f9b7db11adf6de</MD5>
+<SHA256>af4461eaebf706865b65d5ee8b028f0046d146b0faf70aab9c81d30a541e4e9d</SHA256>
+<MD5>0d4aae2e3ab1c092a321ef7b04a9f09b</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGArray.page">
+<URL>&raw;/SGArray.page?v=&version;</URL>
+<SHA256>bfb1c630377a23ca6951bc6e14d3e33542c2939dab0e1fbfecf3232196d1da7f</SHA256>
+<MD5>5e1420409999793b18afb91d42e19d73</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGHelp.page">
+<URL>&raw;/SGHelp.page?v=&version;</URL>
+<SHA256>ae5a9d245c9764e2ec512e5cc942481ca41bf302632b787d3e583c525f733b57</SHA256>
+<MD5>3be337d9dd0415dc9df6478c1387b753</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGSettings.page">
+<URL>&raw;/SGSettings.page?v=&version;</URL>
+<SHA256>9bfe624835ff2cccb85f3c11f9ad73a616f2bb34001285917122521d54c5dd1d</SHA256>
+<MD5>25c0c8ec6c8e043ae6b7af0eeec3a1ca</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-page-boot.php">
+<URL>&raw;/sg-page-boot.php?v=&version;</URL>
+<SHA256>7cd25c3336d9c0ca59bba3c40e9cd134745e035070d7365800ae896f1431b9e5</SHA256>
+<MD5>7c16f65c8feaa22000019ebdcf1198da</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php">
+<URL>&raw;/sg-target-page.php?v=&version;</URL>
+<SHA256>74f5e690b3d9f29ad8ff2e881043c9456f525c6ae97a37ea5deb6363d63a343d</SHA256>
+<MD5>e74cf84d0d6e441301c2a270963c5125</MD5>
+</FILE>
+<FILE Name="/usr/local/emhttp/plugins/StorageGuard/event/started">
+<URL>&raw;/event/started?v=&version;</URL>
+<SHA256>c4f1f912a81b39631d765eca63222659571864ef4ef868fbd01157a994bc13e7</SHA256>
+<MD5>85374279eac1c245305d546d14fa3348</MD5>
 </FILE>
 <!-- raw-files end -->
 
@@ -150,6 +180,7 @@ $fresh = !is_file($path);
 if ($fresh && is_file("/usr/local/emhttp/plugins/StorageGuard/default.cfg")) {
   @copy("/usr/local/emhttp/plugins/StorageGuard/default.cfg", $path);
 }
+if (function_exists("sg_sync_pool_pages")) { sg_sync_pool_pages(); }
 if (function_exists("sg_seed_product_cfg")) {
   // Fresh install: full seed. Upgrade: fill missing/empty threshold keys only.
   sg_seed_product_cfg($fresh);

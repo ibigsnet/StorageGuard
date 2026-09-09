@@ -21,3 +21,6 @@ scripts/promote-stable.sh
 
 # Plugin payload is hashed raw files in the .plg — do not ship Slackware txz
 archive/*.txz
+
+# Runtime pool tabs (written on Unraid from live pool names)
+SGPool_*.page

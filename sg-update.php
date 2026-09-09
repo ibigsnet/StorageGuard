@@ -1,27 +1,79 @@
 <?php
 
+$sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
+if (is_file($sg_lib)) {
+    @require_once $sg_lib;
+}
+
 if (is_array($keys)) {
     foreach (array_keys($keys) as $k) {
         if (!is_string($k)) continue;
-        if ($k === 'pool_all' || preg_match('/^pool_color_/', $k)) {
+        if ($k === 'pool_all' || $k === 'sg_target' || $k === 'sg_target_coloring' || $k === 'sg_tab' || preg_match('/^pool_color_/', $k)) {
             unset($keys[$k]);
             continue;
         }
-        if ($k === 'color_style' || $k === 'cache_coloring') {
+        if ($k === 'cache_coloring') {
             unset($keys[$k]);
         }
     }
 }
 
 if (!isset($_POST['#default'])) {
+    if (($_POST['sg_tab'] ?? '') === 'settings') {
+        $style = (strtolower((string)($_POST['color_style'] ?? 'outline')) === 'solid') ? 'solid' : 'outline';
+        $_POST['color_style'] = $style;
+        $_POST['array_color_style'] = $style;
+        $stamp = function_exists('sg_list_pool_names') ? sg_list_pool_names() : [];
+        $cur_cfg = function_exists('parse_plugin_cfg') ? parse_plugin_cfg('StorageGuard') : [];
+        if (is_array($cur_cfg)) {
+            foreach (array_keys($cur_cfg) as $ck) {
+                if (preg_match('/^pool_(.+)_color_style$/', (string)$ck, $m)) {
+                    $_POST['pool_' . $m[1] . '_color_style'] = $style;
+                }
+            }
+        }
+        foreach ($stamp as $pn) {
+            $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $pn);
+            if ($safe !== '') {
+                $_POST['pool_' . $safe . '_color_style'] = $style;
+            }
+        }
+    }
+    unset($_POST['sg_tab']);
+    $target = trim((string)($_POST['sg_target'] ?? ''));
+    if ($target !== '' && $target !== 'array' && function_exists('sg_list_pool_names')) {
+        $want = (strtolower((string)($_POST['sg_target_coloring'] ?? 'no')) === 'yes');
+        $live = sg_list_pool_names();
+        $cur_cfg = function_exists('parse_plugin_cfg') ? parse_plugin_cfg('StorageGuard') : [];
+        if (!is_array($cur_cfg)) {
+            $cur_cfg = [];
+        }
+        $cur = (string)($cur_cfg['pools_to_color'] ?? 'all');
+        if ($cur === 'all') {
+            $set = $live;
+        } elseif ($cur === '') {
+            $set = [];
+        } else {
+            $set = preg_split('/\s*,\s*/', $cur, -1, PREG_SPLIT_NO_EMPTY);
+        }
+        $set = array_values(array_unique($set));
+        if ($want) {
+            if (!in_array($target, $set, true)) {
+                $set[] = $target;
+            }
+        } else {
+            $set = array_values(array_filter($set, static function ($x) use ($target) {
+                return $x !== $target;
+            }));
+        }
+        $all = ($live && count(array_diff($live, $set)) === 0);
+        $_POST['pools_to_color'] = ($all && $set) ? 'all' : implode(',', $set);
+        $_POST['pool_coloring'] = empty($set) ? 'no' : 'yes';
+    }
+    unset($_POST['sg_target'], $_POST['sg_target_coloring']);
     return;
 }
 
-// Shared lib: SI sizes + product defaults map
-$sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
-if (is_file($sg_lib)) {
-    @require_once $sg_lib;
-}
 if (!function_exists('sg_update_format_size')) {
     function sg_update_format_size($kb) {
         if (function_exists('sg_format_size_kb')) {
