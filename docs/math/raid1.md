@@ -120,7 +120,7 @@ These multi-stream figures are **upper bounds** for comparing profiles — cachi
 
 | Behavior | Detail |
 |----------|--------|
-| **Suggest free thresholds** | **Yes** when $\Delta > 0$ (e.g. **3+** equal disks); **not** for typical 2-disk RAID1 ($\Delta \approx 0$) |
+| **Suggest free thresholds** | **Yes** when $\Delta \ge \sim 10\,\mathrm{G}$ (e.g. **3+** equal disks); **not** for 2-disk RAID1 (survivor holds a full copy; button hidden) |
 | Recommended Warning / Critical | $\max\Delta$ / $\min\Delta$ (equal disks ⇒ one free floor) |
 | User free amounts | Fully free (Custom); disk-size evacuate floors ignored for paint |
 | Paint / alerts | Soft capacity-fit only if $\Delta > 0$ and Custom empty; else your numbers. **One-disk RAID1** and **DUP** paint Critical (no whole-disk survival). |

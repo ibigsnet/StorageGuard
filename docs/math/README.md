@@ -149,7 +149,7 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 
 | Surface | Role |
 |---------|------|
-| Settings → Show Cache (pools) | Suggest button, loss table, alternate-profile table |
+| Tools → Storage Guard → pool tab (e.g. Cache) | Suggest button when Δ is a real capacity drop (not 2-disk RAID1) |
 | Unraid main-page free bars (array / pool) | Paint from configured free thresholds; no-survival pools stay Critical |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
 | `get-config` → `_status.pools.*.math` | Machine-readable package for UI |
