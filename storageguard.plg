@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.08ag">
+<!ENTITY version "2026.09.27aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,6 +24,9 @@
 
 <CHANGES>
 ###&version;
+- Plugin payload is a flash .txz from the GitHub Release (not re-fetched from main at boot).
+
+###2026.09.08ag
 - Docs/Help match tabs and Suggest (2-disk RAID1 hidden).
 
 ###2026.09.08af–ae
@@ -36,13 +39,7 @@
 - Alerts check is POST+csrf; overlay install (do not wipe live plugin).
 
 ###2026.09.06aa–ab
-- Hashed raw install (SHA256/MD5); Settings threshold note escapes form values.
-
-###2026.08.31aa
-- RAID0/single/DUP/one-disk pools paint Critical (cannot survive a disk loss). Alerts once per level change, not hourly.
-
-###2026.08.17ah–ab
-- Array/Alerts/Cache order; Show Cache; pools-only HTML; Main-matching capacity labels.
+- Hashed install (SHA256/MD5); Settings threshold note escapes form values.
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
@@ -53,106 +50,16 @@
 echo "StorageGuard: preparing..."
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 mkdir -p /boot/config/plugins/StorageGuard
-# Forget old Slackware txz registration WITHOUT deleting the live tree.
-# removepkg / rm -rf here ran before GitHub FILE copies; a failed download
-# left Plugins on "error install".
-for p in /var/log/packages/StorageGuard-*; do
-  [ -e "$p" ] || continue
-  echo "StorageGuard: forgetting old package $(basename "$p") (overlay files next)"
-  rm -f "$p"
-done
 rm -rf /usr/local/emhttp/plugins/storageguard 2>/dev/null || true
-rm -f /boot/config/plugins/StorageGuard/StorageGuard-*.txz 2>/dev/null || true
-mkdir -p /usr/local/emhttp/plugins/StorageGuard
 echo "StorageGuard: ready."
 ]]></INLINE>
 </FILE>
 
 <!-- raw-files begin -->
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/StorageGuard.page">
-<URL>&raw;/StorageGuard.page?v=&version;</URL>
-<SHA256>68dfcd10d82177bb55c87f671e5f4a3aa98a8ddb7b9d2f4a3ea8815a4225485a</SHA256>
-<MD5>4fbeef9bd22a08b270e664cc6e82abee</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/default.cfg">
-<URL>&raw;/default.cfg?v=&version;</URL>
-<SHA256>d4d7286afd69b2aaa924a6e1476b39427e57624bf7d8519db918d97844f18b18</SHA256>
-<MD5>db2f8540518cb5b4767577b3ce0c4e1a</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/README.md">
-<URL>&raw;/README.md?v=&version;</URL>
-<SHA256>cbf2ccab683cd6f07669668ca14ea2cce9758ade366432fb2f8ff45ae35a5d4d</SHA256>
-<MD5>3630739e71bf42ed8e12536955e706f1</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-update.php">
-<URL>&raw;/sg-update.php?v=&version;</URL>
-<SHA256>19ed9a97f8d25b6a07b8f36ed52b2e687a52702a5c3f3a4b524a1e675323d8fd</SHA256>
-<MD5>782886a20c6093c2a66e0ff3ffb04ad2</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.js">
-<URL>&raw;/storageguard.js?v=&version;</URL>
-<SHA256>399675354d0555393273875191584d9898db767852e209541f7a0944a27c03e2</SHA256>
-<MD5>5fdcaaf36bc871793cbce7e4fc1e26f9</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard.css">
-<URL>&raw;/storageguard.css?v=&version;</URL>
-<SHA256>47829df059e2bd84a59be5b209bee72a8c26759bb6e87f69d466c1ab979d7a3e</SHA256>
-<MD5>01f4c08dadf25c2f6719bf1cd35b1db9</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/storageguard-color.js">
-<URL>&raw;/storageguard-color.js?v=&version;</URL>
-<SHA256>bd12beeaab139564f65e2fd9f0150cfc033f8a9e7e533388e7ad27bbc0ebad04</SHA256>
-<MD5>99eade83e9f91a966da5776b368f0c77</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/get-config.php">
-<URL>&raw;/get-config.php?v=&version;</URL>
-<SHA256>1d89953e6ac30e23f3aeb67e5c8a1d3d0080af982baa728a5d6e380fe12ccae7</SHA256>
-<MD5>4c426d2190432b0141136f8e57236856</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/check-alerts.php">
-<URL>&raw;/check-alerts.php?v=&version;</URL>
-<SHA256>5b66342a6fd8a611376f05063c6b75cc81e70baf5f0f063178d1e1790816a6d4</SHA256>
-<MD5>53976567a97586233fed6ca3ea8934fa</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-lib.php">
-<URL>&raw;/sg-lib.php?v=&version;</URL>
-<SHA256>c671063ec1a0eff0b4057df137d85400f7bd03333ce4b6fab6e876bac486105f</SHA256>
-<MD5>613f48b6d6e5ab2479fa24da705cb786</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-pool-math.php">
-<URL>&raw;/sg-pool-math.php?v=&version;</URL>
-<SHA256>af4461eaebf706865b65d5ee8b028f0046d146b0faf70aab9c81d30a541e4e9d</SHA256>
-<MD5>0d4aae2e3ab1c092a321ef7b04a9f09b</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGArray.page">
-<URL>&raw;/SGArray.page?v=&version;</URL>
-<SHA256>bfb1c630377a23ca6951bc6e14d3e33542c2939dab0e1fbfecf3232196d1da7f</SHA256>
-<MD5>5e1420409999793b18afb91d42e19d73</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGHelp.page">
-<URL>&raw;/SGHelp.page?v=&version;</URL>
-<SHA256>75e3d08a1cdaaef2a7e9e004b36ad6afd8f95970ba5639b393f64020378698ec</SHA256>
-<MD5>926c7dad32b0d0e7a04347e88de7987e</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/SGSettings.page">
-<URL>&raw;/SGSettings.page?v=&version;</URL>
-<SHA256>9bfe624835ff2cccb85f3c11f9ad73a616f2bb34001285917122521d54c5dd1d</SHA256>
-<MD5>25c0c8ec6c8e043ae6b7af0eeec3a1ca</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-page-boot.php">
-<URL>&raw;/sg-page-boot.php?v=&version;</URL>
-<SHA256>7cd25c3336d9c0ca59bba3c40e9cd134745e035070d7365800ae896f1431b9e5</SHA256>
-<MD5>7c16f65c8feaa22000019ebdcf1198da</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/sg-target-page.php">
-<URL>&raw;/sg-target-page.php?v=&version;</URL>
-<SHA256>74f5e690b3d9f29ad8ff2e881043c9456f525c6ae97a37ea5deb6363d63a343d</SHA256>
-<MD5>e74cf84d0d6e441301c2a270963c5125</MD5>
-</FILE>
-<FILE Name="/usr/local/emhttp/plugins/StorageGuard/event/started">
-<URL>&raw;/event/started?v=&version;</URL>
-<SHA256>c4f1f912a81b39631d765eca63222659571864ef4ef868fbd01157a994bc13e7</SHA256>
-<MD5>85374279eac1c245305d546d14fa3348</MD5>
+<FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
+<URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
+<SHA256>3487fb27e193de9081e38124d02b5916f9149996f2774cffdffb78d1eba5fdb1</SHA256>
+<MD5>356d46bbb4724bc2243ec5d2c1251ed3</MD5>
 </FILE>
 <!-- raw-files end -->
 
@@ -172,6 +79,9 @@ for candidate in /tmp/plugins/storageguard.plg /boot/config/plugins/storageguard
 done
 [ -z "$VER" ] && VER="unknown"
 mkdir -p /boot/config/plugins/StorageGuard
+if [ -n "$VER" ] && [ "$VER" != "unknown" ]; then
+  find /boot/config/plugins/StorageGuard -maxdepth 1 -name 'StorageGuard-*-x86_64-1.txz' ! -name "StorageGuard-${VER}-x86_64-1.txz" -delete 2>/dev/null || true
+fi
 # Machine-aware product defaults (autofill disks, Yes toggles, green outline / no pulse)
 php -r '
 require_once "/usr/local/emhttp/plugins/StorageGuard/sg-lib.php";
