@@ -6,6 +6,12 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.27aa
+
+- **Install:** one Slackware `.txz` per version, saved on the flash drive from the
+  GitHub Release (`v2026.09.27aa`). Boot no longer re-downloads plugin files from
+  live `main`.
+
 ## 2026.09.08ag
 
 - **Docs / Help:** Settings tabs (Array, named pools, Settings, Help). Suggest hidden on
