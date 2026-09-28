@@ -80,8 +80,96 @@ function sg_math_profile_key($profile) {
 }
 
 /**
+ * Usable data (TB) from a model of the BTRFS chunk allocator: each new chunk
+ * goes to the devices with the most free space.
+ *
+ * Chunk width: single/dup 1 device; raid1/raid1c3/raid1c4 2/3/4 devices;
+ * raid0/raid5/raid6 every device that still has space; raid10 that count
+ * rounded down to even. Allocation stops when fewer devices than the profile
+ * minimum have space (raid0 1, raid1 2, raid10 2, raid5 2, raid6 3,
+ * raid1c3 3, raid1c4 4).
+ *
+ * Solved as a continuous water-fill, event by event (no step size): devices
+ * tied on free space share the chunk width, so the result matches a chunk
+ * simulation with very small chunks. Metadata and system chunks are ignored.
+ *
+ * @param string $key math key (single|dup|raid0|raid1|raid1c3|raid1c4|raid10|raid5|raid6)
+ * @param float[] $sizes_tb
+ */
+function sg_btrfs_alloc_usable_tb($key, $sizes_tb) {
+    $free = [];
+    foreach ($sizes_tb as $x) {
+        $x = (float)$x;
+        if ($x > 0) $free[] = $x;
+    }
+    if (empty($free)) return 0.0;
+    $tol = max($free) * 1e-9;
+    $data = 0.0;
+    for ($iter = 0; $iter < 10000; $iter++) {
+        $live = [];
+        foreach ($free as $f) {
+            if ($f > $tol) $live[] = $f;
+        }
+        rsort($live, SORT_NUMERIC);
+        $free = $live;
+        $d = count($free);
+        switch ($key) {
+            case 'single':  $w = 1;              $min = 1; $eff = 1.0;  break;
+            case 'dup':     $w = 1;              $min = 1; $eff = 0.5;  break;
+            case 'raid0':   $w = $d;             $min = 1; $eff = 1.0;  break;
+            case 'raid1':   $w = 2;              $min = 2; $eff = 0.5;  break;
+            case 'raid1c3': $w = 3;              $min = 3; $eff = 1.0 / 3.0; break;
+            case 'raid1c4': $w = 4;              $min = 4; $eff = 0.25; break;
+            case 'raid10':  $w = $d - ($d % 2);  $min = 2; $eff = 0.5;  break;
+            case 'raid5':   $w = $d;             $min = 2; $eff = $d > 0 ? ($d - 1) / $d : 0.0; break;
+            case 'raid6':   $w = $d;             $min = 3; $eff = $d > 0 ? ($d - 2) / $d : 0.0; break;
+            default: return 0.0;
+        }
+        if ($d < $min || $w < 1) break;
+
+        // Tie groups on free space (sorted high to low); each group drains at one rate.
+        $groups = [];
+        foreach ($free as $f) {
+            $g = count($groups) - 1;
+            if ($g >= 0 && ($groups[$g]['v'] - $f) <= $tol) {
+                $groups[$g]['n']++;
+            } else {
+                $groups[] = ['v' => $f, 'n' => 1, 'r' => 0.0];
+            }
+        }
+        $cap = (float)$w;
+        foreach ($groups as $k => $g) {
+            $r = min(1.0, $cap / $g['n']);
+            $groups[$k]['r'] = $r;
+            $cap -= $r * $g['n'];
+            if ($cap <= 1e-12) $cap = 0.0;
+        }
+        // Next event: a draining group empties, or a group catches the one below it.
+        $t = INF;
+        $gc = count($groups);
+        for ($k = 0; $k < $gc; $k++) {
+            if ($groups[$k]['r'] > 0) $t = min($t, $groups[$k]['v'] / $groups[$k]['r']);
+            if ($k + 1 < $gc && $groups[$k]['r'] > $groups[$k + 1]['r']) {
+                $t = min($t, ($groups[$k]['v'] - $groups[$k + 1]['v']) / ($groups[$k]['r'] - $groups[$k + 1]['r']));
+            }
+        }
+        if (!is_finite($t) || $t <= 0) break;
+        $data += $eff * $w * $t;
+        $free = [];
+        foreach ($groups as $g) {
+            $v = max(0.0, $g['v'] - $g['r'] * $t);
+            for ($j = 0; $j < $g['n']; $j++) $free[] = $v;
+        }
+    }
+    return $data;
+}
+
+/**
  * Estimated usable capacity (TB) for a BTRFS data profile and member sizes.
- * First-order estimates; ignore metadata. Mixed-size models are simplified.
+ * Follows the chunk allocator (sg_btrfs_alloc_usable_tb); ignores metadata.
+ * Below the profile minimum, a degraded pool is counted as follows:
+ * one device left on raid1/raid10 = that device; raid1c3/raid1c4 short of
+ * devices = the next lower copy count; raid5/raid6 short of devices = 0.
  *
  * @param string $profile_or_key raw btrfs profile or math key
  * @param float[] $sizes_tb
@@ -103,39 +191,31 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
     }
 
     $sum = sg_math_sum($sizes);
-    $max = sg_math_max($sizes);
 
     switch ($key) {
         case 'single':
         case 'raid0':
-            return $sum;
         case 'dup':
-            // Two copies on the same device: about half raw, no other disk to fail over to.
-            return $sum / 2.0;
+            return sg_btrfs_alloc_usable_tb($key, $sizes);
         case 'raid1':
-            // BTRFS RAID1: two copies on different devices. ≈ half raw when N≥2.
-            // One remaining device is effectively single (full sum) — not sum/2.
-            // (2-disk mirror after one loss: data still fits if used ≤ remaining disk size.)
+            // One device left: the survivor still holds a full copy.
             if ($n < 2) return $sum;
-            return $sum / 2.0;
+            return sg_btrfs_alloc_usable_tb('raid1', $sizes);
         case 'raid1c3':
-            if ($n < 3) return $sum / max(1, $n); // degraded short of 3 copies
-            return $sum / 3.0;
+            if ($n < 3) return sg_usable_tb('raid1', $sizes);
+            return sg_btrfs_alloc_usable_tb('raid1c3', $sizes);
         case 'raid1c4':
-            if ($n < 4) return $sum / max(1, min(3, $n));
-            return $sum / 4.0;
+            if ($n < 4) return sg_usable_tb('raid1c3', $sizes);
+            return sg_btrfs_alloc_usable_tb('raid1c4', $sizes);
         case 'raid10':
-            // BTRFS RAID10: two copies + striping (not fixed mirror pairs). ≈ half raw.
-            if ($n < 2) return $sum; // single remaining device
-            return $sum / 2.0;
+            if ($n < 2) return $sum;
+            return sg_btrfs_alloc_usable_tb('raid10', $sizes);
         case 'raid5':
-            // One parity: classic sum − largest (equal disks: (n−1)×S).
             if ($n < 2) return 0.0;
-            return max(0.0, $sum - $max);
+            return sg_btrfs_alloc_usable_tb('raid5', $sizes);
         case 'raid6':
-            // Two parity: equal-disk (n−2)×S; mixed first-order sum − 2×largest.
             if ($n < 3) return 0.0;
-            return max(0.0, $sum - 2.0 * $max);
+            return sg_btrfs_alloc_usable_tb('raid6', $sizes);
         default:
             return 0.0;
     }

@@ -18,20 +18,27 @@ Often used for **metadata** while data uses RAID1 or RAID10.
 
 ### Usable capacity (estimate)
 
+Each chunk goes to the **three** devices with the most free space. With $T_j$ = sum of the $j$ largest members:
+
 $$
-U(\mathrm{RAID1c3}, S_1,\ldots,S_N) \approx \frac{1}{3}\sum_i S_i \quad (N \ge 3)
+U(\mathrm{RAID1c3}) = \min\Big(\frac{\sum_i S_i}{3},\ \frac{\sum_i S_i - T_1}{2},\ \sum_i S_i - T_2\Big) \quad (N \ge 3)
 $$
 
-| Layout | Raw | Usable (est.) |
-|--------|-----|---------------|
-| 4 × 4 TB | 16 TB | **~5.33 TB** |
-| 4 × 4 TB + 2 × 8 TB | 32 TB | **~10.67 TB** |
+| Layout | Raw | Usable |
+|--------|-----|--------|
+| 4 × 4 TB | 16 TB | **~5.33 TB** |
+| 4 × 4 TB + 2 × 8 TB | 32 TB | **~10.67 TB** |
+| 8 + 1 + 1 TB | 10 TB | **1 TB** |
+| 10 + 2 + 2 + 2 TB | 16 TB | **3 TB** |
+| 8 + 4 + 4 + 4 TB | 20 TB | **6 TB** |
+| 6 + 4 + 2 TB | 12 TB | **2 TB** |
 
 ### After disk loss
 
 Same recovery menu as RAID1: degraded mount, optional remove/rebalance/replace/convert.  
-$\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)$.  
-Planning Critical / Warning: $\max\Delta$ / $2\times\max\Delta$ — [scenarios.md](scenarios.md).
+$\Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)$. With two devices left, Storage Guard counts RAID1 capacity.  
+Planning: Warning = $\max\Delta$ (largest-member loss), Critical = $\min\Delta$ (smallest-member loss) — [scenarios.md](scenarios.md).  
+4 × 4 TB + 2 × 8 TB: lose an 8 TB → 8 TB ($\Delta \approx 2.67$ TB); lose a 4 TB → ~9.33 TB ($\Delta \approx 1.33$ TB).
 
 ### Speeds (best-case multi-stream ceiling)
 

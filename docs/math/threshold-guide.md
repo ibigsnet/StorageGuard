@@ -72,7 +72,7 @@ $$
 
 **Body (shape):**
 
-> Pool 'cache' free space is 2.8T, at or below your warning free-space threshold of 4.0T. Layout: RAID10. Warning/Critical here mean free-space severity (yellow vs red), not which disk already failed. On BTRFS RAID10 … Capacity-fit guide (optional): ~4T free so used data still fits after losing the largest member; ~2T free after losing the smallest. … Warning free means free is at or below your milder free floor (4.0T) — still time to free space or adjust thresholds before the more severe floor.
+> Pool 'cache' free space is 2.8T, at or below your warning free-space threshold of 4.0T. Layout: RAID10. Warning/Critical here mean free-space severity (yellow vs red), not which disk already failed. On BTRFS RAID10 … Capacity-fit guide (optional): ~5.3T free so used data still fits after losing the largest member; ~2T free after losing the smallest. … Warning free means free is at or below your milder free floor (4.0T) — still time to free space or adjust thresholds before the more severe floor.
 
 ### Critical (red)
 
@@ -95,7 +95,7 @@ Array alerts keep **evacuate / largest data disk** wording (different model). Se
 ### A — Follow the recommendation (largest → Warning, smallest → Critical)
 
 - **4 × 4 TB RAID10:** suggest Warning = Critical ≈ **2T** (equal disks). Free **2.8T** → OK. Free **1.5T** → critical.  
-- **4 × 4 TB + 2 × 8 TB RAID10:** Warning **4T**, Critical **2T**. Free **3T** → warning (won’t fit if an 8 TB dies; still fits if a 4 TB dies). Free **1T** → critical.
+- **4 × 4 TB + 2 × 8 TB RAID10:** Warning **~5.3T**, Critical **2T**. Free **3T** → warning (won’t fit if an 8 TB dies; still fits if a 4 TB dies). Free **1T** → critical.
 
 ### B — Reverse the mapping
 

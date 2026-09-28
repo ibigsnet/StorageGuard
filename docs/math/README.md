@@ -1,7 +1,7 @@
 # BTRFS pool math
 
 Planning estimates for **Unraid multi-device BTRFS pools**.  
-These are **not** mdadm / hardware-RAID formulas. Metadata is ignored; mixed-size layouts are simplified.
+These are **not** mdadm / hardware-RAID formulas. Metadata is ignored; mixed sizes follow the BTRFS chunk allocator (see below).
 
 **How to read these pages**
 
@@ -34,7 +34,14 @@ Capacity math targets the pool’s **data** profile (what free space on Unraid�
 
 ### Mixed device sizes
 
-BTRFS can use uneven disks. Usable space is **not** always “sum of smallest × N”. Real allocation follows free space and profile constraints; [carfax btrfs-usage](https://carfax.org.uk/btrfs-usage/) is useful for mutt layouts. First-order formulas below stay simple and deterministic.
+BTRFS can use uneven disks. Usable space is **not** always “sum of smallest × N”, and it is not always half (or a third) of raw either. Storage Guard follows the chunk allocator, the same model as the [carfax btrfs-usage](https://carfax.org.uk/btrfs-usage/) calculator: each new chunk goes to the devices with the **most free space**.
+
+- **RAID1 / RAID1c3 / RAID1c4:** each chunk uses the 2 / 3 / 4 devices with the most free space.
+- **RAID0 / RAID5 / RAID6:** each chunk stripes across every device that still has space (RAID5 loses one device of each stripe to parity, RAID6 two).
+- **RAID10:** stripes across the devices with space, rounded down to an even count.
+- Allocation stops when too few devices have space left (RAID1 2, RAID10 2, RAID5 2, RAID6 3, RAID1c3 3, RAID1c4 4).
+
+When one disk is much larger than the rest, part of it can never be used. Example **8 + 1 + 1 TB**: RAID1 holds **2 TB**, not 5 TB.
 
 ### Quantities
 
@@ -89,16 +96,16 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 
 ### Profile summary
 
-| Profile | Usable (first-order) | 1-disk data online? | Notes |
+| Profile | Usable (allocator model) | 1-disk data online? | Notes |
 |---------|----------------------|---------------------|--------|
 | single / RAID0 | $\sum S_i$ | **No** | No recovery free model; Main stays Critical |
 | DUP | $\sum S_i / 2$ | **No** | Two copies on the same device; Main stays Critical |
-| RAID1 | $\sum S_i / 2$ | Usually yes | **2** copies, not N |
-| RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
-| RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
-| RAID10 | $\sum S_i / 2$ | Usually yes | 2 copies + striping |
+| RAID1 | $\min(\sum S_i / 2,\ \sum S_i - \max S_i)$ | Usually yes | **2** copies, not N |
+| RAID1c3 | $\min_{j<3} (\sum S_i - T_j)/(3-j)$ | Usually yes (2 losses) | 3 copies; $T_j$ = sum of the $j$ largest |
+| RAID1c4 | $\min_{j<4} (\sum S_i - T_j)/(4-j)$ | Usually yes (3 losses) | 4 copies |
+| RAID10 | $\sum S_i / 2$ on equal disks; mixed sizes by allocator (can be below RAID1) | Usually yes | 2 copies + striping |
 | RAID5 | $\sum S_i - \max S_i$ | If within tolerance | One parity; [docs](raid5.md#docs-to-read-raid5--raid6) |
-| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | Two parity; [docs](raid6.md#docs-to-read-raid5--raid6) |
+| RAID6 | $\sum S_i$ − two largest | If within tolerance | Two parity; [docs](raid6.md#docs-to-read-raid5--raid6) |
 
 ### Generic Examples
 

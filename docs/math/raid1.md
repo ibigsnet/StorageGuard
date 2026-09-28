@@ -23,7 +23,7 @@ Official: [mkfs.btrfs PROFILES](https://btrfs.readthedocs.io/en/latest/mkfs.btrf
 ### Usable capacity (estimate)
 
 $$
-U(\mathrm{RAID1}, S_1,\ldots,S_N) \approx \frac{1}{2}\sum_i S_i
+U(\mathrm{RAID1}, S_1,\ldots,S_N) = \min\Big(\frac{1}{2}\sum_i S_i,\ \sum_i S_i - \max_i S_i\Big)
 $$
 
 | Layout | Raw | Usable (est.) | Copies |
@@ -34,7 +34,14 @@ $$
 
 With **6×2 TB**, usable capacity is about **6 TB**, not 2 TB. Extra drives add capacity (roughly half of each new disk), rather than more copies of the same small volume.
 
-Mixed sizes: half-raw is a first-order bound; real usable can be lower when one disk is much larger ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)).
+Mixed sizes: each chunk goes to the two devices with the most free space, so the largest disk can only be matched by the others. Half of raw holds until one disk is bigger than all the others together ([btrfs-usage calculator](https://carfax.org.uk/btrfs-usage/)).
+
+| Layout | Half raw | Usable |
+|--------|----------|--------|
+| 8 + 1 + 1 TB | 5 TB | **2 TB** |
+| 10 + 2 + 2 + 2 TB | 8 TB | **6 TB** |
+| 8 + 4 + 4 + 4 TB | 10 TB | **10 TB** |
+| 6 + 4 + 2 TB | 6 TB | **6 TB** |
 
 ### After one disk loss (any equal-disk RAID1)
 
@@ -99,7 +106,7 @@ Longer walkthroughs: [scenarios.md](scenarios.md), [threshold-guide.md](threshol
 |--------|---------------|----------------------|---------------------------|-----------------|
 | 3 × 8 TB | 12 TB | 8 TB | 4 TB | 4 T / 4 T |
 | 4 × 4 TB | 8 TB | 6 TB | 2 TB | 2 T / 2 T |
-| 4 × 4 TB + 2 × 8 TB (first-order) | ~16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB worst / ~2 TB mild | warn 4 T / crit 2 T |
+| 4 × 4 TB + 2 × 8 TB | 16 TB | worst ≈ 12 TB (lose 8 TB) | ~4 TB worst / ~2 TB mild | warn 4 T / crit 2 T |
 
 ### Speeds (best-case multi-stream ceiling)
 

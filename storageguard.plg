@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.27aa">
+<!ENTITY version "2026.09.28aa">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,15 +24,15 @@
 
 <CHANGES>
 ###&version;
+- Pool math follows the BTRFS chunk allocator: correct usable space and Suggest values for mixed-size RAID1, RAID10, RAID1c3/c4 and RAID6. Alerts check refuses the request when the CSRF token cannot be read.
+
+###2026.09.27aa
 - Plugin payload is a flash .txz from the GitHub Release (not re-fetched from main at boot).
 
-###2026.09.08ag
-- Docs/Help match tabs and Suggest (2-disk RAID1 hidden).
+###2026.09.08ae–ag
+- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets. Docs/Help match tabs.
 
-###2026.09.08af–ae
-- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets.
-
-###2026.09.08ad–ac
+###2026.09.08ac–ad
 - Settings tabs per Array and named pools; no empty parent tab; hide Array when no array disks.
 
 ###2026.09.08aa–ab
@@ -58,8 +58,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
 <URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
-<SHA256>3487fb27e193de9081e38124d02b5916f9149996f2774cffdffb78d1eba5fdb1</SHA256>
-<MD5>356d46bbb4724bc2243ec5d2c1251ed3</MD5>
+<SHA256>8b0b80bab79df1ac50b23b2f718f8a8a2d91313658c6aebb384bd7cbec22e309</SHA256>
+<MD5>1750f9f4a4c53e21bbd09e94019435d1</MD5>
 </FILE>
 <!-- raw-files end -->
 

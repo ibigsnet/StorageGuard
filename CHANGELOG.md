@@ -6,6 +6,20 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.28aa
+
+- **Pool math:** usable space follows the BTRFS chunk allocator (each chunk goes to the
+  devices with the most free space). Fixes mixed-size pools where one disk is much larger:
+  RAID1 / RAID1c3 / RAID1c4 no longer count space the big disk can never mirror, RAID6
+  subtracts the two largest members (not twice the largest), and RAID10 accounts for
+  chunks using an even device count. Example: 8 + 1 + 1 TB RAID1 is 2 TB, not 5 TB.
+  Suggest values change for such pools. Equal-size pools and RAID5 are unchanged.
+- **Docs:** `docs/math/` per-profile formulas and mixed-size examples updated; RAID1c3,
+  RAID5 and RAID6 pages now state the same Warning = largest-loss Δ, Critical =
+  smallest-loss Δ rule the code uses.
+- **Security:** the alerts check refuses the request when the WebUI CSRF token cannot be
+  read, instead of skipping the check.
+
 ## 2026.09.27aa
 
 - **Install:** one Slackware `.txz` per version, saved on the flash drive from the
@@ -149,8 +163,26 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.08.15af
 - Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
 
+## 2026.08.15ae
+- Fix: install prepare no longer wipes Unraid's `/tmp/plugins` working copy.
+
+## 2026.08.15ad
+- Remove leaves the plugin `.plg` file to Unraid.
+
+## 2026.08.15ac
+- Cleaner install/remove scripts (canonical paths only).
+
 ## 2026.08.15ab
 - Changelog: Plugins page shows recent entries only; full history on GitHub <code>CHANGELOG.md</code>.
+
+## 2026.08.15aa
+- **Install:** single runtime `.txz` package (faster updates; docs on GitHub).
+
+## 2026.08.14af
+- **Fix:** 2-disk RAID1 capacity after one loss uses the full remaining disk (Δ ≈ 0), so no
+  false "need half free".
+- Disk-size pool floors ignored again on RAID1 / RAID10 / RAID5–6; Custom free is explicit.
+  Soft capacity-fit only when Δ > 0.
 
 ## 2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
@@ -179,9 +211,16 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 - **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
 - CA templates and install URLs follow `stable` for store users.
 
+## 2026.07.29aa
+- Support link points at the Unraid forum thread (topic 199796); project remains on GitHub.
+
 ## 2026.07.29
 - Alerts/paint only when array is fully started (not stopped, starting/stopping, or maintenance). Missing mounts are not 0 free.
 - Version day rolled to calendar date (was incorrectly still on 2026.07.10 letter suffixes).
+
+## 2026.07.10bu
+- Alerts and paint only when the array is fully started (not stopped, starting/stopping, or
+  maintenance). Missing pool mounts count as unknown free, not 0.
 
 ## 2026.07.10bt
 - RAID5/6: calm “read Unraid/BTRFS docs” notes in math docs, DOCS, Settings help, and parity alerts.

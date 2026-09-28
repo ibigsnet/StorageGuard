@@ -196,16 +196,16 @@ Useful Unraid UI: **main page → click the pool name → Balance Status**
 
 ### Example: 4×4TB + 2×8TB (~32 TB raw)
 
-Approximate usable (first-order, data profile only):
+Usable (BTRFS allocator model, data profile only):
 
 | Profile | ~Usable | Notes |
 |---------|---------|--------|
 | RAID0 / single | ~32 TB | Max space, no safety |
 | RAID1 / RAID10 | ~16 TB | Two copies (+ striping for RAID10) |
 | RAID5 | ~24 TB | sum − largest |
-| RAID6 | ~16 TB | sum − 2×largest |
+| RAID6 | ~16 TB | sum − two largest |
 
-**Lose one 8T on RAID10 (est.):** usable 16 T → 12 T → need **~4T free** so used still fits (Δ).  
+**Lose one 8T on RAID10 (est.):** usable 16 T → ~10.7 T → need **~5.3T free** so used still fits (Δ).  
 **Lose one 4T on RAID10:** Δ ≈ **2T**.  
 You may still run on remaining disks without an emergency replace if used ≤ post-loss U.
 

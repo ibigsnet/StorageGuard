@@ -18,19 +18,23 @@ Rare for bulk **data** (expensive). Sometimes chosen for critical **metadata**.
 
 ### Usable capacity (estimate)
 
+Each chunk goes to the **four** devices with the most free space. With $T_j$ = sum of the $j$ largest members:
+
 $$
-U(\mathrm{RAID1c4}, S_1,\ldots,S_N) \approx \frac{1}{4}\sum_i S_i \quad (N \ge 4)
+U(\mathrm{RAID1c4}) = \min_{j=0..3} \frac{\sum_i S_i - T_j}{4 - j} \quad (N \ge 4)
 $$
 
-| Layout | Raw | Usable (est.) |
-|--------|-----|---------------|
-| 4 × 4 TB | 16 TB | **~4 TB** |
-| 4 × 4 TB + 2 × 8 TB | 32 TB | **~8 TB** |
+| Layout | Raw | Usable |
+|--------|-----|--------|
+| 4 × 4 TB | 16 TB | **4 TB** |
+| 4 × 4 TB + 2 × 8 TB | 32 TB | **8 TB** |
+| 10 + 2 + 2 + 2 TB | 16 TB | **2 TB** |
+| 8 + 4 + 4 + 4 TB | 20 TB | **4 TB** |
 
 ### After disk loss
 
 Degraded / remove / replace / convert — same BTRFS menu as other multi-copy profiles.  
-$\Delta_{\mathrm{fit}}$ and Critical / Warning planning rule: [scenarios.md](scenarios.md).
+With three devices left, Storage Guard counts RAID1c3 capacity. $\Delta_{\mathrm{fit}}$ and the Warning / Critical rule: [scenarios.md](scenarios.md).
 
 ### Speeds (best-case multi-stream ceiling)
 
