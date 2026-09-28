@@ -333,6 +333,9 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.10ai
 - Outline pulse polish (outer glow + light inner wash).
 
+## 2026.07.10ah
+- Stronger Outline pulse: clear outer border throb plus light inner wash (Pulse=Yes). Static when Pulse=No.
+
 ## 2026.07.10ag
 - Restore Pulse=Yes animations; Main flash fix retained.
 
@@ -389,6 +392,10 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 - Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
 - Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z).
 
+## 2026.07.09aa
+- Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
+- Versioning: after letter z same day, continue aa, ab, ... (not next calendar day). Retag of short-lived 2026.07.10 label.
+
 ## 2026.07.09z
 - Settings/docs: mark Pools section as WIP while pool logic is still being refined.
 
@@ -420,6 +427,10 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.09q
 - Full rolling changelog restored (letters a through p as single-line notes).
 - Product defaults and Open pool link fixes from prior letters.
+
+## 2026.07.09p
+- Restore full rolling CHANGES history (keep every letter).
+- Deploy via GitHub plugin install/update only.
 
 ## 2026.07.09o
 - Fix Open pool link (markdown left PHP unparsed in the URL).
@@ -482,5 +493,67 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.09
 - Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
 
+## 2026.07.06-17
+- Clean reinstall build from GitHub: free-bar coloring + HeadInlineJS inject for plugin install.
+
+## 2026.07.06-16
+- Array: paint Free bar fill only (no red cell chrome).
+- Pool: paint Data Partition Free bar, not empty "Pool of N devices" row.
+- Inject script reads version from plg (no hardcoded VER drift).
+
+## 2026.07.06-15
+- Color free-space *bars* (not whole row); stronger pool DOM matching for pools-only systems.
+- Fix VER string and make sure bar-mode color.js ships.
+
+## 2026.07.06-14
+- CRITICAL: inject color JS/CSS into HeadInlineJS.php (Unraid 7 never loads HeadInclude.php — coloring never ran).
+- Clean legacy HeadInclude stubs; versioned script URLs.
+
+## 2026.07.06-13
+- Fix Main-tab coloring: server-side free space + levels; target Array/Pool totals rows; re-apply after nchan refresh.
+- Respect custom capacity (55T/50T etc.) for array warn/crit.
+
+## 2026.07.06-12
+- Array defaults from real disk sizes; match Array/Pool coloration labels.
+
+## 2026.07.06-11
+- Plugins icon launch: Settings/StorageGuard (was wrong Utilities/Storage Guard blank page).
+
+## 2026.07.06-10
+- Alerts: per-target Warning/Critical matrix (e.g. array warn only, cache warn+crit). No redundant master switch.
+- Hide custom capacity fields unless Use custom = Yes; hide disk dropdowns when custom.
+- Clear notice when no array data disks (pools-only); fix get-config.cfg path.
+
+## 2026.07.06-9
+- Short Plugins-page README to match Unraid conventions.
+
+## 2026.07.06-8
+- Asset URLs include ?v=version to avoid stale download caches.
+
+## 2026.07.06-7
+- Pool detection: type=Cache + Unraid prefix() groups cache/cache2 as one pool "cache"; Boot (flash/flash2) excluded.
+
+## 2026.07.06-6
+- CRITICAL: remove script used Type="remove" which Unraid ignores — it ran on INSTALL and deleted all plugin files after download. Fixed to Method="remove".
+
+## 2026.07.06-5
+- Run block CDATA formatting.
+
+## 2026.07.06-4
+- Menu="Utilities", README shipping, metadata attrs.
+- Fixed: Settings menu entry now appears under User Utilities (Menu="Utilities" + launch tweak).
+
+## 2026.07.06-2
+- Dynamic defaults (largest/2nd largest disk), separate warning/critical alert toggles, improved alert messages with cross-pool notes, robust uninstall cleanup, BTRFS help enhancements, and injection fixes.
+- Fix .plg XML parse error: wrap INLINE scripts in CDATA.
+- README cleanup.
+
+## 2026.07.06-1
+- Sub-versioning (2026.07.06-1), clean Settings layout, terminology switched to Pools, improved pool detection.
+- Plugin name StorageGuard + description; User Utilities launch; injection files.
+
 ## 2026.07.06
 - Initial public development series (array/pool thresholds, alerts, Plugins metadata).
+
+## 2026.07.01
+- First plugin files: storageguard.plg, StorageGuard.page, storageguard.js and README.
