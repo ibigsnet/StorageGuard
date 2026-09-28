@@ -6,6 +6,18 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.28ab
+
+- **Main colors without editing Unraid files:** free-bar CSS/JS now load from the plugin's own
+  `StorageGuardHead.page` (Unraid Buttons hook, no header button). Install no longer appends
+  anything to stock `HeadInlineJS.php`.
+- **Upgrade and remove put `HeadInlineJS.php` back:** if an older version patched it, the stock
+  backup on flash is written back when it matches the current Unraid build; otherwise only our
+  lines are stripped. The old `stock-backup` folder is then deleted.
+- **No global jQuery override:** Main re-paint after table refresh uses a `MutationObserver` on
+  the device tables instead of replacing `$.fn.html`. Bars still do not flash.
+- Docs: `docs/stock-ui-inject.md` is now `docs/main-paint.md`; SECURITY.md updated.
+
 ## 2026.09.28aa
 
 - **Pool math:** usable space follows the BTRFS chunk allocator (each chunk goes to the

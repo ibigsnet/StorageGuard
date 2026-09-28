@@ -14,24 +14,21 @@ Copyright (c) 2026 ibigs, LLC · Author: RifleJock · License: GPL-3.0-or-later
 - No network listeners.
 - No package downloads.
 
-## Main page free-bar coloring (stock UI inject)
+## Main page free-bar coloring
 
-Install appends a **marker-bounded** CSS/JS include so free bars on **Main** can be colored.
+CSS/JS load from the plugin's own `StorageGuardHead.page` (Unraid `Buttons` hook). No stock Unraid file is edited.
 
 | Property | Behavior |
 |----------|----------|
-| **Which files** | Only fixed Unraid layout paths under `/usr/local/emhttp/…/HeadInlineJS.php` (and strip of legacy lines there). **Never** walks `/mnt`, user shares, or any directory whose **name** is “Storage Guard”. |
-| **How strip works** | Line match on plugin asset paths / `StorageGuard-inject` markers only — not a filesystem search for folders. |
-| **Backup** | First inject copies stock `HeadInlineJS.php` to `/boot/config/plugins/StorageGuard/stock-backup/` (removed on full uninstall). |
-| **Uninstall** | Removes the marker block from those layout files, then removes plugin emhttp + **all** plugin flash state. |
+| **Stock files** | Not modified. Versions up to 2026.09.28aa patched `HeadInlineJS.php`; install/upgrade and remove put it back (flash backup if it matches, else strip our lines only). |
+| **Which files the cleanup reads** | Fixed Unraid layout paths only. **Never** walks `/mnt`, user shares, or any directory whose **name** is “Storage Guard”. |
+| **Uninstall** | Removes plugin emhttp + **all** plugin flash state. |
 
-A future Unraid UI path change may require a plugin update for coloring to re-attach.
-
-Details: [docs/stock-ui-inject.md](docs/stock-ui-inject.md).
+Details: [docs/main-paint.md](docs/main-paint.md).
 
 ## Uninstall
 
-- Stops using Main free-bar hooks (strip markers from layout files above).
+- Puts back stock HeadInlineJS.php if an older version patched it.
 - Removes emhttp plugin tree.
 - **Removes** `/boot/config/plugins/StorageGuard/` entirely (config, backups) so reinstall is clean.
 - Does **not** touch user data, shares, or folders outside the plugin paths.

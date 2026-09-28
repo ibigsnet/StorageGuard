@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.28aa">
+<!ENTITY version "2026.09.28ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,6 +24,9 @@
 
 <CHANGES>
 ###&version;
+- Main free-bar colors load from the plugin's own page. Stock HeadInlineJS.php is no longer edited; upgrade and remove put it back. No more global jQuery .html() override.
+
+###2026.09.28aa
 - Pool math follows the BTRFS chunk allocator: correct usable space and Suggest values for mixed-size RAID1, RAID10, RAID1c3/c4 and RAID6. Alerts check refuses the request when the CSRF token cannot be read.
 
 ###2026.09.27aa
@@ -58,8 +61,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
 <URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
-<SHA256>8b0b80bab79df1ac50b23b2f718f8a8a2d91313658c6aebb384bd7cbec22e309</SHA256>
-<MD5>1750f9f4a4c53e21bbd09e94019435d1</MD5>
+<SHA256>026f4e60f3f49093ec32972f515dcb7d96690de25234498672147f01985a22d6</SHA256>
+<MD5>f1d9fe9d5a61ead777d01f330545f3ff</MD5>
 </FILE>
 <!-- raw-files end -->
 
@@ -102,45 +105,10 @@ if (function_exists("sg_seed_product_cfg")) {
     cp -a /usr/local/emhttp/plugins/StorageGuard/default.cfg /boot/config/plugins/StorageGuard/StorageGuard.cfg
   fi
 }
-# Main free-bar CSS/JS: ONLY these Unraid layout files (absolute paths).
-# Never walks /mnt, shares, or any folder named "Storage Guard".
-# Marker-only strip (no broad "Storage Guard" text match).
-SG_MARKER='StorageGuard-inject'
-SG_BACKUP=/boot/config/plugins/StorageGuard/stock-backup
-mkdir -p "$SG_BACKUP"
-sg_strip_inject() {
-  local f="$1"
-  [ -f "$f" ] || return 0
-  # Drop our marker block + legacy inject lines (plugin asset paths only)
-  sed -i \
-    -e "/${SG_MARKER}/d" \
-    -e '/storageguard-color\.js/d' \
-    -e '/storageguard\.css/d' \
-    -e '/plugins\/StorageGuard\/storageguard/d' \
-    "$f" 2>/dev/null || true
-}
-for f in \
-  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php
-do
-  [ -f "$f" ] || continue
-  base=$(basename "$f")
-  if [ ! -f "$SG_BACKUP/$base.stock" ]; then
-    cp -a "$f" "$SG_BACKUP/$base.stock"
-    echo "StorageGuard: backed up stock $base"
-  fi
-  sg_strip_inject "$f"
-done
-HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
-if [ -f "$HI" ]; then
-  {
-    printf '\n<!-- %s begin -->\n' "$SG_MARKER"
-    printf '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n' "$VER"
-    printf '<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER"
-    printf '<!-- %s end -->\n' "$SG_MARKER"
-  } >> "$HI"
-  echo "StorageGuard: injected into HeadInlineJS (marker ${SG_MARKER})"
-fi
+chmod 755 /usr/local/emhttp/plugins/StorageGuard/scripts/* 2>/dev/null || true
+# Main paint loads from StorageGuardHead.page. Older versions patched stock
+# HeadInlineJS.php; put it back once.
+/usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore restore || true
 echo "StorageGuard: packages now: $(ls /var/log/packages/StorageGuard-* 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ')"
 echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 ]]></INLINE>
@@ -149,22 +117,10 @@ echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 echo "StorageGuard: removing..."
-# Strip inject from fixed layout paths only — never array/share paths
-SG_MARKER='StorageGuard-inject'
-for f in \
-  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/webGui/include/HeadInclude.php \
-  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
-do
-  [ -f "$f" ] || continue
-  sed -i \
-    -e "/${SG_MARKER}/d" \
-    -e '/storageguard-color\.js/d' \
-    -e '/storageguard\.css/d' \
-    -e '/plugins\/StorageGuard\/storageguard/d' \
-    "$f" 2>/dev/null || true
-done
+# Put back stock HeadInlineJS.php if an older version patched it
+if [ -x /usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore ]; then
+  /usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore restore || true
+fi
 for p in /var/log/packages/StorageGuard-*; do
   [ -e "$p" ] || continue
   removepkg "$(basename "$p")" 2>/dev/null || true

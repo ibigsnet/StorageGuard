@@ -486,29 +486,31 @@
     return id === 'array_devices' || id === 'boot_device' || (id && id.indexOf('pool_device') === 0);
   }
 
-  function hookJQueryHtml() {
-    var $ = window.jQuery || window.$;
-    if (!$ || !$.fn || $.fn._sgHtmlHooked) return;
-    var orig = $.fn.html;
-    $.fn.html = function (value) {
-      if (arguments.length === 0) return orig.apply(this, arguments);
-      var ret = orig.apply(this, arguments);
-      if (!lastStatus) return ret;
-      var need = false;
-      this.each(function () {
-        var id = this.id || '';
-        if (isMainTableId(id)) need = true;
-        else if (this.querySelector && (
-          this.querySelector('#array_devices') ||
-          this.querySelector('#boot_device') ||
-          this.querySelector('[id^="pool_device"]')
-        )) need = true;
-      });
-      if (need) applyStatus(lastStatus, lastOpts);
-      return ret;
-    };
-    $.fn._sgHtmlHooked = true;
-    log('jquery html hook installed');
+  var MAIN_TABLES = '#array_devices, #boot_device, [id^="pool_device"]';
+  var mainObserver = null;
+
+  function touchesMainTable(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (isMainTableId(node.id || '')) return true;
+    if (node.closest && node.closest(MAIN_TABLES)) return true;
+    return !!(node.querySelector && node.querySelector(MAIN_TABLES));
+  }
+
+  // Main rewrites its device tables on every refresh. Re-paint in the same
+  // task (observer callbacks run before the browser paints) so bars do not flash.
+  function watchMainTables() {
+    if (mainObserver || !window.MutationObserver || !document.body || !onMainLikePage()) return;
+    mainObserver = new MutationObserver(function (mutations) {
+      if (!lastStatus) return;
+      for (var i = 0; i < mutations.length; i++) {
+        if (touchesMainTable(mutations[i].target)) {
+          applyStatus(lastStatus, lastOpts);
+          return;
+        }
+      }
+    });
+    mainObserver.observe(document.body, { childList: true, subtree: true });
+    log('main table observer installed');
   }
 
   function fetchAndApply() {
@@ -545,14 +547,13 @@
   }
 
   function boot() {
-    hookJQueryHtml();
+    watchMainTables();
     fetchAndApply();
     setInterval(function () {
       if (lastStatus) applyStatus(lastStatus, lastOpts);
     }, 5000);
     setInterval(fetchAndApply, 10000);
-    setTimeout(hookJQueryHtml, 0);
-    setTimeout(hookJQueryHtml, 1000);
+    setTimeout(watchMainTables, 1000);
   }
 
   if (document.readyState === 'loading') {
