@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.28ab">
+<!ENTITY version "2026.09.28ac">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,6 +24,9 @@
 
 <CHANGES>
 ###&version;
+- Fix: Main page alert check always got 403. Unraid removes csrf_token from the form before the plugin sees it, so the check now reads it from the raw form body. Still POST only and refuses the request when the token is missing, wrong or unreadable. Browser console shows a warning if the check fails.
+
+###2026.09.28ab
 - Main free-bar colors load from the plugin's own page. Stock HeadInlineJS.php is no longer edited; upgrade and remove put it back. No more global jQuery .html() override.
 
 ###2026.09.28aa
@@ -35,11 +38,8 @@
 ###2026.09.08ae–ag
 - Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets. Docs/Help match tabs.
 
-###2026.09.08ac–ad
-- Settings tabs per Array and named pools; no empty parent tab; hide Array when no array disks.
-
-###2026.09.08aa–ab
-- Alerts check is POST+csrf; overlay install (do not wipe live plugin).
+###2026.09.08aa–ad
+- Settings tabs per Array and named pools; no empty parent tab; hide Array when no array disks. Alerts check is POST+csrf; overlay install (do not wipe live plugin).
 
 ###2026.09.06aa–ab
 - Hashed install (SHA256/MD5); Settings threshold note escapes form values.
@@ -61,8 +61,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
 <URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
-<SHA256>026f4e60f3f49093ec32972f515dcb7d96690de25234498672147f01985a22d6</SHA256>
-<MD5>f1d9fe9d5a61ead777d01f330545f3ff</MD5>
+<SHA256>ba6bd92726dc3efa7b9c2cb67df788dc810de31f5bf1265a028c8e2675f49941</SHA256>
+<MD5>8e8d35d761f71d19c875b57044404d2e</MD5>
 </FILE>
 <!-- raw-files end -->
 

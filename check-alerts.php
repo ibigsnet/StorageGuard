@@ -8,13 +8,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     echo json_encode(['sent' => false, 'reason' => 'POST required']);
     exit;
 }
-$csrf_expected = '';
-if (is_readable('/var/local/emhttp/var.ini')) {
-    $var_ini = @parse_ini_file('/var/local/emhttp/var.ini');
-    $csrf_expected = is_array($var_ini) ? (string)($var_ini['csrf_token'] ?? '') : '';
-}
+require_once __DIR__ . '/include/storageguard-csrf.php';
 // Fail closed: no readable token means no request goes through.
-if ($csrf_expected === '' || !hash_equals($csrf_expected, (string)($_POST['csrf_token'] ?? ''))) {
+if (!storageguard_csrf_ok()) {
     http_response_code(403);
     echo json_encode(['sent' => false, 'reason' => 'Invalid csrf_token']);
     exit;

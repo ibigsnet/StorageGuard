@@ -513,6 +513,35 @@
     log('main table observer installed');
   }
 
+  // csrf_token stays in the form body: Unraid checks it there, and the endpoint
+  // reads it back from the raw body after Unraid removes it from $_POST.
+  var alertsWarned = {};
+  function alertsFailed(what) {
+    if (alertsWarned[what]) return;
+    alertsWarned[what] = true;
+    console.warn('Storage Guard: alerts check failed (' + what + ')');
+  }
+
+  function checkAlerts() {
+    if (typeof csrf_token === 'undefined' || !csrf_token) {
+      alertsFailed('no csrf_token on this page');
+      return;
+    }
+    var alertBody = new URLSearchParams();
+    alertBody.set('csrf_token', csrf_token);
+    fetch('/plugins/StorageGuard/check-alerts.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: alertBody.toString()
+    }).then(function (r) {
+      if (!r.ok) alertsFailed('HTTP ' + r.status);
+    }).catch(function (err) {
+      alertsFailed(String(err));
+    });
+  }
+
   function fetchAndApply() {
     fetch('/plugins/StorageGuard/get-config.php', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) {
@@ -529,17 +558,7 @@
         data._status._opts = opts;
         log('status', data._status, opts);
         applyStatus(data._status, opts);
-        var alertBody = new URLSearchParams();
-        if (typeof csrf_token !== 'undefined' && csrf_token) {
-          alertBody.set('csrf_token', csrf_token);
-        }
-        fetch('/plugins/StorageGuard/check-alerts.php', {
-          method: 'POST',
-          credentials: 'same-origin',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: alertBody.toString()
-        }).catch(function () {});
+        checkAlerts();
       })
       .catch(function (err) {
         console.warn('Storage Guard: config fetch failed', err);

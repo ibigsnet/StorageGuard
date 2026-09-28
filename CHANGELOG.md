@@ -6,6 +6,17 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.09.28ac
+
+- **Fix: Main page alert check always failed with 403.** Unraid checks `csrf_token` on every
+  POST and then removes it from `$_POST` before the plugin script runs, so `check-alerts.php`
+  never saw the token. It now reads the token from `$_POST`, the `X-CSRF-Token` header, or the
+  raw form body (`include/storageguard-csrf.php`) and compares it with the WebUI token.
+- Still POST only (405 on GET). The request is refused when the WebUI token is empty or
+  unreadable, or when no token was sent.
+- The Main page keeps the token in the form body and no longer hides a failed alert check:
+  the browser console shows a warning with the HTTP status.
+
 ## 2026.09.28ab
 
 - **Main colors without editing Unraid files:** free-bar CSS/JS now load from the plugin's own
