@@ -1,188 +1,87 @@
 <?php
+/**
+ * Unraid update.php #include hook for the Storage Guard forms.
+ * Runs inside update.php ($keys = saved cfg, $default = default.cfg on #default).
+ */
+require_once '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
 
-$sg_lib = '/usr/local/emhttp/plugins/StorageGuard/sg-lib.php';
-if (is_file($sg_lib)) {
-    @require_once $sg_lib;
-}
-
+// Form-only fields never go to the cfg.
 if (is_array($keys)) {
     foreach (array_keys($keys) as $k) {
-        if (!is_string($k)) continue;
-        if ($k === 'pool_all' || $k === 'sg_target' || $k === 'sg_target_coloring' || $k === 'sg_tab' || preg_match('/^pool_color_/', $k)) {
-            unset($keys[$k]);
-            continue;
-        }
-        if ($k === 'cache_coloring') {
+        if (in_array($k, ['pool_all', 'sg_target', 'sg_target_coloring', 'sg_tab', 'cache_coloring'], true)
+            || preg_match('/^pool_color_/', (string)$k)) {
             unset($keys[$k]);
         }
     }
 }
 
 if (!isset($_POST['#default'])) {
+    $cur_cfg = sg_load_cfg();
+    // Settings tab: one outline/fill style for every target.
     if (($_POST['sg_tab'] ?? '') === 'settings') {
         $style = (strtolower((string)($_POST['color_style'] ?? 'outline')) === 'solid') ? 'solid' : 'outline';
         $_POST['color_style'] = $style;
         $_POST['array_color_style'] = $style;
-        $stamp = function_exists('sg_list_pool_names') ? sg_list_pool_names() : [];
-        $cur_cfg = function_exists('parse_plugin_cfg') ? parse_plugin_cfg('StorageGuard') : [];
-        if (is_array($cur_cfg)) {
-            foreach (array_keys($cur_cfg) as $ck) {
-                if (preg_match('/^pool_(.+)_color_style$/', (string)$ck, $m)) {
-                    $_POST['pool_' . $m[1] . '_color_style'] = $style;
-                }
+        foreach (array_keys($cur_cfg) as $ck) {
+            if (preg_match('/^pool_(.+)_color_style$/', (string)$ck, $m)) {
+                $_POST['pool_' . $m[1] . '_color_style'] = $style;
             }
         }
-        foreach ($stamp as $pn) {
-            $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $pn);
-            if ($safe !== '') {
-                $_POST['pool_' . $safe . '_color_style'] = $style;
-            }
+        foreach (sg_list_pool_names() as $pn) {
+            $_POST['pool_' . sg_pool_page_safe($pn) . '_color_style'] = $style;
         }
     }
     unset($_POST['sg_tab']);
+    // Pool tab: "Color Main free bar" edits this pool's entry in pools_to_color.
     $target = trim((string)($_POST['sg_target'] ?? ''));
-    if ($target !== '' && $target !== 'array' && function_exists('sg_list_pool_names')) {
+    if ($target !== '' && $target !== 'array') {
         $want = (strtolower((string)($_POST['sg_target_coloring'] ?? 'no')) === 'yes');
         $live = sg_list_pool_names();
-        $cur_cfg = function_exists('parse_plugin_cfg') ? parse_plugin_cfg('StorageGuard') : [];
-        if (!is_array($cur_cfg)) {
-            $cur_cfg = [];
-        }
         $cur = (string)($cur_cfg['pools_to_color'] ?? 'all');
-        if ($cur === 'all') {
-            $set = $live;
-        } elseif ($cur === '') {
-            $set = [];
-        } else {
-            $set = preg_split('/\s*,\s*/', $cur, -1, PREG_SPLIT_NO_EMPTY);
-        }
+        $set = $cur === 'all' ? $live : ($cur === '' ? [] : preg_split('/\s*,\s*/', $cur, -1, PREG_SPLIT_NO_EMPTY));
         $set = array_values(array_unique($set));
-        if ($want) {
-            if (!in_array($target, $set, true)) {
-                $set[] = $target;
-            }
-        } else {
+        if ($want && !in_array($target, $set, true)) {
+            $set[] = $target;
+        } elseif (!$want) {
             $set = array_values(array_filter($set, static function ($x) use ($target) {
                 return $x !== $target;
             }));
         }
-        $all = ($live && count(array_diff($live, $set)) === 0);
+        $all = ($live && !array_diff($live, $set));
         $_POST['pools_to_color'] = ($all && $set) ? 'all' : implode(',', $set);
-        $_POST['pool_coloring'] = empty($set) ? 'no' : 'yes';
+        $_POST['pool_coloring'] = $set ? 'yes' : 'no';
     }
     unset($_POST['sg_target'], $_POST['sg_target_coloring']);
     return;
 }
 
-if (!function_exists('sg_update_format_size')) {
-    function sg_update_format_size($kb) {
-        if (function_exists('sg_format_size_kb')) {
-            return sg_format_size_kb($kb);
-        }
-        // Fallback: Main Size column rules (my_scale kilo=1000, decimals=-1)
-        if (!$kb || $kb <= 0) return '0';
-        $value = (float)$kb * 1024.0;
-        $kilo = 1000.0;
-        $units = ['', 'K', 'M', 'G', 'T', 'P'];
-        $base = $value > 0 ? (int)floor(log($value, $kilo)) : 0;
-        if ($base > 5) $base = 5;
-        if ($base < 0) $base = 0;
-        $value /= pow($kilo, $base);
-        if ($value >= 100 || ((int)round($value * 10) % 10) === 0) $decimals = 0;
-        else $decimals = 1;
-        if (round($value, -1) == 1000 && $base < 5) { $value = 1; $base++; $decimals = 0; }
-        $formatted = number_format($value, $decimals, '.', '');
-        if (strpos($formatted, '.') !== false) {
-            $formatted = rtrim(rtrim($formatted, '0'), '.');
-        }
-        return $units[$base] === '' ? $formatted : ($formatted . $units[$base]);
-    }
-}
-
-$largest_warn = '';
-$smallest_crit = '';
-$disks_ini = '/var/local/emhttp/disks.ini';
-if (is_file($disks_ini)) {
-    $disks = @parse_ini_file($disks_ini, true) ?: [];
-    $raw = [];
-    foreach ($disks as $key => $d) {
-        if (empty($d['device'])) continue;
-        $type = $d['type'] ?? '';
-        $name = $d['name'] ?? $key;
-        $is_data = ($type === 'Data') || preg_match('/^disk\d+$/', $name) || preg_match('/^disk\d+$/', $key);
-        if (!$is_data) continue;
-        $sz = function_exists('sg_disk_capacity_kb') ? sg_disk_capacity_kb($d) : (isset($d['size']) ? (int)$d['size'] : 0);
-        if ($sz > 0) $raw[] = $sz;
-    }
-    if (!empty($raw)) {
-        rsort($raw, SORT_NUMERIC);
-        $largest_warn = sg_update_format_size($raw[0]);
-        $smallest_crit = sg_update_format_size($raw[count($raw) - 1]);
-    }
-}
-
+// Default button: machine-aware product defaults for every posted key.
 if (!is_array($default)) {
     $default = [];
 }
-
-// Prefer shared product map (Yes toggles, pool autofill, outline OK / no pulse).
-if (function_exists('sg_product_defaults_map')) {
-    foreach (sg_product_defaults_map() as $k => $v) {
-        $default[$k] = $v;
-    }
-    // Unraid Default button clears the "seeded" lock so next Apply re-locks
-    $default['sg_defaults'] = '';
-} else {
-    // Fallback if lib missing
-    $has_array = ($largest_warn !== '');
-    $default['array_warning'] = $largest_warn;
-    $default['array_critical'] = $smallest_crit;
-    $default['array_use_custom'] = 'no';
-    $default['array_warning_custom'] = '';
-    $default['array_critical_custom'] = '';
-    $default['array_color_style'] = 'outline';
-    $default['array_coloring'] = $has_array ? 'yes' : 'no';
-    $default['outline_pulse'] = 'no';
-    $default['outline_show_ok'] = 'yes';
-    $default['pool_coloring'] = 'yes';
-    $default['pools_to_color'] = 'all';
-    $default['alerts_array_warning'] = $has_array ? 'yes' : 'no';
-    $default['alerts_array_critical'] = $has_array ? 'yes' : 'no';
-    $default['sg_defaults'] = '';
+foreach (sg_product_defaults_map() as $k => $v) {
+    $default[$k] = $v;
 }
+$default['sg_defaults'] = '';
 
 foreach ($_POST as $key => $value) {
-    if (!is_string($key) || $key === '' || $key[0] === '#') continue;
-
-    // Covered by sg_product_defaults_map when lib loaded; keep loop for unknown keys cleanup
+    if (!is_string($key) || $key === '' || $key[0] === '#') {
+        continue;
+    }
     if (preg_match('/^alerts_pool_.+_(warning|critical)$/', $key)) {
-        if (!isset($default[$key])) {
-            $default[$key] = 'yes';
-        }
-        continue;
-    }
-
-    if (preg_match('/^pool_.+_(warning|critical)$/', $key) && strpos($key, '_custom') === false) {
-        // leave map values; do not blank
-        continue;
-    }
-    if (preg_match('/^pool_.+_(warning_custom|critical_custom)$/', $key)) {
+        $default[$key] = $default[$key] ?? 'yes';
+    } elseif (preg_match('/^pool_.+_(warning_custom|critical_custom)$/', $key)) {
         $default[$key] = '';
-        continue;
-    }
-    if (preg_match('/^pool_.+_use_custom$/', $key)) {
-        $default[$key] = 'no';
-        continue;
-    }
-    if (preg_match('/^pool_.+_color_style$/', $key)) {
+    } elseif (preg_match('/^pool_.+_use_custom$/', $key)) {
+        $default[$key] = $default[$key] ?? 'no';
+    } elseif (preg_match('/^pool_.+_color_style$/', $key)) {
         $default[$key] = 'outline';
     }
 }
 
 if (is_array($keys)) {
     foreach (array_keys($keys) as $k) {
-        if (!is_string($k)) continue;
-        if (preg_match('/^(pool_|alerts_pool_)/', $k) && !array_key_exists($k, $_POST)) {
+        if (preg_match('/^(pool_|alerts_pool_)/', (string)$k) && !array_key_exists($k, $_POST)) {
             unset($keys[$k]);
         }
     }

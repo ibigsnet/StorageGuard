@@ -139,7 +139,8 @@ There is **no** Show Cache / Show Array button. Pool tabs are created at runtime
 Each pool has its **own tab**, named as Unraid names it (`cache` → **Cache**, and so on). Nothing is hard-coded to the word cache.
 
 **Supported:** custom free-space thresholds, member disk-size thresholds (except mirrors — below), free-bar coloring on Main, and alerts.  
-**Profile-aware:** alert wording by profile class; **mirrored pools (RAID1 / RAID1cN) ignore disk-size thresholds** for paint/alerts (use Custom / Suggest). **DUP** is not a mirror for failed-disk purposes (copies on the same device).  
+**Profile-aware:** alert wording by profile class. **Disk-size thresholds only apply where a failed member's data has to move onto free space.** RAID1 / RAID1cN / RAID10 / RAID5 / RAID6 pools keep data online after one loss, and pools that cannot survive a loss (one disk, RAID0, single, DUP) have nowhere to move it — those tabs show free amounts only (Custom / Suggest). **DUP** is not a mirror for failed-disk purposes (copies on the same device).  
+**ZFS pools are not modelled:** no profile detection, layout class, or Suggest. They use free amounts only (no disk-size floors); thresholds are plain free-space floors on `/mnt/{pool}`. A one-disk ZFS pool is still layout-critical.  
 **Capacity math / Suggest:** the pool tab can fill Custom Warning/Critical from same-profile Δ for RAID1/1cN, RAID10, RAID5, and RAID6 **when that Δ is a real capacity drop**. Formulas: [docs/math/](docs/math/README.md).
 
 **Suggest free thresholds** is optional and never auto-applied.
@@ -196,23 +197,23 @@ Useful Unraid UI: **main page → click the pool name → Balance Status**
 
 ### Example: 4×4TB + 2×8TB (~32 TB raw)
 
-Approximate usable (first-order, data profile only):
+Usable (BTRFS allocator model, data profile only):
 
 | Profile | ~Usable | Notes |
 |---------|---------|--------|
 | RAID0 / single | ~32 TB | Max space, no safety |
 | RAID1 / RAID10 | ~16 TB | Two copies (+ striping for RAID10) |
 | RAID5 | ~24 TB | sum − largest |
-| RAID6 | ~16 TB | sum − 2×largest |
+| RAID6 | ~16 TB | sum − two largest |
 
-**Lose one 8T on RAID10 (est.):** usable 16 T → 12 T → need **~4T free** so used still fits (Δ).  
+**Lose one 8T on RAID10 (est.):** usable 16 T → ~10.7 T → need **~5.3T free** so used still fits (Δ).  
 **Lose one 4T on RAID10:** Δ ≈ **2T**.  
 You may still run on remaining disks without an emergency replace if used ≤ post-loss U.
 
 **Rules of thumb (Suggest-style)**
 
 - Prefer **Δ-based** free (worst single-disk capacity drop), not “always free ≥ largest disk”  
-- **Warning** free amount larger than **Critical** when sizes differ (product rule: Warning ≈ 2× Critical fit free)  
+- **Warning** free amount larger than **Critical** when sizes differ (product rule: Warning = largest-member Δ, Critical = smallest-member Δ)  
 - Always keep **backups**; redundancy is not a backup  
 
 For detailed speed/capacity tables with mixed drives, this community spreadsheet is useful:  
@@ -255,26 +256,27 @@ Array can be Solid while one pool is Outline, and so on. Pulse is shared across 
 
 ## Alerts
 
-On the Settings page, a small matrix of **checkboxes** chooses who gets notifications:
+Each **Array** / pool tab has **Notify warning** and **Notify critical** (Yes/No).
 
-- Rows: **Array**, each **pool**  
-- Columns: Warning, Critical  
+**Default (with array data disks):** **Array → Warning** and **Array → Critical** on. Detected **pools** default Warning + Critical on (set No to stay silent).
 
-**Default (with array data disks):** **Array → Warning** and **Array → Critical** on. Detected **pools** default Warning + Critical on (uncheck to stay silent).
+Alerts use the **same severity ranking** as main-page free-bar coloring (free-space thresholds) and do **not** require free-bar coloring to be on. If the level is critical but only Notify warning is Yes, you get a **warning** notification.
 
-Checked = send an Unraid notification when that target hits that level.  
-Nothing checked for a row = silent for that target.  
-Alerts use the **same severity ranking** as main-page free-bar coloring (free-space thresholds, plus layout-critical for pools that cannot survive a disk loss). They do **not** require free-bar coloring to be on.
+**When they run:** a plugin cron (`/boot/config/plugins/StorageGuard/storageguard.cron`, every **5 minutes**) runs `scripts/sg-alerts` on the server. No browser has to be open. One run at a time (`flock`); nothing is evaluated while the array is stopped, starting/stopping, or in Maintenance. Run it by hand with `/usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts` (prints one JSON line).
 
-If the level is critical but only the warning checkbox is enabled, you get a **warning** notification (highest enabled severity that matches).
+**When they notify:**
 
-Main still **checks** about every **10 seconds** while the Main page is open. A notification is sent **only when the level changes** (for example critical → warning sends the warning). The same warning/critical is **not** repeated every hour.
+- Only when the level **changes** (ok → warning → critical, or back). The same warning/critical is not repeated.
+- The last level per target is kept in `/boot/config/plugins/StorageGuard/alert-state.json`. It is written only when a level changes, so a reboot does **not** re-send an unchanged warning.
+- **Recovery margin:** to leave a level, free space must rise above that floor by 2% of the floor (at least 10 GB). Free space hovering at a threshold does not flap.
+- **Escalations** (ok → warning, warning → critical) notify at once. A **step down** (critical → warning, or recovered) is sent only once the last notification for that target is at least 1 hour old; if the level goes back up before then, nothing is sent.
+- Switching both Notify settings to No for a target forgets its stored level.
 
 ### Recovery (cleared) notifications
 
 When the level was warning or critical and later returns to **ok**, Storage Guard sends one **recovered** notification using Unraid importance `normal` (the green/OK style used when parity finishes successfully).
 
-- Only fires after a prior warning/critical for that target (array or a pool).  
+- Only fires after a prior warning/critical for that target (array or a pool), and after the recovery margin and the 1-hour step-down wait above.  
 - Does **not** fire on first install just because the target is already healthy.  
 - If critical becomes warning, you get the **warning** notify only (not recovered plus warning).
 
@@ -320,7 +322,7 @@ Pool free thresholds default to **None**. **Suggest** can fill Custom Warning/Cr
 
 **Subject:** `Storage Guard: Pool {name} cannot survive a disk loss`
 
-Sent once when that pool is first seen as layout-critical (RAID0, single, DUP, one disk, or too few devices). Same notify path as other critical/warning alerts — not a second system, and not repeated every hour. Recovered (or the next free-space warning/critical) fires if the layout later *can* survive a disk.
+Sent at Unraid importance **warning** when a pool **becomes** layout-critical (RAID0, single, DUP, one disk, or too few devices — for example a mirror member goes missing), if either Notify setting for that pool is Yes. A pool that is already like that when Storage Guard first sees it (a one-disk cache pool on install) is recorded silently: Main still paints it Critical, but you are not notified for a layout you chose. `Storage Guard: Pool {name} can survive a disk loss again` (normal) is sent if the layout later can survive a disk. Free-space warnings/criticals for the same pool are tracked separately and use its free amounts.
 
 ### Notification outcomes (summary)
 
@@ -333,7 +335,7 @@ Sent once when that pool is first seen as layout-critical (RAID0, single, DUP, o
 | Array custom threshold | same | Custom free wording, no fake disk names |
 | Pool RAID1 + free low | same paint | Mirror narrative (not “evacuate like array”) |
 | Pool RAID5 + free low | same paint | Rebalance/recovery headroom narrative |
-| Pool RAID0 / single / DUP / one disk | **Red** | One layout-critical notify (if Critical alerts on) |
+| Pool RAID0 / single / DUP / one disk | **Red** | One layout notice (warning importance) when it becomes so; none for a pool that was already so at install |
 
 ---
 
@@ -369,7 +371,7 @@ Sent once when that pool is first seen as layout-critical (RAID0, single, DUP, o
 
 ## Planned / future
 
-1. **Richer rebalance free-space estimator** (beyond capacity-fit $\Delta$ and $2\times$ comfort).  
+1. **Richer rebalance free-space estimator** (beyond capacity-fit $\Delta$).  
 2. **Better speed estimates** — model JSON by drive name, optional read-only probe, user overrides.  
 3. **Per-failure-device analysis** (“if disk X fails…”).  
 4. **Profile conversion guidance** in Settings UI (capacity + bus-ceiling speeds).  
@@ -382,8 +384,8 @@ Sent once when that pool is first seen as layout-critical (RAID0, single, DUP, o
 ## How coloring works (technical, brief)
 
 - Config is stored under `/boot/config/plugins/StorageGuard/`  
-- A small script on Unraid’s main page loads config + live free space and paints the **Free** usage bars (array totals row; pool **Data Partition** free—not “Pool of N devices”, not Internal Boot)  
-- Alerts are evaluated on a timer and use Unraid’s normal notify system  
+- A small script on Unraid’s main page loads config + live free space (`get-config.php`, every 30 s while Main is open and visible) and paints the **Free** usage bars (array totals row; pool totals or Data Partition row; not Internal Boot). Details: [docs/main-paint.md](docs/main-paint.md)  
+- Alerts run on the server from the plugin cron every 5 minutes (see **Alerts**) and use Unraid’s normal notify script  
 - **Paint and alerts only run when storage is fully up:** Unraid `fsState=Started`, `mdState=STARTED` (when set), and **not** Maintenance. Array stopped / starting / stopping / maintenance does **not** treat missing mounts as 0 free  
 
 Hard-refresh the **main page** after install or update if styles look stale.
@@ -398,7 +400,7 @@ Hard-refresh the **main page** after install or update if styles look stale.
 | Array free bar never colors | Confirm array coloring Yes and Warning/Critical set; free space above both thresholds stays unpainted in Solid mode |
 | Wrong pool / no pool free-bar color | Open that pool’s tab; Color Main free bar = Yes; confirm free space vs thresholds |
 | Yellow/red seem “swapped” vs labels | Check whether Critical free amount is higher than Warning—the plugin ranks by free-space severity |
-| Alerts never fire | On that Array/pool tab, Notify warning/critical = Yes; confirm thresholds; Unraid notification agents must allow warnings/alerts |
+| Alerts never fire | On that Array/pool tab, Notify warning/critical = Yes; confirm thresholds; Unraid notification agents must allow warnings/alerts. Run `/usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts` and check `grep storageguard /etc/cron.d/root` |
 | No Array tab | Normal when there are no array data disks (pools-only). |
 | No Suggest on a RAID1 pool | Normal for **two-disk** RAID1 (survivor holds a copy). Custom still works. |
 | Disk size label ≠ Main (e.g. 26T vs 25.9T) | Labels use Main’s capacity source (`fsSize` / BTRFS used+free when mounted) and `my_scale` SI rules (decimals=-1). Hard-refresh Settings after upgrade; re-pick disk sizes or press Default if an old rounded label was saved. |

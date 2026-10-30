@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.09.27aa">
+<!ENTITY version "2026.10.30ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/main/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,22 +24,26 @@
 
 <CHANGES>
 ###&version;
+- Alerts run on the server every 5 minutes (no browser needed), keep their last level across reboots, and no longer flap or repeat. "None" thresholds stay None after a reboot. The schedule registers on every boot device.
+- One-disk / RAID0 pools: one layout notice when a pool becomes unable to survive a disk loss, not on every boot. Pool math: degraded RAID5/RAID6 no longer suggest the whole pool as a free floor.
+
+###2026.09.28ac
+- Fix: Main page alert check always got 403. Unraid removes csrf_token from the form before the plugin sees it, so the check now reads it from the raw form body.
+
+###2026.09.28ab
+- Main free-bar colors load from the plugin's own page. Stock HeadInlineJS.php is no longer edited; upgrade and remove put it back. No more global jQuery .html() override.
+
+###2026.09.28aa
+- Pool math follows the BTRFS chunk allocator: correct usable space and Suggest values for mixed-size RAID1, RAID10, RAID1c3/c4 and RAID6.
+
+###2026.09.27aa
 - Plugin payload is a flash .txz from the GitHub Release (not re-fetched from main at boot).
 
-###2026.09.08ag
-- Docs/Help match tabs and Suggest (2-disk RAID1 hidden).
+###2026.09.08ae–ag
+- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets. Docs/Help match tabs.
 
-###2026.09.08af–ae
-- Suggest: no 2-disk RAID1 / sub-10G Δ. Settings Outline or fill for all targets.
-
-###2026.09.08ad–ac
-- Settings tabs per Array and named pools; no empty parent tab; hide Array when no array disks.
-
-###2026.09.08aa–ab
-- Alerts check is POST+csrf; overlay install (do not wipe live plugin).
-
-###2026.09.06aa–ab
-- Hashed install (SHA256/MD5); Settings threshold note escapes form values.
+###2026.09.08aa–ad
+- Settings tabs per Array and named pools; no empty parent tab; hide Array when no array disks. Alerts check is POST+csrf; overlay install (do not wipe live plugin).
 
 ### Older releases
 - Full changelog: https://github.com/ibigsnet/StorageGuard/blob/main/CHANGELOG.md
@@ -58,8 +62,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
 <URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
-<SHA256>3487fb27e193de9081e38124d02b5916f9149996f2774cffdffb78d1eba5fdb1</SHA256>
-<MD5>356d46bbb4724bc2243ec5d2c1251ed3</MD5>
+<SHA256>cc90feb84a61150ce8d490ad4f185acfdacd8c292298434533c70ffb994027f3</SHA256>
+<MD5>7b2abf4efc95318381b6e28705957f65</MD5>
 </FILE>
 <!-- raw-files end -->
 
@@ -92,7 +96,7 @@ if ($fresh && is_file("/usr/local/emhttp/plugins/StorageGuard/default.cfg")) {
 }
 if (function_exists("sg_sync_pool_pages")) { sg_sync_pool_pages(); }
 if (function_exists("sg_seed_product_cfg")) {
-  // Fresh install: full seed. Upgrade: fill missing/empty threshold keys only.
+  // Fresh install: full seed. Upgrade: add missing keys only (empty = None stays).
   sg_seed_product_cfg($fresh);
   echo $fresh ? "StorageGuard: seeded product defaults on flash\n" : "StorageGuard: healed empty defaults on flash\n";
 }
@@ -102,46 +106,33 @@ if (function_exists("sg_seed_product_cfg")) {
     cp -a /usr/local/emhttp/plugins/StorageGuard/default.cfg /boot/config/plugins/StorageGuard/StorageGuard.cfg
   fi
 }
-# Main free-bar CSS/JS: ONLY these Unraid layout files (absolute paths).
-# Never walks /mnt, shares, or any folder named "Storage Guard".
-# Marker-only strip (no broad "Storage Guard" text match).
-SG_MARKER='StorageGuard-inject'
-SG_BACKUP=/boot/config/plugins/StorageGuard/stock-backup
-mkdir -p "$SG_BACKUP"
-sg_strip_inject() {
-  local f="$1"
-  [ -f "$f" ] || return 0
-  # Drop our marker block + legacy inject lines (plugin asset paths only)
-  sed -i \
-    -e "/${SG_MARKER}/d" \
-    -e '/storageguard-color\.js/d' \
-    -e '/storageguard\.css/d' \
-    -e '/plugins\/StorageGuard\/storageguard/d' \
-    "$f" 2>/dev/null || true
-}
-for f in \
-  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php
-do
-  [ -f "$f" ] || continue
-  base=$(basename "$f")
-  if [ ! -f "$SG_BACKUP/$base.stock" ]; then
-    cp -a "$f" "$SG_BACKUP/$base.stock"
-    echo "StorageGuard: backed up stock $base"
-  fi
-  sg_strip_inject "$f"
-done
-HI="/usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php"
-if [ -f "$HI" ]; then
-  {
-    printf '\n<!-- %s begin -->\n' "$SG_MARKER"
-    printf '<link rel="stylesheet" href="/plugins/StorageGuard/storageguard.css?v=%s">\n' "$VER"
-    printf '<script src="/plugins/StorageGuard/storageguard-color.js?v=%s"></script>\n' "$VER"
-    printf '<!-- %s end -->\n' "$SG_MARKER"
-  } >> "$HI"
-  echo "StorageGuard: injected into HeadInlineJS (marker ${SG_MARKER})"
+chmod 755 /usr/local/emhttp/plugins/StorageGuard/scripts/* 2>/dev/null || true
+# Alerts: plugin cron. update_cron reads /boot/config/plugins/<plg name>/*.cron
+# of registered plugins only: the folder is lowercase storageguard (case matters
+# on a ZFS boot device; on FAT it is the same folder), and the plugin registers
+# after this script, so update_cron runs again a minute later.
+SG_CRON_DIR=/boot/config/plugins/storageguard
+SG_CRON=$SG_CRON_DIR/storageguard.cron
+SG_CRON_WANT='# Storage Guard: free-space alerts
+*/5 * * * * [ -x /usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts ] && /usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts >/dev/null 2>&1'
+mkdir -p "$SG_CRON_DIR"
+if [ "$(cat "$SG_CRON" 2>/dev/null)" != "$SG_CRON_WANT" ]; then
+  printf '%s\n' "$SG_CRON_WANT" > "$SG_CRON"
 fi
-echo "StorageGuard: packages now: $(ls /var/log/packages/StorageGuard-* 2>/dev/null | xargs -n1 basename 2>/dev/null | tr '\n' ' ')"
+SG_OLD_CRON=/boot/config/plugins/StorageGuard/storageguard.cron
+if [ -f "$SG_OLD_CRON" ] && ! [ "$SG_OLD_CRON" -ef "$SG_CRON" ]; then
+  rm -f "$SG_OLD_CRON"
+fi
+if [ -x /usr/local/sbin/update_cron ]; then
+  /usr/local/sbin/update_cron
+  echo /usr/local/sbin/update_cron | at -M now + 1 minute >/dev/null 2>&1 || true
+fi
+# Main paint loads from StorageGuardHead.page. Older versions patched stock
+# HeadInlineJS.php; put it back once.
+/usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore restore || true
+SG_PKGS=""
+for p in /var/log/packages/StorageGuard-*; do [ -e "$p" ] && SG_PKGS="$SG_PKGS ${p##*/}"; done
+echo "StorageGuard: packages now:$SG_PKGS"
 echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 ]]></INLINE>
 </FILE>
@@ -149,30 +140,22 @@ echo "StorageGuard: install complete. Hard-refresh the browser (Ctrl+Shift+R)."
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 echo "StorageGuard: removing..."
-# Strip inject from fixed layout paths only — never array/share paths
-SG_MARKER='StorageGuard-inject'
-for f in \
-  /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php \
-  /usr/local/emhttp/webGui/include/HeadInclude.php \
-  /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
-do
-  [ -f "$f" ] || continue
-  sed -i \
-    -e "/${SG_MARKER}/d" \
-    -e '/storageguard-color\.js/d' \
-    -e '/storageguard\.css/d' \
-    -e '/plugins\/StorageGuard\/storageguard/d' \
-    "$f" 2>/dev/null || true
-done
+# Put back stock HeadInlineJS.php if an older version patched it
+if [ -x /usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore ]; then
+  /usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore restore || true
+fi
 for p in /var/log/packages/StorageGuard-*; do
   [ -e "$p" ] || continue
   removepkg "$(basename "$p")" 2>/dev/null || true
 done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
-# Full uninstall: flash config + stock backups + runtime scratch (clean reinstall)
+# Full uninstall: flash config (incl. alert cron + alert state) + runtime scratch (clean reinstall)
 rm -rf /boot/config/plugins/StorageGuard
+rm -f /boot/config/plugins/storageguard/storageguard.cron
+rmdir /boot/config/plugins/storageguard 2>/dev/null || true
+[ -x /usr/local/sbin/update_cron ] && /usr/local/sbin/update_cron
 rm -rf /tmp/storageguard_alerts
+rm -f /var/tmp/storageguard-has-array /var/run/storageguard-alerts.lock
 rm -f /tmp/plugins/storageguard.txt 2>/dev/null || true
 # Note: do not delete /tmp/plugins/storageguard.plg here — Unraid install working copy
 # Note: do not touch /boot/config/plugins-removed/ (Unraid-owned)

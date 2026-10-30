@@ -1,0 +1,5 @@
+#!/bin/bash
+# Storage Guard: evaluate free-space alerts once. Run by the plugin cron
+# (/boot/config/plugins/storageguard/storageguard.cron); safe to run by hand.
+# Only one run at a time (flock inside); does nothing while the array is stopped.
+exec /usr/bin/php -r 'require "/usr/local/emhttp/plugins/StorageGuard/include/sg-alerts.php"; exit(sg_alerts_cli());'

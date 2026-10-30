@@ -40,6 +40,6 @@ Rough upper bound ≈ $N\cdot R$ read / $N\cdot W$ write when work fans across d
 | **Suggest free thresholds** | **No** — no recovery free model |
 | Thresholds | Optional Custom (capacity policy only) |
 | Paint | **Always Critical** on Main — a failed disk loses the chunks that lived only there |
-| Alerts | One layout-critical notify if pool Critical (or Warning) alerts are on; not hourly |
+| Alerts | One layout notice (warning importance) when the pool **becomes** this layout, if either Notify setting is Yes; none for a pool that was already this way when first seen |
 
 Code: class `none` → `apply = false` in `sg_pool_threshold_suggestions`; `sg_pool_one_disk_mode` → `nonsurvival`.

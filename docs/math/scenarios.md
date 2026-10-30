@@ -129,10 +129,10 @@ With **~2.8 TB free** on this layout, used still fits after one loss → **OK*
 | Loss | $U_{\mathrm{after}}$ | $\Delta_{\mathrm{fit}}$ |
 |------|------------------------|---------------------------|
 | Healthy $U=16$ TB | — | — |
-| Largest: lose 8 TB | 12 TB | **4 TB** |
-| Smallest: lose 4 TB | 14 TB | **2 TB** |
+| Largest: lose 8 TB | ~10.7 TB | **~5.3 TB** |
+| Smallest: lose 4 TB | 14 TB | **2 TB** |
 
-Planning: **Warning 4 T** (largest-loss $\Delta$), **Critical 2 T** (smallest-loss $\Delta$).
+Planning: **Warning ~5.3 T** (largest-loss $\Delta$), **Critical 2 T** (smallest-loss $\Delta$). Losing an 8 TB leaves five devices; RAID10 chunks use an even count, so the 4 TB disks fill up while part of the remaining 8 TB goes unused ([raid10.md](raid10.md)).
 
 ---
 

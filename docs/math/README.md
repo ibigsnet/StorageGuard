@@ -1,7 +1,7 @@
 # BTRFS pool math
 
 Planning estimates for **Unraid multi-device BTRFS pools**.  
-These are **not** mdadm / hardware-RAID formulas. Metadata is ignored; mixed-size layouts are simplified.
+These are **not** mdadm / hardware-RAID formulas. Metadata is ignored; mixed sizes follow the BTRFS chunk allocator (see below).
 
 **How to read these pages**
 
@@ -34,7 +34,14 @@ Capacity math targets the pool’s **data** profile (what free space on Unraid�
 
 ### Mixed device sizes
 
-BTRFS can use uneven disks. Usable space is **not** always “sum of smallest × N”. Real allocation follows free space and profile constraints; [carfax btrfs-usage](https://carfax.org.uk/btrfs-usage/) is useful for mutt layouts. First-order formulas below stay simple and deterministic.
+BTRFS can use uneven disks. Usable space is **not** always “sum of smallest × N”, and it is not always half (or a third) of raw either. Storage Guard follows the chunk allocator, the same model as the [carfax btrfs-usage](https://carfax.org.uk/btrfs-usage/) calculator: each new chunk goes to the devices with the **most free space**.
+
+- **RAID1 / RAID1c3 / RAID1c4:** each chunk uses the 2 / 3 / 4 devices with the most free space.
+- **RAID0 / RAID5 / RAID6:** each chunk stripes across every device that still has space (RAID5 loses one device of each stripe to parity, RAID6 two).
+- **RAID10:** stripes across the devices with space, rounded down to an even count.
+- Allocation stops when too few devices have space left (RAID1 2, RAID10 2, RAID5 2, RAID6 3, RAID1c3 3, RAID1c4 4).
+
+When one disk is much larger than the rest, part of it can never be used. Example **8 + 1 + 1 TB**: RAID1 holds **2 TB**, not 5 TB.
 
 ### Quantities
 
@@ -66,6 +73,8 @@ $$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 $$
 
+When a loss leaves fewer devices than the profile needs, the survivors are counted as the profile they can still hold: RAID1 / RAID10 → the one survivor, RAID1c3 / RAID1c4 → one copy fewer, RAID5 → single, RAID6 → RAID5. So a 2-disk RAID5 or 3-disk equal RAID6 has $\Delta = 0$ (no Suggest), rather than a floor equal to the whole pool.
+
 First-order **suggested free floors** (user may assign either way; see [threshold-guide.md](threshold-guide.md)):
 
 $$
@@ -89,16 +98,16 @@ On an Unraid **BTRFS pool**, the kernel does the I/O: one sequential write on **
 
 ### Profile summary
 
-| Profile | Usable (first-order) | 1-disk data online? | Notes |
+| Profile | Usable (allocator model) | 1-disk data online? | Notes |
 |---------|----------------------|---------------------|--------|
 | single / RAID0 | $\sum S_i$ | **No** | No recovery free model; Main stays Critical |
 | DUP | $\sum S_i / 2$ | **No** | Two copies on the same device; Main stays Critical |
-| RAID1 | $\sum S_i / 2$ | Usually yes | **2** copies, not N |
-| RAID1c3 | $\sum S_i / 3$ | Usually yes (2 losses) | 3 copies |
-| RAID1c4 | $\sum S_i / 4$ | Usually yes (3 losses) | 4 copies |
-| RAID10 | $\sum S_i / 2$ | Usually yes | 2 copies + striping |
+| RAID1 | $\min(\sum S_i / 2,\ \sum S_i - \max S_i)$ | Usually yes | **2** copies, not N |
+| RAID1c3 | $\min_{j<3} (\sum S_i - T_j)/(3-j)$ | Usually yes (2 losses) | 3 copies; $T_j$ = sum of the $j$ largest |
+| RAID1c4 | $\min_{j<4} (\sum S_i - T_j)/(4-j)$ | Usually yes (3 losses) | 4 copies |
+| RAID10 | $\sum S_i / 2$ on equal disks; mixed sizes by allocator (can be below RAID1) | Usually yes | 2 copies + striping |
 | RAID5 | $\sum S_i - \max S_i$ | If within tolerance | One parity; [docs](raid5.md#docs-to-read-raid5--raid6) |
-| RAID6 | $\sum S_i - 2\max S_i$ | If within tolerance | Two parity; [docs](raid6.md#docs-to-read-raid5--raid6) |
+| RAID6 | $\sum S_i$ − two largest | If within tolerance | Two parity; [docs](raid6.md#docs-to-read-raid5--raid6) |
 
 ### Generic Examples
 
@@ -152,12 +161,14 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 | Tools → Storage Guard → pool tab (e.g. Cache) | Suggest button when Δ is a real capacity drop (not 2-disk RAID1) |
 | Unraid main-page free bars (array / pool) | Paint from configured free thresholds; no-survival pools stay Critical |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
-| `get-config` → `_status.pools.*.math` | Machine-readable package for UI |
+| `get-config` → `_status.pools.*.math` | Machine-readable package (members, Suggest, profile alternatives; no speed columns) |
 
 ## Code
 
 `sg-pool-math.php` — `sg_usable_tb`, `sg_capacity_delta_tb`, `sg_pool_threshold_suggestions`, `sg_pool_profile_alternatives`, `sg_pool_math_package`.  
-`sg-lib.php` — `sg_pool_one_disk_mode`, `sg_pool_effective_level` (layout-critical paint).
+`sg-lib.php` — `sg_pool_one_disk_mode`, `sg_pool_uses_disk_sizes`, `sg_evaluate` (one evaluation shared by Main paint and alerts; layout-critical pools paint Critical).  
+`include/sg-alerts.php` — alert state, recovery margin, re-notify interval (run by the plugin cron).  
+Speed ceilings (`sg_pool_bus_ceiling_estimate`, `smartctl -n standby`) are only computed when asked for with `sg_pool_math_package(..., true)`; Main paint and alerts never run them.
 
 ## Docs map
 

@@ -5,7 +5,7 @@ Markdown="false"
 ---
 <?php
 require_once '/usr/local/emhttp/plugins/StorageGuard/sg-page-boot.php';
-sg_page_styles();
+sg_page_assets();
 ?>
 <div class="sg-wrap">
   <p class="sg-section-lead">
@@ -16,7 +16,8 @@ sg_page_styles();
     <li><strong>Array</strong> (hidden if no array disks) and each pool tab (named like <strong>Cache</strong>) set Warning/Critical, alerts, coloring, and outline vs fill for that target.</li>
     <li><strong>Settings</strong> — outline vs fill for <em>all</em> targets, green outline when OK, pulse on warn/crit.</li>
     <li><strong>Suggest free thresholds</strong> on a pool tab fills Custom from capacity-fit Δ when that Δ is real (RAID10 / RAID5/6 / 3+ disk RAID1). Hidden on 2-disk RAID1 — survivor holds a copy; Custom still works.</li>
-    <li>Pools that cannot survive a disk loss (RAID0, single, DUP, one disk) stay Critical on Main.</li>
+    <li>Pools that cannot survive a disk loss (RAID0, single, DUP, one disk) stay Critical on Main. They and RAID1/RAID10/RAID5/6 pools use free amounts, not disk sizes.</li>
+    <li>Notifications are checked on the server every 5 minutes, with or without a browser open. ZFS layouts are not modelled.</li>
     <li><strong>Default</strong> resets the whole plugin. Apply on a tab saves that tab only.</li>
   </ul>
   <p>

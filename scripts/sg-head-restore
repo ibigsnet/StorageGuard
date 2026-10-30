@@ -1,0 +1,101 @@
+#!/bin/bash
+# Undo the old Main-page head patch (plugin versions up to 2026.09.28aa).
+#
+# Older versions appended a CSS/JS block to the stock layout file
+# HeadInlineJS.php. The plugin now loads its CSS/JS from its own page
+# (StorageGuardHead.page) and never edits stock files.
+#
+# Runs on install/upgrade and on remove. For each layout file:
+#   - no Storage Guard lines -> leave it alone (stock, or Unraid replaced it)
+#   - lines present          -> strip them; put the flash backup back only if it
+#                               matches the stripped file (same Unraid build)
+# Content is written back into the same file, so owner and mode stay as-is.
+# Then the old backup directory is deleted.
+#
+# Usage: sg-head-restore [restore|status]
+
+set -uo pipefail
+
+BACKUP_DIR="${SG_HEAD_BACKUP:-/boot/config/plugins/StorageGuard/stock-backup}"
+if [ -n "${SG_HEAD_FILES:-}" ]; then
+  read -r -a FILES <<< "$SG_HEAD_FILES"
+else
+  FILES=(
+    /usr/local/emhttp/webGui/include/DefaultPageLayout/HeadInlineJS.php
+    /usr/local/emhttp/plugins/dynamix/include/DefaultPageLayout/HeadInlineJS.php
+    /usr/local/emhttp/webGui/include/HeadInclude.php
+    /usr/local/emhttp/plugins/dynamix/include/HeadInclude.php
+  )
+fi
+
+# Lines older versions wrote. Plugin asset paths and our markers only.
+SG_PATTERN='StorageGuard-inject|<!-- Storage Guard -->|storageguard-color\.js|storageguard\.css|plugins/StorageGuard/storageguard'
+
+log() {
+  logger -t StorageGuard "head-restore: $*" 2>/dev/null || true
+  echo "StorageGuard: $*"
+}
+
+has_patch() { grep -Eq "$SG_PATTERN" "$1" 2>/dev/null; }
+
+# File without our lines and without trailing blank lines.
+stripped() {
+  grep -Ev "$SG_PATTERN" "$1" | sed -e ':a' -e '/^\n*$/{$d;N;ba' -e '}'
+}
+
+# Compare two files ignoring trailing blank lines.
+same_content() {
+  cmp -s <(sed -e ':a' -e '/^\n*$/{$d;N;ba' -e '}' "$1") <(sed -e ':a' -e '/^\n*$/{$d;N;ba' -e '}' "$2")
+}
+
+restore_file() {
+  local f="$1" tmp bak
+  [ -f "$f" ] || return 0
+  if ! has_patch "$f"; then
+    return 0
+  fi
+  tmp=$(mktemp) || return 1
+  stripped "$f" > "$tmp"
+  bak="$BACKUP_DIR/$(basename "$f").stock"
+  if [ -f "$bak" ] && ! has_patch "$bak" && same_content "$bak" "$tmp"; then
+    cat "$bak" > "$f"
+    log "restored $(basename "$f") from stock backup"
+  else
+    cat "$tmp" > "$f"
+    log "stripped old lines from $(basename "$f") (no current backup)"
+  fi
+  rm -f "$tmp"
+  if has_patch "$f"; then
+    log "WARNING: $f still has Storage Guard lines"
+    return 1
+  fi
+  return 0
+}
+
+status() {
+  local f rc=0 seen=""
+  for f in "${FILES[@]}"; do
+    [ -f "$f" ] || continue
+    r=$(readlink -f "$f"); case " $seen " in *" $r "*) continue ;; esac; seen="$seen $r"
+    if has_patch "$f"; then echo "patched: $f"; rc=1; else echo "clean:   $f"; fi
+  done
+  return $rc
+}
+
+case "${1:-restore}" in
+  status) status; exit $? ;;
+  restore)
+    rc=0 seen=""
+    for f in "${FILES[@]}"; do
+      [ -f "$f" ] || continue
+      # webGui is a symlink to plugins/dynamix; handle each real file once
+      r=$(readlink -f "$f"); case " $seen " in *" $r "*) continue ;; esac; seen="$seen $r"
+      restore_file "$f" || rc=1
+    done
+    if [ "$rc" -eq 0 ] && [ -d "$BACKUP_DIR" ]; then
+      rm -rf "$BACKUP_DIR"
+    fi
+    exit $rc
+    ;;
+  *) echo "usage: $0 [restore|status]" >&2; exit 2 ;;
+esac

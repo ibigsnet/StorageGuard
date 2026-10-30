@@ -1,190 +1,55 @@
 <?php
+/**
+ * Main free-bar paint data: saved cfg plus _status from the shared evaluator.
+ * Read-only (no notifications, no writes, no smartctl).
+ */
 header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
 require_once __DIR__ . '/sg-lib.php';
-require_once __DIR__ . '/sg-pool-math.php';
 
-$cfgFile = '/boot/config/plugins/StorageGuard/StorageGuard.cfg';
-$cfg = [];
-if (file_exists($cfgFile)) {
-  $cfg = @parse_ini_file($cfgFile, false, INI_SCANNER_RAW) ?: [];
-}
+$cfg = sg_load_cfg();
+$ev = sg_evaluate($cfg);
+$online = $ev['storage_online'];
 
-function sg_parse_to_tb($str) {
-  if ($str === null || $str === '') return 0.0;
-  if (!preg_match('/([0-9]*\.?[0-9]+)\s*([TGMKtgmk]?)/', (string)$str, $m)) return 0.0;
-  $num = (float)$m[1];
-  $u = strtoupper($m[2] ?: 'T');
-  if ($u === 'T') return $num;
-  if ($u === 'G') return $num / 1000.0;
-  if ($u === 'M') return $num / 1000.0 / 1000.0;
-  if ($u === 'K') return $num / 1000.0 / 1000.0 / 1000.0;
-  return $num;
-}
-
-function sg_free_tb_mount($mount) {
-  if (!is_dir($mount)) return null;
-  $out = @shell_exec("df -B1 --output=avail " . escapeshellarg($mount) . " 2>/dev/null | tail -1");
-  $bytes = (float)trim((string)$out);
-  if ($bytes < 0) return null;
-  return $bytes / 1000.0 / 1000.0 / 1000.0 / 1000.0;
-}
-
-function sg_level($free_tb, $warn_tb, $crit_tb) {
-  if ($free_tb === null) return 'ok';
-  $w = ($warn_tb > 0) ? (float)$warn_tb : null;
-  $c = ($crit_tb > 0) ? (float)$crit_tb : null;
-  if ($w === null && $c === null) return 'ok';
-  if ($w === null) return ($free_tb <= $c) ? 'critical' : 'ok';
-  if ($c === null) return ($free_tb <= $w) ? 'warning' : 'ok';
-  $severe = min($w, $c);
-  $mild   = max($w, $c);
-  if ($free_tb <= $severe) return 'critical';
-  if ($free_tb <= $mild) return 'warning';
-  return 'ok';
-}
-
-function sg_style($cfg, $key) {
-  $legacy = $cfg['color_style'] ?? 'outline';
-  $s = $cfg[$key] ?? $legacy;
-  return ($s === 'solid') ? 'solid' : 'outline';
-}
-
-$array_present = function_exists('sg_array_present') ? sg_array_present() : (function_exists('sg_largest_data_disk_tb') && sg_largest_data_disk_tb() > 0);
-$storage_online = function_exists('sg_storage_online') ? sg_storage_online() : true;
-
-// Prefer array-only mount; do not treat pools-only /mnt/user as the array
-// Only sample free space when Unraid storage is fully started (not stopped/maintenance)
-$array_free = null;
-if ($storage_online && $array_present) {
-  $array_free = sg_free_tb_mount('/mnt/user0');
-  if ($array_free === null || $array_free <= 0) {
-    $array_free = sg_free_tb_mount('/mnt/user');
-  }
-}
-
-$sg_defaults_ok = (($cfg['sg_defaults'] ?? '') === '1');
-$use_custom = ($cfg['array_use_custom'] ?? 'no') === 'yes';
-$array_size_kbs = function_exists('sg_array_data_disk_size_kbs') ? sg_array_data_disk_size_kbs() : [];
-if ($use_custom) {
-  $arr_warn = sg_parse_to_tb($cfg['array_warning_custom'] ?? '');
-  $arr_crit = sg_parse_to_tb($cfg['array_critical_custom'] ?? '');
-} else {
-  if ($sg_defaults_ok && array_key_exists('array_warning', $cfg)) {
-    $aw = (string)($cfg['array_warning'] ?? '');
-    if ($aw !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
-      $aw = sg_migrate_disk_size_label($aw, $array_size_kbs);
-    }
-    $arr_warn = sg_parse_to_tb($aw);
-  } else {
-    $arr_warn = ($array_present && function_exists('sg_largest_data_disk_tb')) ? sg_largest_data_disk_tb() : 0.0;
-  }
-  if ($sg_defaults_ok && array_key_exists('array_critical', $cfg)) {
-    $ac = (string)($cfg['array_critical'] ?? '');
-    if ($ac !== '' && function_exists('sg_migrate_disk_size_label') && !empty($array_size_kbs)) {
-      $ac = sg_migrate_disk_size_label($ac, $array_size_kbs);
-    }
-    $arr_crit = sg_parse_to_tb($ac);
-  } else {
-    $arr_crit = ($array_present && function_exists('sg_smallest_data_disk_tb')) ? sg_smallest_data_disk_tb() : 0.0;
-  }
-}
-
-$array_coloring = ($cfg['array_coloring'] ?? 'yes') === 'yes';
-$pool_coloring = ($cfg['pool_coloring'] ?? 'yes') === 'yes';
-$pools_to_color = $cfg['pools_to_color'] ?? 'all';
-$array_style = sg_style($cfg, 'array_color_style');
-
-// No array / storage offline: keep cfg values but do not paint / treat as active
-$array_enabled = $storage_online && $array_present && $array_coloring;
+$a = $ev['array'];
+$array_enabled = $online && $a['coloring'];
 $status = [
-  'storage_online' => $storage_online,
-  'array' => [
-    'present' => $array_present,
-    'enabled' => $array_enabled,
-    'free_tb' => ($array_enabled && $array_free !== null) ? round($array_free, 3) : null,
-    'warn_tb' => round($arr_warn, 3),
-    'crit_tb' => round($arr_crit, 3),
-    'level'   => $array_enabled ? sg_level($array_free, $arr_warn, $arr_crit) : 'ok',
-    'style'   => $array_style,
-  ],
-  'pools' => new stdClass(),
+    'storage_online' => $online,
+    'array' => [
+        'present' => $a['present'],
+        'enabled' => $array_enabled,
+        'free_tb' => ($array_enabled && $a['free_tb'] !== null) ? round($a['free_tb'], 3) : null,
+        'warn_tb' => round($a['th']['warn'], 3),
+        'crit_tb' => round($a['th']['crit'], 3),
+        'level' => $array_enabled ? $a['level'] : 'ok',
+        'style' => $a['style'],
+    ],
+    'pools' => new stdClass(),
 ];
 
-$pool_names = [];
-foreach ($cfg as $k => $v) {
-  if (preg_match('/^pool_([a-zA-Z0-9_]+)_warning$/', $k, $m)) {
-    $pool_names[$m[1]] = true;
-  }
-  if (preg_match('/^pool_([a-zA-Z0-9_]+)_warning_custom$/', $k, $m)) {
-    $pool_names[$m[1]] = true;
-  }
+$pools = [];
+foreach ($ev['pools'] as $name => $p) {
+    $enabled = $online && $p['coloring'];
+    $pools[$name] = [
+        'enabled' => $enabled,
+        'free_tb' => $p['free_tb'] !== null ? round($p['free_tb'], 3) : null,
+        'warn_tb' => round($p['th']['warn'], 3),
+        'crit_tb' => round($p['th']['crit'], 3),
+        'level' => $enabled ? $p['level'] : 'ok',
+        'level_reason' => $enabled ? $p['level_reason'] : 'none',
+        'one_disk_mode' => $p['one_disk'],
+        'members' => $p['members'],
+        'style' => $p['style'],
+        'profile' => $p['profile'],
+        'fs_type' => $p['fs_type'],
+        'threshold_source' => $p['th']['source'],
+        'math' => $p['math'],
+    ];
 }
-$disks_ini = '/var/local/emhttp/disks.ini';
-if (file_exists($disks_ini)) {
-  $disks = @parse_ini_file($disks_ini, true) ?: [];
-  foreach ($disks as $key => $d) {
-    if (($d['type'] ?? '') !== 'Cache') continue;
-    if (empty($d['device'])) continue;
-    $pname = preg_replace('/\d+$/', '', $key);
-    if ($pname !== '' && $pname !== 'flash') $pool_names[$pname] = true;
-  }
+if ($pools) {
+    $status['pools'] = $pools;
 }
-
-$pool_status = [];
-foreach (array_keys($pool_names) as $pname) {
-  $safe = preg_replace('/[^a-zA-Z0-9_]/', '_', $pname);
-  $include = ($pools_to_color === 'all' || $pools_to_color === '');
-  if (!$include) {
-    $list = array_map('trim', explode(',', $pools_to_color));
-    $include = in_array($pname, $list, true) || in_array($safe, $list, true);
-  }
-  $enabled = $storage_online && $pool_coloring && $include;
-  $profile = $storage_online ? sg_pool_btrfs_profile($pname) : '';
-  $free = $storage_online ? sg_free_tb_mount('/mnt/' . $pname) : null;
-  $math = ($storage_online && function_exists('sg_pool_math_package'))
-    ? sg_pool_math_package($pname, $profile) : null;
-  $th = function_exists('sg_pool_resolve_thresholds')
-    ? sg_pool_resolve_thresholds($cfg, $safe, $pname)
-    : ['warn' => 0.0, 'crit' => 0.0, 'source' => 'none'];
-  $warn = (float)($th['warn'] ?? 0);
-  $crit = (float)($th['crit'] ?? 0);
-  $members = function_exists('sg_pool_member_count')
-    ? sg_pool_member_count($pname)
-    : (is_array($math) && isset($math['members_tb']) ? count($math['members_tb']) : 0);
-  $one_disk = function_exists('sg_pool_one_disk_mode')
-    ? sg_pool_one_disk_mode($profile, $members)
-    : 'unknown';
-  $level = 'ok';
-  $level_reason = 'none';
-  if ($enabled && $free !== null) {
-    $level = sg_level($free, $warn, $crit);
-    if (function_exists('sg_pool_effective_level')) {
-      $level = sg_pool_effective_level($level, $one_disk);
-    }
-    if ($one_disk === 'nonsurvival') {
-      $level_reason = 'layout';
-    } elseif ($level === 'warning' || $level === 'critical') {
-      $level_reason = 'free';
-    }
-  }
-  $pool_status[$pname] = [
-    'enabled' => $enabled,
-    'free_tb' => ($free !== null) ? round($free, 3) : null,
-    'warn_tb' => round($warn, 3),
-    'crit_tb' => round($crit, 3),
-    'level'   => $level,
-    'level_reason' => $level_reason,
-    'one_disk_mode' => $one_disk,
-    'members' => $members,
-    'style'   => sg_style($cfg, "pool_{$safe}_color_style"),
-    'profile' => $profile,
-    'threshold_source' => $th['source'] ?? 'none',
-    'math'    => $math,
-  ];
-}
-$status['pools'] = $pool_status ?: new stdClass();
 
 $out = $cfg;
 $out['_status'] = $status;

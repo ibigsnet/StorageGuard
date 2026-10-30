@@ -36,11 +36,17 @@ After a single disk loss, common options:
 
 ### Usable capacity (estimate)
 
-$$
-U(\mathrm{RAID10}, S_1,\ldots,S_N) \approx \frac{1}{2}\sum_i S_i \quad (N \ge 2)
-$$
+Equal disks: $U = \frac{1}{2}\sum_i S_i$ ($N \ge 2$).
 
-Real mutt layouts can leave some raw unusable; see [btrfs disk usage calculator](https://carfax.org.uk/btrfs-usage/).
+Mixed sizes: each chunk stripes across the devices that still have space, rounded down to an even count (with an odd count, the ones with the most free space). Small disks fill up at the same pace as big ones, so a big disk can be left with space no chunk can use. RAID10 can hold **less** than RAID1 on the same disks. Storage Guard follows that allocator (same model as the [btrfs disk usage calculator](https://carfax.org.uk/btrfs-usage/)).
+
+| Layout | RAID10 usable | RAID1 on same disks |
+|--------|---------------|---------------------|
+| 4 × 4 TB | **8 TB** | 8 TB |
+| 8 + 1 + 1 TB | **2 TB** | 2 TB |
+| 10 + 2 + 2 + 2 TB | **4 TB** | 6 TB |
+| 8 + 4 + 4 + 4 TB | **8 TB** | 10 TB |
+| 6 + 4 + 2 TB | **6 TB** | 6 TB |
 
 ### Free headroom after losing disk $i$ (same profile)
 
@@ -75,11 +81,11 @@ Still online with two devices if used ≤ 4 TB.
 
 | Event | Usable after (est.) | $\Delta_{\mathrm{fit}}$ |
 |-------|---------------------|---------------------------|
-| Healthy | 16 TB | — |
-| Lose one **8 TB** | 12 TB | **4 TB** (worst) |
-| Lose one **4 TB** | 14 TB | **2 TB** (mild) |
+| Healthy | 16 TB | — |
+| Lose one **8 TB** | ~10.7 TB (8 TB + 4 × 4 TB, odd count) | **~5.3 TB** (worst) |
+| Lose one **4 TB** | 14 TB | **2 TB** (mild) |
 
-Planning: **Warning 4 T** (largest-loss Δ), **Critical 2 T** (smallest-loss Δ).
+Planning: **Warning ~5.3 T** (largest-loss Δ), **Critical 2 T** (smallest-loss Δ).
 
 ### Profile conversion (education)
 
@@ -109,8 +115,7 @@ See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid doe
 |----------|--------|
 | **Suggest free thresholds** | **Yes** |
 | Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
-| Paint / alerts | Use capacity-fit automatically (Custom overrides) |
-| Settings tables | Per-member loss Δ, usable after loss, profile comparison |
+| Paint / alerts | Your free amounts only (Custom, or filled by **Suggest**); capacity-fit is never applied automatically. Disk-size dropdowns are not shown on this tab |
 | Alerts | RAID10 / striped-mirror wording: data usually online; free = capacity-fit after usable shrinks |
 | Not claimed | Forced immediate replace |
 

@@ -6,6 +6,84 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.10.30ab
+
+- **Alert schedule on every boot device.** The cron file moved to `/boot/config/plugins/storageguard/`
+  and `update_cron` runs again a minute after install. Unraid's `update_cron` reads `/boot/config/plugins/<plugin>/*.cron` only for plugins that have finished installing, and the folder name is case-sensitive on a ZFS boot device. Before, the 5-minute alert check
+  could be missing after a fresh install or a reboot.
+- **Notification text is plain ASCII.** Dashes and curly quotes were dropped by shell escaping under
+  cron, which left double spaces in the message.
+
+## 2026.10.30aa
+
+- **Alerts run on the server.** A plugin cron (`storageguard.cron`, every 5 minutes, installed with
+  Unraid's `update_cron`) checks free space and sends notifications. A browser no longer has to be
+  open, and open tabs no longer poll the alert check. One run at a time; nothing runs while the
+  array is stopped or in Maintenance. Uninstall removes the cron.
+- **No repeats after reboot.** The last alert level per target is kept on the flash drive
+  (`alert-state.json`, written only when a level changes), so an unchanged warning is not sent
+  again after every boot.
+- **No flapping.** Leaving a level needs free space 2% (at least 10 GB) above that floor, and a
+  step down or "recovered" waits until the last notification for that target is an hour old.
+  Escalations still notify at once.
+- **"None" stays None.** Boot no longer refills empty Warning/Critical values with disk sizes; it
+  only adds settings that are missing. The settings file is only rewritten when something changed.
+- **One-disk / RAID0 / single / DUP pools:** the "cannot survive a disk loss" notice is sent at
+  warning importance, once, when a pool becomes that way. A pool that already was (a one-disk
+  cache) is recorded silently; Main still paints it Critical.
+- **Pool tabs:** RAID1/RAID1cN/RAID10/RAID5/RAID6 and no-survival pools show free amounts only
+  (disk-size floors never applied to them). ZFS pools are marked as not modelled and also use free
+  amounts only, so a ZFS mirror is no longer Critical just because free space is below a member size.
+- **Pool math:** a degraded RAID5 counts as single and a degraded RAID6 as RAID5, so 2-disk RAID5
+  and 3-disk RAID6 no longer suggest a free floor equal to the whole pool.
+- **Main page:** polls only while the device tables are on screen (every 30 s, paused in hidden
+  tabs) and makes no requests on other pages. Rows are found by structure (totals row, pool's own
+  device link) before English labels. Speed estimates no longer run `smartctl` for Main, and use
+  `smartctl -n standby` when they do run.
+- **Settings tabs:** each tab's form works on its own (Suggest enables that tab's Apply; the button
+  label shows "Suggested").
+- Alerts use the pool's real name for its mount (pools with `-` in the name). Uninstall also removes
+  `/var/tmp/storageguard-has-array`.
+- Internal: one shared evaluator for paint and alerts; `disks.ini` read once per request;
+  `check-alerts.php` is POST-only and relies on Unraid's own CSRF check.
+
+## 2026.09.28ac
+
+- **Fix: Main page alert check always failed with 403.** Unraid checks `csrf_token` on every
+  POST and then removes it from `$_POST` before the plugin script runs, so `check-alerts.php`
+  never saw the token. It now reads the token from `$_POST`, the `X-CSRF-Token` header, or the
+  raw form body (`include/storageguard-csrf.php`) and compares it with the WebUI token.
+- Still POST only (405 on GET). The request is refused when the WebUI token is empty or
+  unreadable, or when no token was sent.
+- The Main page keeps the token in the form body and no longer hides a failed alert check:
+  the browser console shows a warning with the HTTP status.
+
+## 2026.09.28ab
+
+- **Main colors without editing Unraid files:** free-bar CSS/JS now load from the plugin's own
+  `StorageGuardHead.page` (Unraid Buttons hook, no header button). Install no longer appends
+  anything to stock `HeadInlineJS.php`.
+- **Upgrade and remove put `HeadInlineJS.php` back:** if an older version patched it, the stock
+  backup on flash is written back when it matches the current Unraid build; otherwise only our
+  lines are stripped. The old `stock-backup` folder is then deleted.
+- **No global jQuery override:** Main re-paint after table refresh uses a `MutationObserver` on
+  the device tables instead of replacing `$.fn.html`. Bars still do not flash.
+- Docs: `docs/stock-ui-inject.md` is now `docs/main-paint.md`; SECURITY.md updated.
+
+## 2026.09.28aa
+
+- **Pool math:** usable space follows the BTRFS chunk allocator (each chunk goes to the
+  devices with the most free space). Fixes mixed-size pools where one disk is much larger:
+  RAID1 / RAID1c3 / RAID1c4 no longer count space the big disk can never mirror, RAID6
+  subtracts the two largest members (not twice the largest), and RAID10 accounts for
+  chunks using an even device count. Example: 8 + 1 + 1 TB RAID1 is 2 TB, not 5 TB.
+  Suggest values change for such pools. Equal-size pools and RAID5 are unchanged.
+- **Docs:** `docs/math/` per-profile formulas and mixed-size examples updated; RAID1c3,
+  RAID5 and RAID6 pages now state the same Warning = largest-loss Δ, Critical =
+  smallest-loss Δ rule the code uses.
+- **Security:** the alerts check refuses the request when the WebUI CSRF token cannot be
+  read, instead of skipping the check.
+
 ## 2026.09.27aa
 
 - **Install:** one Slackware `.txz` per version, saved on the flash drive from the
@@ -149,8 +227,26 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.08.15af
 - Uninstall: remove flash config dir and /tmp/storageguard_alerts (no longer keep StorageGuard.cfg).
 
+## 2026.08.15ae
+- Fix: install prepare no longer wipes Unraid's `/tmp/plugins` working copy.
+
+## 2026.08.15ad
+- Remove leaves the plugin `.plg` file to Unraid.
+
+## 2026.08.15ac
+- Cleaner install/remove scripts (canonical paths only).
+
 ## 2026.08.15ab
 - Changelog: Plugins page shows recent entries only; full history on GitHub <code>CHANGELOG.md</code>.
+
+## 2026.08.15aa
+- **Install:** single runtime `.txz` package (faster updates; docs on GitHub).
+
+## 2026.08.14af
+- **Fix:** 2-disk RAID1 capacity after one loss uses the full remaining disk (Δ ≈ 0), so no
+  false "need half free".
+- Disk-size pool floors ignored again on RAID1 / RAID10 / RAID5–6; Custom free is explicit.
+  Soft capacity-fit only when Δ > 0.
 
 ## 2026.08.14ae
 - **Pool thresholds flexible:** Warning/Critical = free-space severity (yellow/red), not hard-wired
@@ -179,9 +275,16 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 - **Release channel:** PluginURL + raw FILE sources pin to GitHub branch `stable` (not `main`). Develop on `main`; ship by merging to `stable`.
 - CA templates and install URLs follow `stable` for store users.
 
+## 2026.07.29aa
+- Support link points at the Unraid forum thread (topic 199796); project remains on GitHub.
+
 ## 2026.07.29
 - Alerts/paint only when array is fully started (not stopped, starting/stopping, or maintenance). Missing mounts are not 0 free.
 - Version day rolled to calendar date (was incorrectly still on 2026.07.10 letter suffixes).
+
+## 2026.07.10bu
+- Alerts and paint only when the array is fully started (not stopped, starting/stopping, or
+  maintenance). Missing pool mounts count as unknown free, not 0.
 
 ## 2026.07.10bt
 - RAID5/6: calm “read Unraid/BTRFS docs” notes in math docs, DOCS, Settings help, and parity alerts.
@@ -294,6 +397,9 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.10ai
 - Outline pulse polish (outer glow + light inner wash).
 
+## 2026.07.10ah
+- Stronger Outline pulse: clear outer border throb plus light inner wash (Pulse=Yes). Static when Pulse=No.
+
 ## 2026.07.10ag
 - Restore Pulse=Yes animations; Main flash fix retained.
 
@@ -350,6 +456,10 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 - Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
 - Versioning: Unraid uses strcmp for updates — after z use za/zb/... (not aa; aa sorts older than z).
 
+## 2026.07.09aa
+- Hide pool settings by default (array is primary). Show under Advanced button as WIP; pool code and defaults unchanged (pools inactive unless configured).
+- Versioning: after letter z same day, continue aa, ab, ... (not next calendar day). Retag of short-lived 2026.07.10 label.
+
 ## 2026.07.09z
 - Settings/docs: mark Pools section as WIP while pool logic is still being refined.
 
@@ -381,6 +491,10 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.09q
 - Full rolling changelog restored (letters a through p as single-line notes).
 - Product defaults and Open pool link fixes from prior letters.
+
+## 2026.07.09p
+- Restore full rolling CHANGES history (keep every letter).
+- Deploy via GitHub plugin install/update only.
 
 ## 2026.07.09o
 - Fix Open pool link (markdown left PHP unparsed in the URL).
@@ -443,5 +557,67 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 ## 2026.07.09
 - Versioning: YYYY.MM.DD + letter suffixes; Free-bar coloring; HeadInlineJS inject.
 
+## 2026.07.06-17
+- Clean reinstall build from GitHub: free-bar coloring + HeadInlineJS inject for plugin install.
+
+## 2026.07.06-16
+- Array: paint Free bar fill only (no red cell chrome).
+- Pool: paint Data Partition Free bar, not empty "Pool of N devices" row.
+- Inject script reads version from plg (no hardcoded VER drift).
+
+## 2026.07.06-15
+- Color free-space *bars* (not whole row); stronger pool DOM matching for pools-only systems.
+- Fix VER string and make sure bar-mode color.js ships.
+
+## 2026.07.06-14
+- CRITICAL: inject color JS/CSS into HeadInlineJS.php (Unraid 7 never loads HeadInclude.php — coloring never ran).
+- Clean legacy HeadInclude stubs; versioned script URLs.
+
+## 2026.07.06-13
+- Fix Main-tab coloring: server-side free space + levels; target Array/Pool totals rows; re-apply after nchan refresh.
+- Respect custom capacity (55T/50T etc.) for array warn/crit.
+
+## 2026.07.06-12
+- Array defaults from real disk sizes; match Array/Pool coloration labels.
+
+## 2026.07.06-11
+- Plugins icon launch: Settings/StorageGuard (was wrong Utilities/Storage Guard blank page).
+
+## 2026.07.06-10
+- Alerts: per-target Warning/Critical matrix (e.g. array warn only, cache warn+crit). No redundant master switch.
+- Hide custom capacity fields unless Use custom = Yes; hide disk dropdowns when custom.
+- Clear notice when no array data disks (pools-only); fix get-config.cfg path.
+
+## 2026.07.06-9
+- Short Plugins-page README to match Unraid conventions.
+
+## 2026.07.06-8
+- Asset URLs include ?v=version to avoid stale download caches.
+
+## 2026.07.06-7
+- Pool detection: type=Cache + Unraid prefix() groups cache/cache2 as one pool "cache"; Boot (flash/flash2) excluded.
+
+## 2026.07.06-6
+- CRITICAL: remove script used Type="remove" which Unraid ignores — it ran on INSTALL and deleted all plugin files after download. Fixed to Method="remove".
+
+## 2026.07.06-5
+- Run block CDATA formatting.
+
+## 2026.07.06-4
+- Menu="Utilities", README shipping, metadata attrs.
+- Fixed: Settings menu entry now appears under User Utilities (Menu="Utilities" + launch tweak).
+
+## 2026.07.06-2
+- Dynamic defaults (largest/2nd largest disk), separate warning/critical alert toggles, improved alert messages with cross-pool notes, robust uninstall cleanup, BTRFS help enhancements, and injection fixes.
+- Fix .plg XML parse error: wrap INLINE scripts in CDATA.
+- README cleanup.
+
+## 2026.07.06-1
+- Sub-versioning (2026.07.06-1), clean Settings layout, terminology switched to Pools, improved pool detection.
+- Plugin name StorageGuard + description; User Utilities launch; injection files.
+
 ## 2026.07.06
 - Initial public development series (array/pool thresholds, alerts, Plugins metadata).
+
+## 2026.07.01
+- First plugin files: storageguard.plg, StorageGuard.page, storageguard.js and README.

@@ -22,11 +22,21 @@ See also [raid5.md](raid5.md).
 
 ### Usable capacity (estimate)
 
+Each chunk stripes across every device that still has space, with two devices' worth of parity per stripe. Stripes keep going while three or more devices have space, so this works out to:
+
 $$
-U(\mathrm{RAID6}, S_1,\ldots,S_N) \approx \sum_i S_i - 2\cdot\max_i S_i \quad (N \ge 3)
+U(\mathrm{RAID6}, S_1,\ldots,S_N) = \sum_i S_i - S_{(1)} - S_{(2)} \quad (N \ge 3)
 $$
 
-Equal disks of size $S$: $(N-2)\cdot S$.
+where $S_{(1)}, S_{(2)}$ are the two largest members. Equal disks of size $S$: $(N-2)\cdot S$.
+
+| Layout | Usable |
+|--------|--------|
+| 4 × 4 TB | **8 TB** |
+| 8 + 1 + 1 TB | **1 TB** |
+| 10 + 2 + 2 + 2 TB | **4 TB** |
+| 8 + 4 + 4 + 4 TB | **8 TB** |
+| 6 + 4 + 2 TB | **2 TB** |
 
 ### Free headroom after losing disk $i$
 
@@ -34,20 +44,21 @@ $$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 $$
 
-Planning: Critical = $\max\Delta_{\mathrm{fit}}$, Warning = $2\times\max\Delta_{\mathrm{fit}}$ ([scenarios.md](scenarios.md)).  
+Planning: Warning = $\max\Delta_{\mathrm{fit}}$ (largest-member loss), Critical = $\min\Delta_{\mathrm{fit}}$ (smallest-member loss) ([scenarios.md](scenarios.md)).  
 Suggest uses **single-disk** Δ (not simultaneous double failure).
 
-### Example: 4 × 4 TB
+### Example: 4 × 4 TB
 
-- Healthy: $16 - 8 = 8$ TB  
-- After one loss: $12 - 8 = 4$ TB → $\Delta = 4$ TB  
-- Critical **4 T**, Warning **8 T**
+- Healthy: $16 - 8 = 8$ TB  
+- After one loss: $12 - 8 = 4$ TB → $\Delta = 4$ TB  
+- Warning = Critical **4 T** (equal disks)
 
-### Example: 4 × 4 TB + 2 × 8 TB
+### Example: 4 × 4 TB + 2 × 8 TB
 
-- Healthy: $32 - 16 = 16$ TB  
-- After losing an 8 TB: $\Delta = 8$ TB  
-- Critical **8 T**, Warning **16 T**
+- Healthy: $32 - 16 = 16$ TB  
+- Lose an 8 TB: $24 - 8 - 4 = 12$ TB → $\Delta = 4$ TB  
+- Lose a 4 TB: $28 - 16 = 12$ TB → $\Delta = 4$ TB  
+- Warning = Critical **4 T**
 
 ### Speeds (best-case bus ceiling)
 
@@ -61,7 +72,9 @@ Suggest uses **single-disk** Δ (not simultaneous double failure).
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
-| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
+| Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
+| Degraded (3 → 2 devices) | Counted as **RAID5** on the two survivors, so a 3-disk equal RAID6 has $\Delta = 0$ and no Suggest (not "free = whole pool") |
+| Disk-size dropdowns | Not shown on this tab; free amounts only (Custom / Suggest) |
 | Help / alerts | Capacity + recovery headroom; points at Unraid/BTRFS RAID5/6 docs |
 | Not claimed | Simultaneous double-failure capacity model (Suggest is single-disk Δ) |
 

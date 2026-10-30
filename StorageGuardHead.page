@@ -1,0 +1,9 @@
+Menu="Buttons:199"
+Link="storageguard-head"
+---
+<?php
+// Main free-bar CSS/JS. Unraid loads every Buttons page on each page view, so no stock file is edited.
+?>
+<style>.storageguard-head{display:none}</style>
+<link type="text/css" rel="stylesheet" href="<?php autov('/plugins/StorageGuard/storageguard.css') ?>">
+<script src="<?php autov('/plugins/StorageGuard/storageguard-color.js') ?>"></script>
