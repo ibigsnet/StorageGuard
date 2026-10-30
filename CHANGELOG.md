@@ -6,6 +6,14 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.10.30ab
+
+- **Alert schedule on every boot device.** The cron file moved to `/boot/config/plugins/storageguard/`
+  and `update_cron` runs again a minute after install. Unraid's `update_cron` reads `/boot/config/plugins/<plugin>/*.cron` only for plugins that have finished installing, and the folder name is case-sensitive on a ZFS boot device. Before, the 5-minute alert check
+  could be missing after a fresh install or a reboot.
+- **Notification text is plain ASCII.** Dashes and curly quotes were dropped by shell escaping under
+  cron, which left double spaces in the message.
+
 ## 2026.10.30aa
 
 - **Alerts run on the server.** A plugin cron (`storageguard.cron`, every 5 minutes, installed with

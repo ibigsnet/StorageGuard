@@ -654,14 +654,14 @@ function sg_pool_notify_body(string $severity, string $pname, float $free_tb, ar
         $sm = sg_format_tb_short((float)$sug['smallest_loss_delta_tb']);
         if ($lg !== '' && $sm !== '') {
             $guide = $lg === $sm
-                ? " Capacity-fit guide (optional): members are equal size — about {$lg} free so used data still fits after any one member loss."
+                ? " Capacity-fit guide (optional): members are equal size; about {$lg} free so used data still fits after any one member loss."
                 : " Capacity-fit guide (optional): ~{$lg} free so used data still fits after losing the largest member; ~{$sm} free after losing the smallest. You can map either number to Warning or Critical (or use your own free amounts).";
         }
     }
 
     switch ($class) {
         case 'mirror':
-            $line2 = 'On BTRFS RAID1/RAID1cN, a single disk loss usually leaves data online (extra copies). Free space is about whether used data still fits after usable capacity shrinks — not Unraid-array “evacuate this disk onto free space.”';
+            $line2 = 'On BTRFS RAID1/RAID1cN, a single disk loss usually leaves data online (extra copies). Free space is about whether used data still fits after usable capacity shrinks, not Unraid-array "evacuate this disk onto free space."';
             break;
         case 'parity':
             $line2 = 'On BTRFS RAID5/RAID6, free space is capacity after a loss plus room for replace/remove/rebalance. See Unraid pool docs and BTRFS RAID56 notes for profile behavior.';
@@ -678,9 +678,9 @@ function sg_pool_notify_body(string $severity, string $pname, float $free_tb, ar
 
     $line3 = $is_crit
         ? ' Critical free means free is at or below your more severe free floor' . ($severe !== null ? ' (' . sg_human_free($severe) . ')' : '')
-            . ' — used data may not fit after a capacity-shrinking member loss if you stay this full.'
+            . '; used data may not fit after a capacity-shrinking member loss if you stay this full.'
         : ' Warning free means free is at or below your milder free floor' . ($mild !== null ? ' (' . sg_human_free($mild) . ')' : '')
-            . ' — still time to free space or adjust thresholds before the more severe floor.';
+            . '; still time to free space or adjust thresholds before the more severe floor.';
     return $line1 . ' ' . $line2 . $guide . $line3;
 }
 

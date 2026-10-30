@@ -2,7 +2,7 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "StorageGuard">
 <!ENTITY author "RifleJock">
-<!ENTITY version "2026.10.30aa">
+<!ENTITY version "2026.10.30ab">
 <!ENTITY launch "Settings/StorageGuard">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/ibigsnet/StorageGuard/testing/storageguard.plg">
 <!ENTITY github "ibigsnet/StorageGuard">
@@ -24,7 +24,7 @@
 
 <CHANGES>
 ###&version;
-- Alerts run on the server every 5 minutes (no browser needed), keep their last level across reboots, and no longer flap or repeat. "None" thresholds stay None after a reboot.
+- Alerts run on the server every 5 minutes (no browser needed), keep their last level across reboots, and no longer flap or repeat. "None" thresholds stay None after a reboot. The schedule registers on every boot device.
 - One-disk / RAID0 pools: one layout notice when a pool becomes unable to survive a disk loss, not on every boot. Pool math: degraded RAID5/RAID6 no longer suggest the whole pool as a free floor.
 
 ###2026.09.28ac
@@ -62,8 +62,8 @@ echo "StorageGuard: ready."
 <!-- raw-files begin -->
 <FILE Name="&configdir;/StorageGuard-&version;-x86_64-1.txz" Run="upgradepkg --install-new --reinstall">
 <URL>https://github.com/ibigsnet/StorageGuard/releases/download/v&version;/StorageGuard-&version;-x86_64-1.txz</URL>
-<SHA256>4b5cdc7f093b6407abb4f493d049939b19f9b383f8043b2a5f745772c0de08f7</SHA256>
-<MD5>b0a8c92dc6717ee827aae6f60867045c</MD5>
+<SHA256>cc90feb84a61150ce8d490ad4f185acfdacd8c292298434533c70ffb994027f3</SHA256>
+<MD5>7b2abf4efc95318381b6e28705957f65</MD5>
 </FILE>
 <!-- raw-files end -->
 
@@ -107,15 +107,26 @@ if (function_exists("sg_seed_product_cfg")) {
   fi
 }
 chmod 755 /usr/local/emhttp/plugins/StorageGuard/scripts/* 2>/dev/null || true
-# Alerts: plugin cron (Unraid update_cron builds /etc/cron.d/root from plugin .cron files).
-# Written only when it differs, to spare the flash.
-SG_CRON=/boot/config/plugins/StorageGuard/storageguard.cron
+# Alerts: plugin cron. update_cron reads /boot/config/plugins/<plg name>/*.cron
+# of registered plugins only: the folder is lowercase storageguard (case matters
+# on a ZFS boot device; on FAT it is the same folder), and the plugin registers
+# after this script, so update_cron runs again a minute later.
+SG_CRON_DIR=/boot/config/plugins/storageguard
+SG_CRON=$SG_CRON_DIR/storageguard.cron
 SG_CRON_WANT='# Storage Guard: free-space alerts
-*/5 * * * * /usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts >/dev/null 2>&1'
+*/5 * * * * [ -x /usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts ] && /usr/local/emhttp/plugins/StorageGuard/scripts/sg-alerts >/dev/null 2>&1'
+mkdir -p "$SG_CRON_DIR"
 if [ "$(cat "$SG_CRON" 2>/dev/null)" != "$SG_CRON_WANT" ]; then
   printf '%s\n' "$SG_CRON_WANT" > "$SG_CRON"
 fi
-[ -x /usr/local/sbin/update_cron ] && /usr/local/sbin/update_cron
+SG_OLD_CRON=/boot/config/plugins/StorageGuard/storageguard.cron
+if [ -f "$SG_OLD_CRON" ] && ! [ "$SG_OLD_CRON" -ef "$SG_CRON" ]; then
+  rm -f "$SG_OLD_CRON"
+fi
+if [ -x /usr/local/sbin/update_cron ]; then
+  /usr/local/sbin/update_cron
+  echo /usr/local/sbin/update_cron | at -M now + 1 minute >/dev/null 2>&1 || true
+fi
 # Main paint loads from StorageGuardHead.page. Older versions patched stock
 # HeadInlineJS.php; put it back once.
 /usr/local/emhttp/plugins/StorageGuard/scripts/sg-head-restore restore || true
@@ -140,6 +151,8 @@ done
 rm -rf /usr/local/emhttp/plugins/StorageGuard
 # Full uninstall: flash config (incl. alert cron + alert state) + runtime scratch (clean reinstall)
 rm -rf /boot/config/plugins/StorageGuard
+rm -f /boot/config/plugins/storageguard/storageguard.cron
+rmdir /boot/config/plugins/storageguard 2>/dev/null || true
 [ -x /usr/local/sbin/update_cron ] && /usr/local/sbin/update_cron
 rm -rf /tmp/storageguard_alerts
 rm -f /var/tmp/storageguard-has-array /var/run/storageguard-alerts.lock
