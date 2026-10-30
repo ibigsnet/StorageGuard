@@ -115,8 +115,7 @@ See [unraid-io.md](unraid-io.md) for single- vs multi-stream and what Unraid doe
 |----------|--------|
 | **Suggest free thresholds** | **Yes** |
 | Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
-| Paint / alerts | Use capacity-fit automatically (Custom overrides) |
-| Settings tables | Per-member loss Δ, usable after loss, profile comparison |
+| Paint / alerts | Your free amounts only (Custom, or filled by **Suggest**); capacity-fit is never applied automatically. Disk-size dropdowns are not shown on this tab |
 | Alerts | RAID10 / striped-mirror wording: data usually online; free = capacity-fit after usable shrinks |
 | Not claimed | Forced immediate replace |
 

@@ -26,7 +26,7 @@ Regardless of which form field you type into:
 So if you set Warning = `2T` and Critical = `4T`, paint still treats **2T as red** and **4T as yellow** (lower free = more severe).  
 **Tip:** keep **Warning free ≥ Critical free** as numbers (e.g. Warning `4T`, Critical `2T`) so field labels match severity.
 
-Alerts only fire for levels you enable under **Alerts** (pool Warning / Critical checkboxes). The same level is not re-sent every hour — only when it **changes**.
+Alerts only fire for levels you enable (**Notify warning** / **Notify critical** on that tab). They are checked on the server every 5 minutes and sent only when the level **changes**; leaving a level needs a small recovery margin, and a step down waits until the last notification is an hour old. Details: [DOCS.md → Alerts](../../DOCS.md#alerts).
 
 ---
 

@@ -13,13 +13,13 @@
  * value column + max-width keep them compact/centered. Nested markdown
  * blocks still need a cap so dropdowns do not stretch full bleed.
  */
-#storageguard-form select:not([multiple]) {
+form.sg-form select:not([multiple]) {
   width: auto !important;
   min-width: 9em;
   max-width: 22em;
   box-sizing: border-box;
 }
-#storageguard-form input[type="text"] {
+form.sg-form input[type="text"] {
   width: auto !important;
   min-width: 12em;
   max-width: 24em;

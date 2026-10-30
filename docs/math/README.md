@@ -73,6 +73,8 @@ $$
 \Delta_{\mathrm{fit}}(i) = U_{\mathrm{full}} - U_{\mathrm{after}}(i)
 $$
 
+When a loss leaves fewer devices than the profile needs, the survivors are counted as the profile they can still hold: RAID1 / RAID10 → the one survivor, RAID1c3 / RAID1c4 → one copy fewer, RAID5 → single, RAID6 → RAID5. So a 2-disk RAID5 or 3-disk equal RAID6 has $\Delta = 0$ (no Suggest), rather than a floor equal to the whole pool.
+
 First-order **suggested free floors** (user may assign either way; see [threshold-guide.md](threshold-guide.md)):
 
 $$
@@ -159,12 +161,14 @@ Equal disks ⇒ max = min ⇒ one shared free floor.
 | Tools → Storage Guard → pool tab (e.g. Cache) | Suggest button when Δ is a real capacity drop (not 2-disk RAID1) |
 | Unraid main-page free bars (array / pool) | Paint from configured free thresholds; no-survival pools stay Critical |
 | Unraid notifications | Profile-class wording (mirror / RAID10 / parity / none) |
-| `get-config` → `_status.pools.*.math` | Machine-readable package for UI |
+| `get-config` → `_status.pools.*.math` | Machine-readable package (members, Suggest, profile alternatives; no speed columns) |
 
 ## Code
 
 `sg-pool-math.php` — `sg_usable_tb`, `sg_capacity_delta_tb`, `sg_pool_threshold_suggestions`, `sg_pool_profile_alternatives`, `sg_pool_math_package`.  
-`sg-lib.php` — `sg_pool_one_disk_mode`, `sg_pool_effective_level` (layout-critical paint).
+`sg-lib.php` — `sg_pool_one_disk_mode`, `sg_pool_uses_disk_sizes`, `sg_evaluate` (one evaluation shared by Main paint and alerts; layout-critical pools paint Critical).  
+`include/sg-alerts.php` — alert state, recovery margin, re-notify interval (run by the plugin cron).  
+Speed ceilings (`sg_pool_bus_ceiling_estimate`, `smartctl -n standby`) are only computed when asked for with `sg_pool_math_package(..., true)`; Main paint and alerts never run them.
 
 ## Docs map
 

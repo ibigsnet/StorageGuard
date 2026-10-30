@@ -6,7 +6,6 @@
   var BAR_WARN = '#ffc107';
   var BAR_CRIT = '#e53935';
   var BAR_OK = '#4caf50';
-  var applyTimer = null;
 
   function resolveStyle(obj, fallback) {
     if (obj && obj.style === 'outline') return 'outline';
@@ -43,6 +42,19 @@
     if (!disk) return null;
     if (disk.closest) return disk.closest('td');
     return disk.parentElement && disk.parentElement.nodeName === 'TD' ? disk.parentElement : null;
+  }
+
+  // Device link on a Main row (Device?name=cache2, Boot?name=flash), or null for summary rows.
+  function rowDeviceName(tr) {
+    var a = tr && tr.querySelector('a[href*="Device?name="], a[href*="Boot?name="]');
+    if (!a) return null;
+    var m = (a.getAttribute('href') || '').match(/name=([^&]+)/i);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  // Totals rows ("Array of N devices", "Pool of N devices") carry no device link.
+  function isSummaryRow(tr) {
+    return !!(tr && freeUsageDisk(tr) && (tr.classList.contains('tr_last') || rowDeviceName(tr) === null));
   }
 
   function clearPaint(scope) {
@@ -252,6 +264,9 @@
     if (!tbody) return null;
     var rows = tbody.querySelectorAll('tr');
     var i;
+    for (i = rows.length - 1; i >= 0; i--) {
+      if (isSummaryRow(rows[i]) && !isBootSummaryRow(rows[i])) return rows[i];
+    }
     for (i = 0; i < rows.length; i++) {
       if (isArrayOfDevicesRow(rows[i]) && freeUsageDisk(rows[i])) return rows[i];
     }
@@ -261,50 +276,49 @@
     return null;
   }
 
-  function isPoolMemberDeviceRow(tr) {
-    var t = rowText(tr);
-
-    if (/device\s+\d+/.test(t)) return true;
-    if (isPoolOfDevicesRow(tr) || isArrayOfDevicesRow(tr) || isBootSummaryRow(tr)) return false;
-
-    var link = tr.querySelector('a[href*="Device?name="]');
-    if (link && freeUsageDisk(tr) && !isDataPartitionRow(tr)) {
-
-
-      if (/\b(cache\d+|device)\b/.test(t) && t.indexOf('pool of') === -1) {
-
-      }
-    }
-    return false;
+  // Member rows of a multi-device pool (cache2, cache3, ...): linked to a device that is
+  // not the pool itself. Falls back to the "Device N" label.
+  function isPoolMemberDeviceRow(tr, poolKey) {
+    var name = rowDeviceName(tr);
+    if (name && poolKey) return name !== poolKey;
+    return /^[\s]*device\s+\d+/.test(rowText(tr));
   }
 
-  function findPoolDataFreeRow(root) {
+  function findPoolDataFreeRow(root, poolKey) {
     if (!root) return null;
     var rows = root.querySelectorAll('tr');
+    var isBoot = root.id === 'boot_device';
     var i, tr;
 
+    // 1. Structural: pool totals row (no device link), then the row of the pool itself.
+    if (!isBoot) {
+      for (i = 0; i < rows.length; i++) {
+        if (isSummaryRow(rows[i]) && !isArrayOfDevicesRow(rows[i])) return rows[i];
+      }
+    }
+    for (i = 0; i < rows.length; i++) {
+      tr = rows[i];
+      if (poolKey && rowDeviceName(tr) === poolKey && freeUsageDisk(tr) && !isBootSummaryRow(tr)) return tr;
+    }
 
+    // 2. Fallbacks by row text (English UI labels).
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
       if (isPoolOfDevicesRow(tr) && freeUsageDisk(tr)) return tr;
     }
-
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isPoolMemberDeviceRow(tr)) continue;
+      if (isPoolMemberDeviceRow(tr, poolKey)) continue;
       if (isDataPartitionRow(tr) && freeUsageDisk(tr)) return tr;
     }
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr)) continue;
-      if (isPoolOfDevicesRow(tr)) continue;
-      var t = rowText(tr);
-      if (/^[\s]*device\s+\d+/.test(t)) continue;
+      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr, poolKey) || isPoolOfDevicesRow(tr)) continue;
       if (tr.querySelectorAll('td .usage-disk').length >= 2) return tr;
     }
     for (i = 0; i < rows.length; i++) {
       tr = rows[i];
-      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) continue;
+      if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr, poolKey)) continue;
       if (freeUsageDisk(tr)) return tr;
     }
     return null;
@@ -327,11 +341,6 @@
     document.querySelectorAll('.TableContainer table.disk_status').forEach(function (el) {
       if (el.id === 'array_devices' || (el.querySelector && el.querySelector('#array_devices'))) return;
 
-      var wrap = el.closest ? el.closest('.TableContainer, .tabs, #tab1, #array') : null;
-      var label = wrap ? (wrap.textContent || '').slice(0, 80).toLowerCase() : '';
-      if (/^[\s]*array devices/.test(label) || (el.previousElementSibling && /array devices/i.test(el.previousElementSibling.textContent || ''))) {
-
-      }
       add(el);
     });
     return list;
@@ -411,21 +420,19 @@
     for (var r = 0; r < roots.length; r++) {
       var root = roots[r];
 
-      root.querySelectorAll('tr').forEach(function (tr) {
-        if (isArrayOfDevicesRow(tr)) return;
-        if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) {
-          clearPaint(tr);
-        }
-      });
-
       var names = namesInRoot(root);
       var key = resolvePoolKey(names, root.textContent || '', pools);
+
+      root.querySelectorAll('tr').forEach(function (tr) {
+        if (isArrayOfDevicesRow(tr)) return;
+        if (isBootSummaryRow(tr) || isPoolMemberDeviceRow(tr, key)) clearPaint(tr);
+      });
       if (!key || matched[key]) continue;
 
       var st = pools[key];
       if (!st) continue;
 
-      var prow = findPoolDataFreeRow(root);
+      var prow = findPoolDataFreeRow(root, key);
       log('pool match', {
         root: root.id || root.className,
         key: key,
@@ -439,7 +446,7 @@
 
       if (isArrayOfDevicesRow(prow)) continue;
 
-      if (isPoolMemberDeviceRow(prow) || /^[\s]*device\s+\d+/.test(rowText(prow))) continue;
+      if (isPoolMemberDeviceRow(prow, key)) continue;
       matched[key] = true;
       paintTarget(prow, st, opts);
     }
@@ -455,7 +462,7 @@
       var candidates = [];
       document.querySelectorAll('tr').forEach(function (tr) {
         if (isBootSummaryRow(tr) || isArrayOfDevicesRow(tr)) return;
-        if (isPoolMemberDeviceRow(tr) || /^[\s]*device\s+\d+/.test(rowText(tr))) return;
+        if (isPoolMemberDeviceRow(tr, pk)) return;
         if (!freeUsageDisk(tr)) return;
         var t = rowText(tr);
         if (isPoolOfDevicesRow(tr) && t.indexOf(pk.toLowerCase()) !== -1) {
@@ -474,20 +481,11 @@
     if (!opts.pulse) stripAllPulse();
   }
 
-  function scheduleApply() {
-    if (applyTimer) return;
-    applyTimer = requestAnimationFrame(function () {
-      applyTimer = null;
-      if (lastStatus) applyStatus(lastStatus, lastOpts);
-    });
-  }
-
   function isMainTableId(id) {
     return id === 'array_devices' || id === 'boot_device' || (id && id.indexOf('pool_device') === 0);
   }
 
   var MAIN_TABLES = '#array_devices, #boot_device, [id^="pool_device"]';
-  var mainObserver = null;
 
   function touchesMainTable(node) {
     if (!node || node.nodeType !== 1) return false;
@@ -496,53 +494,15 @@
     return !!(node.querySelector && node.querySelector(MAIN_TABLES));
   }
 
-  // Main rewrites its device tables on every refresh. Re-paint in the same
-  // task (observer callbacks run before the browser paints) so bars do not flash.
-  function watchMainTables() {
-    if (mainObserver || !window.MutationObserver || !document.body || !onMainLikePage()) return;
-    mainObserver = new MutationObserver(function (mutations) {
-      if (!lastStatus) return;
-      for (var i = 0; i < mutations.length; i++) {
-        if (touchesMainTable(mutations[i].target)) {
-          applyStatus(lastStatus, lastOpts);
-          return;
-        }
-      }
-    });
-    mainObserver.observe(document.body, { childList: true, subtree: true });
-    log('main table observer installed');
-  }
-
-  // csrf_token stays in the form body: Unraid checks it there, and the endpoint
-  // reads it back from the raw body after Unraid removes it from $_POST.
-  var alertsWarned = {};
-  function alertsFailed(what) {
-    if (alertsWarned[what]) return;
-    alertsWarned[what] = true;
-    console.warn('Storage Guard: alerts check failed (' + what + ')');
-  }
-
-  function checkAlerts() {
-    if (typeof csrf_token === 'undefined' || !csrf_token) {
-      alertsFailed('no csrf_token on this page');
-      return;
-    }
-    var alertBody = new URLSearchParams();
-    alertBody.set('csrf_token', csrf_token);
-    fetch('/plugins/StorageGuard/check-alerts.php', {
-      method: 'POST',
-      credentials: 'same-origin',
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: alertBody.toString()
-    }).then(function (r) {
-      if (!r.ok) alertsFailed('HTTP ' + r.status);
-    }).catch(function (err) {
-      alertsFailed(String(err));
-    });
-  }
+  // Main colors only: fetch paint data while the device tables are on screen. Alerts run
+  // on the server (plugin cron), never from the browser.
+  var POLL_MS = 30000;
+  var pollTimer = null;
+  var inflight = false;
 
   function fetchAndApply() {
+    if (inflight || !onMainLikePage()) return;
+    inflight = true;
     fetch('/plugins/StorageGuard/get-config.php', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -555,32 +515,53 @@
           pulse: (data.outline_pulse === 'yes'),
           showOk: (data.outline_show_ok !== 'no')
         };
-        data._status._opts = opts;
         log('status', data._status, opts);
         applyStatus(data._status, opts);
-        checkAlerts();
       })
       .catch(function (err) {
         console.warn('Storage Guard: config fetch failed', err);
-      });
+      })
+      .then(function () { inflight = false; });
+  }
+
+  function startPolling() {
+    if (pollTimer || !onMainLikePage()) return;
+    fetchAndApply();
+    pollTimer = setInterval(function () {
+      if (!document.hidden) fetchAndApply();
+    }, POLL_MS);
+  }
+
+  // Main rewrites its device tables on every refresh. Re-paint in the same task (observer
+  // callbacks run before the browser paints) so bars do not flash. The observer is always
+  // attached, so tables that arrive late still start the polling.
+  function watchMainTables() {
+    if (!window.MutationObserver || !document.body) return;
+    new MutationObserver(function (mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        if (touchesMainTable(mutations[i].target)) {
+          if (!pollTimer) startPolling();
+          if (lastStatus) applyStatus(lastStatus, lastOpts);
+          return;
+        }
+      }
+    }).observe(document.body, { childList: true, subtree: true });
   }
 
   function boot() {
     watchMainTables();
-    fetchAndApply();
-    setInterval(function () {
-      if (lastStatus) applyStatus(lastStatus, lastOpts);
-    }, 5000);
-    setInterval(fetchAndApply, 10000);
-    setTimeout(watchMainTables, 1000);
+    startPolling();
   }
+
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && pollTimer) fetchAndApply();
+  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
     boot();
   }
-  setTimeout(fetchAndApply, 1500);
 
   window.StorageGuardColor = {
     refresh: fetchAndApply,

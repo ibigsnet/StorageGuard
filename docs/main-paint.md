@@ -13,7 +13,21 @@ The plugin ships its own page, `StorageGuardHead.page`, with `Menu="Buttons"`. U
 
 It sets `Link`, so no button shows in the header. No stock Unraid file is edited. Removing the plugin removes the page, and the colors go with it.
 
-`storageguard-color.js` only paints on Main (it checks for the array / pool device tables). Main rewrites those tables on each refresh; a `MutationObserver` re-paints them before the browser draws, so bars do not flash. No jQuery function is overridden.
+`storageguard-color.js` loads on every page but only works on Main (it checks for the array / pool device tables):
+
+- It fetches `get-config.php` once when the device tables are present, then every **30 seconds** while the tab is visible. Other pages make no requests.
+- A `MutationObserver` on the page is always attached. Main rewrites its device tables on each refresh; the observer re-paints them before the browser draws, so bars do not flash, and tables that appear late still start the polling. No jQuery function is overridden.
+- The browser does **not** send alerts. Alerts run on the server from the plugin cron (see [DOCS.md → Alerts](../DOCS.md#alerts)).
+
+### Which row gets painted
+
+Structure first, row text only as a fallback (so non-English WebUI languages still work in the common cases):
+
+| Target | Row |
+|--------|-----|
+| Array | Last row of `#array_devices` with a usage bar and no device link (the totals row, `tr_last`) |
+| Pool | In `#pool_device*`: the totals row (usage bar, no device link); else the row linked to the pool's own name (`Device?name=cache`). Rows linked to other members (`cache2`, ...) are never painted |
+| Fallback | English labels: "Array of N devices", "Pool of N devices", "Data partition"; Internal Boot rows are skipped |
 
 ## Cleanup of older versions
 

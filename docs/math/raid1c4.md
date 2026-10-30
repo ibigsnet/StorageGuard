@@ -52,8 +52,8 @@ Single-stream write remains closer to ~$W$.
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (mirror class) |
-| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
-| Disk-size dropdowns | **Ignored** for paint/alerts |
+| Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
+| Disk-size dropdowns | Not shown on this tab; free amounts only (Custom / Suggest) |
 | Alerts | Mirror-class wording |
 
 Code: profile key `raid1c4`, class `mirror`.

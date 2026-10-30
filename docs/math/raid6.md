@@ -72,7 +72,9 @@ Suggest uses **single-disk** Δ (not simultaneous double failure).
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
-| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
+| Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
+| Degraded (3 → 2 devices) | Counted as **RAID5** on the two survivors, so a 3-disk equal RAID6 has $\Delta = 0$ and no Suggest (not "free = whole pool") |
+| Disk-size dropdowns | Not shown on this tab; free amounts only (Custom / Suggest) |
 | Help / alerts | Capacity + recovery headroom; points at Unraid/BTRFS RAID5/6 docs |
 | Not claimed | Simultaneous double-failure capacity model (Suggest is single-disk Δ) |
 

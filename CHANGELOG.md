@@ -6,6 +6,39 @@ User-facing history for this plugin. The `.plg` file (Community Applications / P
 
 ---
 
+## 2026.10.30aa
+
+- **Alerts run on the server.** A plugin cron (`storageguard.cron`, every 5 minutes, installed with
+  Unraid's `update_cron`) checks free space and sends notifications. A browser no longer has to be
+  open, and open tabs no longer poll the alert check. One run at a time; nothing runs while the
+  array is stopped or in Maintenance. Uninstall removes the cron.
+- **No repeats after reboot.** The last alert level per target is kept on the flash drive
+  (`alert-state.json`, written only when a level changes), so an unchanged warning is not sent
+  again after every boot.
+- **No flapping.** Leaving a level needs free space 2% (at least 10 GB) above that floor, and a
+  step down or "recovered" waits until the last notification for that target is an hour old.
+  Escalations still notify at once.
+- **"None" stays None.** Boot no longer refills empty Warning/Critical values with disk sizes; it
+  only adds settings that are missing. The settings file is only rewritten when something changed.
+- **One-disk / RAID0 / single / DUP pools:** the "cannot survive a disk loss" notice is sent at
+  warning importance, once, when a pool becomes that way. A pool that already was (a one-disk
+  cache) is recorded silently; Main still paints it Critical.
+- **Pool tabs:** RAID1/RAID1cN/RAID10/RAID5/RAID6 and no-survival pools show free amounts only
+  (disk-size floors never applied to them). ZFS pools are marked as not modelled and also use free
+  amounts only, so a ZFS mirror is no longer Critical just because free space is below a member size.
+- **Pool math:** a degraded RAID5 counts as single and a degraded RAID6 as RAID5, so 2-disk RAID5
+  and 3-disk RAID6 no longer suggest a free floor equal to the whole pool.
+- **Main page:** polls only while the device tables are on screen (every 30 s, paused in hidden
+  tabs) and makes no requests on other pages. Rows are found by structure (totals row, pool's own
+  device link) before English labels. Speed estimates no longer run `smartctl` for Main, and use
+  `smartctl -n standby` when they do run.
+- **Settings tabs:** each tab's form works on its own (Suggest enables that tab's Apply; the button
+  label shows "Suggested").
+- Alerts use the pool's real name for its mount (pools with `-` in the name). Uninstall also removes
+  `/var/tmp/storageguard-has-array`.
+- Internal: one shared evaluator for paint and alerts; `disks.ini` read once per request;
+  `check-alerts.php` is POST-only and relies on Unraid's own CSRF check.
+
 ## 2026.09.28ac
 
 - **Fix: Main page alert check always failed with 403.** Unraid checks `csrf_token` on every

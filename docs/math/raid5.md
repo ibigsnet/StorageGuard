@@ -71,7 +71,9 @@ Planning: Warning = $\max\Delta_{\mathrm{fit}}$ (largest-member loss), Critical 
 | Behavior | Detail |
 |----------|--------|
 | **Suggest** | **Yes** (parity class) |
-| Critical / Warning | $\max\Delta_{\mathrm{fit}}$ / $2\times\max\Delta_{\mathrm{fit}}$ |
+| Warning / Critical | $\max\Delta_{\mathrm{fit}}$ (largest loss) / $\min\Delta_{\mathrm{fit}}$ (smallest loss) |
+| Degraded (2 → 1 device) | Counted as **single** on the survivor, so a 2-disk RAID5 has $\Delta = 0$ and no Suggest (not "free = whole pool") |
+| Disk-size dropdowns | Not shown on this tab; free amounts only (Custom / Suggest) |
 | Help / alerts | Capacity + recovery headroom; points at Unraid/BTRFS RAID5/6 docs |
 
 Code: profile key `raid5`, class `parity`.

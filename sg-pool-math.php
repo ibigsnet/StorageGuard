@@ -4,29 +4,11 @@
  * See docs/math/ for formulas. Speeds are bus-capped ceilings for profile comparison only.
  */
 
-if (!function_exists('sg_pool_profile_class')) {
-    require_once __DIR__ . '/sg-lib.php';
-}
+require_once __DIR__ . '/sg-lib.php';
 
-/** @return float[] member sizes in TB (decimal, from Unraid KB size) */
-function sg_pool_member_sizes_tb($pool) {
-    $pool = preg_replace('/\d+$/', '', (string)$pool);
-    $disks_ini = '/var/local/emhttp/disks.ini';
-    if (!is_file($disks_ini)) return [];
-    $disks = @parse_ini_file($disks_ini, true) ?: [];
-    $out = [];
-    foreach ($disks as $key => $d) {
-        if (($d['type'] ?? '') !== 'Cache') continue;
-        if (empty($d['device'])) continue;
-        $status = $d['status'] ?? '';
-        if (strpos($status, '_NP') !== false) continue;
-        $prefix = preg_replace('/\d+$/', '', $key);
-        if ($prefix !== $pool) continue;
-        $kb = function_exists('sg_disk_capacity_kb') ? sg_disk_capacity_kb($d) : (isset($d['size']) ? (int)$d['size'] : 0);
-        if ($kb <= 0) continue;
-        // Main-aligned capacity (KiB) → decimal TB for pool math
-        $out[] = ($kb * 1024.0) / 1e12;
-    }
+/** @return float[] member sizes in decimal TB, largest first */
+function sg_pool_member_sizes_tb(string $pool): array {
+    $out = array_map('sg_kb_to_tb', sg_pool_member_size_kbs($pool));
     rsort($out, SORT_NUMERIC);
     return $out;
 }
@@ -167,9 +149,10 @@ function sg_btrfs_alloc_usable_tb($key, $sizes_tb) {
 /**
  * Estimated usable capacity (TB) for a BTRFS data profile and member sizes.
  * Follows the chunk allocator (sg_btrfs_alloc_usable_tb); ignores metadata.
- * Below the profile minimum, a degraded pool is counted as follows:
- * one device left on raid1/raid10 = that device; raid1c3/raid1c4 short of
- * devices = the next lower copy count; raid5/raid6 short of devices = 0.
+ * Below the profile minimum, a degraded pool is counted as the profile it can
+ * still be converted to with the devices left: raid1/raid10 with one device =
+ * that device; raid1c3/raid1c4 = the next lower copy count; raid5 with one
+ * device = single; raid6 with two devices = raid5.
  *
  * @param string $profile_or_key raw btrfs profile or math key
  * @param float[] $sizes_tb
@@ -211,10 +194,10 @@ function sg_usable_tb($profile_or_key, $sizes_tb) {
             if ($n < 2) return $sum;
             return sg_btrfs_alloc_usable_tb('raid10', $sizes);
         case 'raid5':
-            if ($n < 2) return 0.0;
+            if ($n < 2) return sg_usable_tb('single', $sizes);
             return sg_btrfs_alloc_usable_tb('raid5', $sizes);
         case 'raid6':
-            if ($n < 3) return 0.0;
+            if ($n < 3) return sg_usable_tb('raid5', $sizes);
             return sg_btrfs_alloc_usable_tb('raid6', $sizes);
         default:
             return 0.0;
@@ -255,17 +238,14 @@ function sg_capacity_delta_tb($profile_or_key, $sizes_tb, $i) {
  *
  * @return array{
  *   profile_key:string, class:string, usable_tb:float,
- *   warn_tb:float, crit_tb:float, fit_free_tb:float, rebalance_free_tb:float,
- *   largest_loss_delta_tb:float, smallest_loss_delta_tb:float,
+ *   warn_tb:float, crit_tb:float, largest_loss_delta_tb:float, smallest_loss_delta_tb:float,
  *   apply:bool, rule:string,
  *   losses: list<array{size_tb:float, usable_after_tb:float, delta_tb:float}>
  * }
  */
 function sg_pool_threshold_suggestions($profile, $sizes_tb) {
     $key = sg_math_profile_key($profile);
-    $class = function_exists('sg_pool_profile_class')
-        ? sg_pool_profile_class($profile)
-        : 'unknown';
+    $class = sg_pool_profile_class($profile);
     $sizes = [];
     foreach ($sizes_tb as $x) {
         $x = (float)$x;
@@ -316,12 +296,8 @@ function sg_pool_threshold_suggestions($profile, $sizes_tb) {
         'usable_tb' => round($u0, 3),
         'warn_tb' => $apply ? round($warn, 3) : 0.0,
         'crit_tb' => $apply ? round($crit, 3) : 0.0,
-        // Legacy keys: fit = worst (largest) loss; "rebalance" name kept for API but = same as warn now
-        'fit_free_tb' => round($max_delta, 3),
-        'rebalance_free_tb' => round($max_delta, 3),
         'largest_loss_delta_tb' => round($max_delta, 3),
         'smallest_loss_delta_tb' => round($min_delta, 3),
-        'mildest_delta_tb' => round($min_delta, 3),
         'apply' => $apply,
         'rule' => 'warn=max_fit_delta(largest_loss); crit=min_fit_delta(smallest_loss)',
         'losses' => $losses,
@@ -479,7 +455,8 @@ function sg_device_bus_ceiling_mbs($dev) {
     }
 
     // SATA via smartctl current speed
-    $out = @shell_exec('smartctl -i ' . escapeshellarg('/dev/' . $dev) . ' 2>/dev/null');
+    // -n standby: never wake a spun-down disk just to read its link speed.
+    $out = @shell_exec('smartctl -n standby -i ' . escapeshellarg('/dev/' . $dev) . ' 2>/dev/null');
     if ($out && preg_match('/SATA Version.*current:\\s*([0-9.]+)\\s*Gb/i', $out, $m)) {
         $gbps = (float)$m[1];
         // 8b/10b-ish usable ~100 MB/s per Gb/s raw bit rate / 10 * 8... practical:
@@ -498,22 +475,11 @@ function sg_device_bus_ceiling_mbs($dev) {
  * @param string $pool
  * @return array{read_mbs:?float, write_mbs:?float, note:string}
  */
-function sg_pool_bus_ceiling_estimate($pool) {
-    $disks_ini = '/var/local/emhttp/disks.ini';
-    $pool = preg_replace('/\\d+$/', '', (string)$pool);
+function sg_pool_bus_ceiling_estimate(string $pool): array {
     $caps = [];
-    if (is_file($disks_ini)) {
-        $disks = @parse_ini_file($disks_ini, true) ?: [];
-        foreach ($disks as $key => $d) {
-            if (($d['type'] ?? '') !== 'Cache') continue;
-            if (empty($d['device'])) continue;
-            $prefix = preg_replace('/\\d+$/', '', $key);
-            if ($prefix !== $pool) continue;
-            $dev = $d['device']; // e.g. sdb or nvme0n1
-            $dev = preg_replace('#^/dev/#', '', $dev);
-            $c = sg_device_bus_ceiling_mbs($dev);
-            if ($c !== null && $c > 0) $caps[] = $c;
-        }
+    foreach (sg_pool_members($pool) as $d) {
+        $c = sg_device_bus_ceiling_mbs((string)preg_replace('#^/dev/#', '', (string)$d['device']));
+        if ($c !== null && $c > 0) $caps[] = $c;
     }
     if (empty($caps)) {
         return [
@@ -533,26 +499,22 @@ function sg_pool_bus_ceiling_estimate($pool) {
 }
 
 /**
- * Full math package for one pool (for get-config / future Settings suggest UI).
+ * Math package for one pool: member sizes, Suggest values, and profile alternatives.
+ * Bus/speed ceilings (smartctl) are only added when $with_bus is true; Main paint
+ * and alerts never ask for them.
  */
-function sg_pool_math_package($pool, $profile = null) {
+function sg_pool_math_package(string $pool, ?string $profile = null, bool $with_bus = false): array {
     if ($profile === null || $profile === '') {
-        $profile = function_exists('sg_pool_btrfs_profile') ? sg_pool_btrfs_profile($pool) : '';
+        $profile = sg_pool_btrfs_profile($pool);
     }
     $sizes = sg_pool_member_sizes_tb($pool);
-    $suggest = sg_pool_threshold_suggestions($profile, $sizes);
-    $bus = sg_pool_bus_ceiling_estimate($pool);
-    $alts = sg_pool_profile_alternatives(
-        $sizes,
-        $bus['read_mbs'],
-        $bus['write_mbs']
-    );
+    $bus = $with_bus ? sg_pool_bus_ceiling_estimate($pool) : ['read_mbs' => null, 'write_mbs' => null, 'note' => ''];
     return [
         'pool' => $pool,
         'profile' => $profile,
         'members_tb' => array_map(function ($x) { return round($x, 3); }, $sizes),
-        'suggest' => $suggest,
+        'suggest' => sg_pool_threshold_suggestions($profile, $sizes),
         'bus' => $bus,
-        'alternatives' => $alts,
+        'alternatives' => sg_pool_profile_alternatives($sizes, $bus['read_mbs'], $bus['write_mbs']),
     ];
 }
